@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 
 public class Configuration {//ソフトウェアの環境設定を保持するクラス。
@@ -21,6 +23,8 @@ public class Configuration {//ソフトウェアの環境設定を保持する�
 	private boolean menubarMode = true;
 	
 	private boolean no_alert = false;//起動時使用上の注意を表示しない
+
+	private final StringProperty uiFont = new SimpleStringProperty("System");
 	
 	public boolean getR_grid(){return this.R_grid;}
 	public void setR_grid(boolean b){this.R_grid = b;}
@@ -40,6 +44,9 @@ public class Configuration {//ソフトウェアの環境設定を保持する�
 	public void setNoAlert(boolean b){this.no_alert = b;}
 	public boolean isGridTriangle() {return this.triangleGrid;}
 	public void setGridTriangle(boolean b) {this.triangleGrid = b;}
+	public String getUiFont() { return this.uiFont.get(); }
+	public void setUiFont(String s) { this.uiFont.set(s); }
+	public StringProperty getUiFontProperty() { return this.uiFont; }
 	
 	public void read(){
 		File file = new File("config.properties");
@@ -63,6 +70,7 @@ public class Configuration {//ソフトウェアの環境設定を保持する�
 			menubarMode = Boolean.valueOf(p.getProperty("menubarMode", "true"));
 			no_alert = Boolean.valueOf(p.getProperty("no_alert", "false"));
 			triangleGrid = Boolean.valueOf(p.getProperty("triangleGrid", "false"));
+			uiFont.set(String.valueOf(p.getProperty("uiFont", "System")));
 		}
 	}
 	public void save(){
@@ -77,6 +85,7 @@ public class Configuration {//ソフトウェアの環境設定を保持する�
 			p.setProperty("nonFixedColor", nonFixedColor.toString());
 			p.setProperty("no_alert", String.valueOf(no_alert));
 			p.setProperty("triangleGrid", String.valueOf(triangleGrid));
+			p.setProperty("uiFont", uiFont.get());
 			FileWriter fw = new FileWriter("config.properties");
 			p.store(fw, null);
 			fw.close();

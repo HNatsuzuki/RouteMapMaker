@@ -3,6 +3,7 @@ package RouteMapMaker;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.Factories.AlertFactory;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -27,6 +28,11 @@ public class LineDashesController implements Initializable{
 	@FXML Button delete;
 	ObservableList<DoubleArrayWrapper> lineDashes;
 	LineDashCell ldCell;
+	private final AlertFactory alertFactory;
+
+	public LineDashesController(AlertFactory alertFactory) {
+		this.alertFactory = alertFactory;
+	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -74,11 +80,11 @@ public class LineDashesController implements Initializable{
 		delete.setOnAction((ActionEvent) ->{
 			int selectedIndex = list.getSelectionModel().getSelectedIndex();
 			if(selectedIndex == -1){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("項目を選択してください。");
 				alert.showAndWait();
 			}else if(selectedIndex == 0){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("直線パターンは削除できません。");
 				alert.showAndWait();
 			}else{
@@ -92,12 +98,12 @@ public class LineDashesController implements Initializable{
 			String[] split = text.split(",",0);
 			DoubleArrayWrapper daw = list.getSelectionModel().getSelectedItem();
 			if(daw == null){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("項目を選択してください");
 				alert.showAndWait();
 			}else{
 				if(split.length == 0 || split.length == 1){
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("破線パターンを表す要素数は2つ以上の必要があります。");
 					alert.showAndWait();
 					setText(daw);
@@ -108,7 +114,7 @@ public class LineDashesController implements Initializable{
 						try{
 							da[i] = Double.valueOf(split[i]);
 							if(da[i] < 1){
-								Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+								Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 								alert.getDialogPane().setContentText("要素として使用できるのは1以上の半角数字のみです。");
 								alert.showAndWait();
 								error = true;
@@ -116,7 +122,7 @@ public class LineDashesController implements Initializable{
 							}
 						}catch(NumberFormatException e){
 							error = true;
-							Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+							Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 							alert.getDialogPane().setContentText("不適切な文字が使用されています。使用できるのは1以上の半角数字と区切りカンマのみです。");
 							alert.showAndWait();
 						}

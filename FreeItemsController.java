@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.Factories.AlertFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -28,6 +29,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 public class FreeItemsController implements Initializable{
 	ObservableList<FreeItem> freeItems;
 	UIController uic;
+	private final AlertFactory alertFactory;
 	
 	@FXML Button addImage;
 	@FXML Button addText;
@@ -48,9 +50,10 @@ public class FreeItemsController implements Initializable{
 	@FXML ChoiceBox<String> p_style;
 	@FXML Button selectFont;
 	
-	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic){
+	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertFactory alertFactory) {
 		this.freeItems = freeItems;
 		this.uic = uic;
+		this.alertFactory = alertFactory;
 	}
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -70,7 +73,7 @@ public class FreeItemsController implements Initializable{
 					fi.setText(imageFile.getName());
 					if(fi.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
 						fi.getImage().getException().printStackTrace();
-						Alert alert = new Alert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 						alert.showAndWait();
 					}else{//エラーなし
@@ -87,7 +90,7 @@ public class FreeItemsController implements Initializable{
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					Alert alert = new Alert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
 					alert.showAndWait();
 				}
@@ -112,7 +115,7 @@ public class FreeItemsController implements Initializable{
 		copy.setOnAction((ActionEvent) ->{
 			int index = itemList.getSelectionModel().getSelectedIndex();
 			if(index == -1){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("コピーするアイテムを選択してください。");
 				alert.showAndWait();
 			}else{
@@ -123,7 +126,7 @@ public class FreeItemsController implements Initializable{
 		Delete.setOnAction((ActionEvent) ->{
 			int index = itemList.getSelectionModel().getSelectedIndex();
 			if(index == -1){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("削除するアイテムを選択してください。");
 				alert.showAndWait();
 			}else{

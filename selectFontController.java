@@ -1,5 +1,6 @@
 package RouteMapMaker;
 
+import java.util.List;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -20,7 +21,6 @@ public class selectFontController implements Initializable{
 	@FXML Button defaultFont;
 	@FXML Label sampleText;
 	@FXML ListView<String> FontList;
-	private Stage stage;//このstageを保持する
 	private int fontIndex;//今どれが選択されているか
 	private int defaultIndex;//デフォルトのフォントのindexを保持する
 	private boolean saved;//戻る時に変更を反映するかしないか
@@ -29,9 +29,9 @@ public class selectFontController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
-		for(int i = 0; i < Font.getFamilies().size(); i++){//デフォルトフォントを探索
-			if(Font.getFamilies().get(i).equals("System")) defaultIndex = i;
-		}
+		//デフォルトフォントを探索
+		defaultIndex = getFontIndex("System");
+
 		for(int i = 0; i < Font.getFamilies().size(); i++){
 			fn.add(Font.getFamilies().get(i));
 		}
@@ -48,27 +48,25 @@ public class selectFontController implements Initializable{
 		});
 		cancelBT.setOnAction((ActionEvent) ->{
 			saved = false;
+			Stage stage = (Stage)cancelBT.getScene().getWindow();
 			stage.close();
 		});
 		saveBT.setOnAction((ActionEvent) ->{
 			saved = true;
+			Stage stage = (Stage)saveBT.getScene().getWindow();
 			stage.close();
 		});
 	}
-	public void setObject(Stage stage, String currentFont){
-		this.stage = stage;
+	public void setObject(String currentFont){
 		if(currentFont == null){//nullのときはSystemを指定します。
 			fontIndex = defaultIndex;
 		}else{
-			boolean found = false;
-			for(int i = 0; i < Font.getFamilies().size(); i++){
-				if(Font.getFamilies().get(i).equals(currentFont)){
-					fontIndex = i;
-					found = true;
-				}
-			}
-			if(! found){
+			int index = getFontIndex(currentFont);
+
+			if (index == -1){
 				fontIndex = defaultIndex;
+			} else {
+				fontIndex = index;
 			}
 		}
 		FontList.getSelectionModel().select(fontIndex);
@@ -84,4 +82,21 @@ public class selectFontController implements Initializable{
 		}
 	}
 
+	/**
+	 * フォント名からフォントのインデックスを取得します。
+	 *
+	 * @param  fontName フォント名
+	 * @return インデックス (見つからなかった場合は -1)
+	 */
+	private int getFontIndex(String fontName) {
+		List<String> families = Font.getFamilies();
+
+		for (int i = 0; i < families.size(); ++i) {
+			if (families.get(i).equals(fontName)) {
+				return i;
+			}
+		}
+
+		return -1;
+	}
 }

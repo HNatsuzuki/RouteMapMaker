@@ -2,6 +2,8 @@ package RouteMapMaker;
 	
 import java.util.Optional;
 
+import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.Factories.SceneFactory;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -16,15 +18,26 @@ import javafx.fxml.FXMLLoader;
 
 
 public class Main extends Application {
+	private final Configuration config = new Configuration();
+	private final SceneFactory sceneFactory = new SceneFactory(config);
+	private final AlertFactory alertFactory = new AlertFactory(config);
+
 	@Override
 	public void start(Stage primaryStage) {
 		try {
+			config.read();
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("UIController.fxml"));
+			loader.setControllerFactory(param -> {
+				if (param == UIController.class) {
+					return new UIController(config, sceneFactory, alertFactory);
+				} else {
+					throw new RuntimeException();
+				}
+			});
 			AnchorPane root = (AnchorPane)loader.load();
 			UIController uic = loader.getController();
 			uic.setObject(primaryStage);
-			Scene scene = new Scene(root,800,500);
-			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			Scene scene = sceneFactory.createScene(root,800,500);
 			primaryStage.setScene(scene);
 			primaryStage.setTitle("路線図メーカー - main");
 			//primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("ro.png")));
@@ -33,7 +46,7 @@ public class Main extends Application {
 					//保存は既に済んでいるので終了
 					System.exit(0);
 				}
-				Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+				Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
 				alert.setTitle("終了の確認");
 				alert.setHeaderText(null);
 				alert.setContentText("保存されていない変更があります．\n終了してよろしいですか？");
