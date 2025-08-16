@@ -16,12 +16,10 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class ConfigUIController implements Initializable{
 	private final Configuration config;//設定はここに保存。
-	private final UIController uic;
 	private final SceneFactory sceneFactory;
 	
 	@FXML CheckBox showGrid;
@@ -36,9 +34,8 @@ public class ConfigUIController implements Initializable{
 	@FXML Label uiFont;
 	@FXML Button selectFont;
 	
-	public ConfigUIController(Configuration config, UIController controller, SceneFactory sceneFactory) {
+	public ConfigUIController(Configuration config, SceneFactory sceneFactory) {
 		this.config = config;
-		this.uic = controller;
 		this.sceneFactory = sceneFactory;
 	}
 
@@ -48,31 +45,24 @@ public class ConfigUIController implements Initializable{
 		GridInterval.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5,1000));
 		showGrid.setOnAction((ActionEvent) ->{
 			config.setR_grid(showGrid.isSelected());
-			uic.ReDraw();
 		});
 		GridInterval.valueProperty().addListener((obs, oldVal, newVal) -> {
 			config.setR_gridInterval(GridInterval.getValue());
-			uic.ReDraw();
 		});
 		BindX.setOnAction((ActionEvent) ->{
 			config.setR_bindToGridX(BindX.isSelected());
-			uic.ReDraw();
 		});
 		BindY.setOnAction((ActionEvent) ->{
 			config.setR_bindToGridY(BindY.isSelected());
-			uic.ReDraw();
 		});
 		menubarMode.setOnAction((ActionEvent) ->{
 			config.setMenubarMode(menubarMode.isSelected());
-			uic.setMenuBarMode(menubarMode.isSelected());
 		});
 		fixedColor.setOnAction((ActionEvent) ->{
 			config.setFixedColor(fixedColor.getValue());
-			uic.ReDraw();
 		});
 		nonFixedColor.setOnAction((ActionEvent) ->{
 			config.setNonFixedColor(nonFixedColor.getValue());
-			uic.ReDraw();
 		});
 		selectFont.setOnAction((ActionEvent) -> {
 			SelectFontFactory factory = new SelectFontFactory(sceneFactory);
@@ -93,11 +83,9 @@ public class ConfigUIController implements Initializable{
 		gridSquare.setToggleGroup(gridGroup);
 		gridTriangle.setOnAction((ActionEvent) ->{
 			config.setGridTriangle(true);
-			uic.ReDraw();
 		});
 		gridSquare.setOnAction((ActionEvent) ->{
 			config.setGridTriangle(false);
-			uic.ReDraw();
 		});
 
 		this.initializeView();

@@ -1193,7 +1193,7 @@ public class UIController implements Initializable{
 					editLoader = new FXMLLoader(getClass().getResource("ConfigUIController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ConfigUIController.class) {
-							return new ConfigUIController(config, this, sceneFactory);
+							return new ConfigUIController(config, sceneFactory);
 						} else {
 							throw new RuntimeException();
 						}
@@ -1923,6 +1923,39 @@ public class UIController implements Initializable{
 		ZoomSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double d = ZoomSlider.getValue();
 			zoom = Math.pow(2, d);
+			ReDraw();
+		});
+
+		// 設定変更時イベント処理
+		config.getR_gridProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_gridIntervalProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_bindToGridXProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_bindToGridYProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getTriangleGridProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getMenubarModeProperty().addListener((obs, oldValue, newValue) -> {
+			setMenuBarMode(newValue);
+		});
+
+		config.getFixedColorProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getNonFixedColorProperty().addListener((obs) -> {
 			ReDraw();
 		});
 	}
