@@ -1,15 +1,17 @@
 package RouteMapMaker.Converters;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import RouteMapMaker.MarkLayer;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 
 /**
  * MarkLayer と Properties の相互変換を行うクラスです。
  */
-public class MarkLayerPropertiesConverter {
+public class MarkLayerPropertiesConverter extends PropertiesConverterBase {
     /**
      * MarkLayer を Properties に変換します。
      *
@@ -41,5 +43,45 @@ public class MarkLayerPropertiesConverter {
         }
 
         return properties;
+    }
+
+    /**
+     * Properties から MarkLayer に変換します。
+     *
+     * @param properties Properties
+     * @param images 入力画像リスト
+     * @param prefix 接頭辞
+     * @return MarkLayer
+     */
+    public MarkLayer fromProperties(Properties properties, Map<Integer, Image> images, String prefix) {
+        errorMessages.clear();
+        MarkLayer layer = new MarkLayer(Integer.valueOf(properties.getProperty(prefix + "type")));
+        layer.setPaint(Integer.valueOf(properties.getProperty(prefix + "paint")));
+        int numOfParams = Integer.valueOf(properties.getProperty(prefix + "numOfParams"));
+
+        for (int i = 0; i < numOfParams; ++i) {
+            layer.addParam(Double.valueOf(properties.getProperty(prefix + "param" + i)));
+        }
+
+        layer.setText(properties.getProperty(prefix + "text"));
+        layer.setFontName(properties.getProperty(prefix + "fontName",null));
+
+        double r = Double.valueOf(properties.getProperty(prefix + "colorR"));
+        double g = Double.valueOf(properties.getProperty(prefix + "colorG"));
+        double b = Double.valueOf(properties.getProperty(prefix + "colorB"));
+        double a = Double.valueOf(properties.getProperty(prefix + "colorO"));
+        layer.setColor(new Color(r, g, b, a));
+
+        if (layer.getType() == MarkLayer.IMAGE){
+            Image im = images.get(Integer.valueOf(properties.getProperty(prefix + "image")));
+
+            if (im == null) {
+                errorMessages.add("画像属性ですが画像が取得できませんでした。");
+            } else {
+                layer.setImage(im);
+            }
+        }
+
+        return layer;
     }
 }

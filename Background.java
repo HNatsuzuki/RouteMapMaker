@@ -3,8 +3,6 @@ package RouteMapMaker;
 import java.util.HashMap;
 import java.util.Properties;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
@@ -17,10 +15,15 @@ public class Background implements Cloneable{
 
 	public Color getColor() { return this.color; }
 	public Image getImage() { return this.image; }
+	public void setImage(Image image) { this.image = image; }
 	public int getX() { return this.x; }
+	public void setX(int x) { this.x = x; }
 	public int getY() { return this.y; }
+	public void setY(int y) { this.y = y; }
 	public int getZoomRatio() { return this.zoomRatio; }
+	public void setZoomRatio(int zoomRatio) { this.zoomRatio = zoomRatio; }
 	public int getOpacity() { return this.opacity; }
+	public void setOpacity(int opacity) { this.opacity = opacity; }
 	
 	public Background() {
 		color = Color.WHITESMOKE;

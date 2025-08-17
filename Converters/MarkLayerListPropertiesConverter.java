@@ -1,7 +1,10 @@
 package RouteMapMaker.Converters;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import RouteMapMaker.MarkLayer;
 import javafx.scene.image.Image;
@@ -9,7 +12,7 @@ import javafx.scene.image.Image;
 /**
  * MarkLayer のリストと Properties の相互変換を行うクラスです。
  */
-public class MarkLayerListPropertiesConverter {
+public class MarkLayerListPropertiesConverter extends PropertiesConverterBase {
     /**
      * MarkLayer のリストを Properties に変換します。
      *
@@ -30,5 +33,38 @@ public class MarkLayerListPropertiesConverter {
         }
 
             return properties;
+    }
+    /**
+     * Properties から MarkLayer のリストに変換します。
+     *
+     * @param properties Properties
+     * @param images 入力画像リスト
+     * @param prefix 接頭辞
+     * @return MarkLayer のリスト
+     */
+    public List<MarkLayer> fromProperties(Properties properties, Map<Integer, Image> images, String prefix) {
+        errorMessages.clear();
+        MarkLayerPropertiesConverter markLayerPropertiesConverter = new MarkLayerPropertiesConverter();
+        int numOfLayers = Integer.valueOf(properties.getProperty(prefix + "NumOfLayers"));
+        List<MarkLayer> markLayers = new ArrayList<>(numOfLayers);
+
+        for (int i = 0; i < numOfLayers; ++i) {
+            String indexedLayerPrefix = prefix + "layer" + i + ".";
+            MarkLayer markLayer = markLayerPropertiesConverter.fromProperties(properties, images, indexedLayerPrefix);
+
+            if (markLayerPropertiesConverter.hasError()) {
+                String messagePrefix = "レイヤー" + i + "は";
+                List<String> messages = markLayerPropertiesConverter
+                    .getErrorMessages()
+                    .stream()
+                    .map(s -> messagePrefix + s)
+                    .collect(Collectors.toList());
+                errorMessages.addAll(messages);
+            }
+
+            markLayers.add(markLayer);
+        }
+
+        return markLayers;
     }
 }

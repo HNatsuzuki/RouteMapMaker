@@ -1,5 +1,6 @@
 package RouteMapMaker.Converters;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -32,5 +33,32 @@ public class LineDashListPropertiesConverter {
         }
 
         return properties;
+    }
+
+    /**
+     * Properties から LineDash のリストに変換します。
+     *
+     * @param properties Properties
+     * @param prefix 接頭辞
+     * @return LineDash のリスト
+     */
+    public static List<DoubleArrayWrapper> fromProperties(Properties properties, String prefix) {
+        List<DoubleArrayWrapper> lineDashes = new ArrayList<DoubleArrayWrapper>();
+        int numOfLineDashes = Integer.valueOf(properties.getProperty(prefix + "NumOfLineDashes"));
+
+        //iは1から。（0はNORMAL_LINE）
+        for (int i = 1; i < numOfLineDashes; ++i) {
+            String indexedPrefix = prefix + "LineDash" + i;
+            int length = Integer.valueOf(properties.getProperty(indexedPrefix + "length"));
+            double[] da = new double[length];
+
+            for (int j = 0; j < length; ++j) {
+                da[j] = Double.valueOf(properties.getProperty(indexedPrefix + "." + j));
+            }
+
+            lineDashes.add(new DoubleArrayWrapper(da));
+        }
+
+        return lineDashes;
     }
 }

@@ -1,15 +1,17 @@
 package RouteMapMaker.Converters;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import RouteMapMaker.Station;
 import RouteMapMaker.StopMark;
 import RouteMapMaker.TrainStop;
 
 /**
  * TrainStop のリストと Properties の相互変換を行うクラスです。
  */
-public class TrainStopListPropertiesConverter {
+public class TrainStopListPropertiesConverter extends PropertiesConverterBase {
     public static Properties toProperties(List<TrainStop> trainStops, List<StopMark> customMarks, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfStations", String.valueOf(trainStops.size()));
@@ -34,5 +36,58 @@ public class TrainStopListPropertiesConverter {
         }
 
         return properties;
+    }
+
+    /**
+     * Properties から TrainStop のリストに変換します。
+     *
+     * @param properties Properties
+     * @param customMarks カスタムマークリスト
+     * @param stations 駅リスト
+     * @param prefix 接頭辞
+     * @return TrainStop
+     */
+    public List<TrainStop> fromProperties(Properties properties, List<StopMark> customMarks, List<Station> stations, String prefix) {
+        errorMessages.clear();
+        int count = 0;
+        List<TrainStop> trainStops = new ArrayList<>();
+
+        for (int k = 0; k < stations.size(); k++){//路線の駅から停車駅を追加していく。
+            String a = stations.get(k).getName();
+            String b = properties.getProperty(prefix + "sta" + String.valueOf(count));
+
+            if (a.equals(b)) {
+                TrainStop trainStop = new TrainStop(stations.get(k));
+                //記載がなかったら0を代入。
+                trainStop.setShiftX(Integer.valueOf(properties.getProperty(prefix + "sta" + String.valueOf(count) + ".shiftX", "0")));
+                trainStop.setShiftY(Integer.valueOf(properties.getProperty(prefix + "sta" + String.valueOf(count) + ".shiftY", "0")));
+
+                //停車駅マークについて
+                String ms = properties.getProperty (prefix + "sta" + String.valueOf(count) + ".mark");
+
+                if (ms == null) {//デフォは路線準拠
+                    trainStop.setMark(StopMark.OBEY_LINE);
+                } else if (ms.equals("OBEY_LINE")){
+                    trainStop.setMark(StopMark.OBEY_LINE);
+                } else if (ms.equals("NO_DRAW")){
+                    trainStop.setMark(StopMark.NO_DRAW);
+                } else if (ms.equals("CIRCLE")){
+                    trainStop.setMark(StopMark.CIRCLE);
+                } else {//カスタムマークの場合は番号で。
+                    trainStop.setMark(customMarks.get(Integer.valueOf(ms)));
+                }
+
+                trainStops.add(trainStop);
+                count++;
+            }
+        }
+
+        String numOfStations = properties.getProperty(prefix + "NumOfStations");
+
+        if (count != Integer.parseInt(numOfStations)) {
+            errorMessages.add("指定された駅数 (" + numOfStations + ") が停車駅として追加されていません。");
+        }
+
+        return trainStops;
     }
 }

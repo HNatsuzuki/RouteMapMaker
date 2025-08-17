@@ -4,13 +4,15 @@ import java.util.List;
 import java.util.Properties;
 
 import RouteMapMaker.DoubleArrayWrapper;
+import RouteMapMaker.Station;
 import RouteMapMaker.StopMark;
 import RouteMapMaker.Train;
+import RouteMapMaker.TrainStop;
 
 /**
  * Train と Properties の相互変換を行うクラスです。
  */
-public class TrainPropertiesConverter {
+public class TrainPropertiesConverter extends PropertiesConverterBase {
     /**
      * Train を Properties に変換します。
      *
@@ -55,5 +57,62 @@ public class TrainPropertiesConverter {
         properties.setProperty(prefix + "lineDash", String.valueOf(lineDashes.indexOf(train.getLineDash())));//lineDashは番号で。
 
         return properties;
+    }
+
+    /**
+     * Properties から Train に変換します。
+     *
+     * @param properties Properties
+     * @param lineDashes 点線定義リスト
+     * @param customMarks 停車駅マークリスト
+     * @param stations 路線の駅リスト
+     * @param prefix 接頭辞
+     * @return Train
+     */
+    public Train fromProperties(Properties properties, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, List<Station> stations, String prefix) {
+        errorMessages.clear();
+
+        Train train = new Train(properties.getProperty(prefix + "name"));
+
+        TrainStopListPropertiesConverter trainStopListPropertiesConverter = new TrainStopListPropertiesConverter();
+        List<TrainStop> trainStops = trainStopListPropertiesConverter.fromProperties(properties, customMarks, stations, prefix);
+        train.getStops().addAll(trainStops);
+
+        if (trainStopListPropertiesConverter.hasError()) {
+            errorMessages.addAll(trainStopListPropertiesConverter.getErrorMessages());
+        }
+
+        double[][] dd = new double[3][4];
+        for (int i = 0; i <= 3; ++i){
+            dd[0][i] = Double.parseDouble(properties.getProperty(prefix + "Color0" + String.valueOf(i)));
+            dd[1][i] = Double.parseDouble(properties.getProperty(prefix + "Color1" + String.valueOf(i)));
+            dd[2][i] = Double.parseDouble(properties.getProperty(prefix + "Color2" + String.valueOf(i)));
+        }
+
+        train.setColorsInDouble(dd);
+        train.setLineWidth(Integer.parseInt(properties.getProperty(prefix + "lineWidth")));
+        train.setLineDistance(Integer.parseInt(properties.getProperty(prefix + "lineDistance")));
+
+        //マークの読み込み
+        String markString = properties.getProperty(prefix + "mark");
+
+        if (markString == null || markString.equals("CIRCLE")) {
+            train.setMark(StopMark.CIRCLE);
+        } else if(markString.equals("NO_DRAW")) {
+            train.setMark(StopMark.NO_DRAW);
+        } else {
+            //カスタムマークの時は番号から読み込む
+            train.setMark(customMarks.get(Integer.valueOf(markString)));
+        }
+
+        train.setMarkSize(Integer.parseInt(properties.getProperty(prefix + "markSize")));
+        train.setStaSize(Integer.parseInt(properties.getProperty(prefix + "staSize")));
+        //コレ使ってるのか謎
+        train.setTategaki(Boolean.valueOf(properties.getProperty(prefix + "tategaki")));
+        train.setEdgeA(Integer.parseInt(properties.getProperty(prefix + "edgeFixA")));
+        train.setEdgeB(Integer.parseInt(properties.getProperty(prefix + "edgeFixB")));
+        train.setLineDash(lineDashes.get(Integer.parseInt(properties.getProperty(prefix + "lineDash","0"))));
+
+        return train;
     }
 }

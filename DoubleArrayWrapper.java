@@ -3,7 +3,7 @@ package RouteMapMaker;
 public class DoubleArrayWrapper {
 	private double[] da;
 	DoubleArrayWrapper(){}
-	DoubleArrayWrapper(double[] d){
+	public DoubleArrayWrapper(double[] d){
 		da = d;
 	}
 	public void set(double[] d){
