@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.Factories.AlertFactory;
 import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -34,6 +35,7 @@ public class TransformController implements Initializable {
 	private final int WITH_FI = -10;
 	private final int NO_FI = -11;
 	private final int CANCEL = -12;
+	private final AlertFactory alertFactory;
 	
 	@FXML Spinner<Integer> trans_X;
 	@FXML Spinner<Integer> trans_Y;
@@ -45,6 +47,10 @@ public class TransformController implements Initializable {
 	@FXML Spinner<Integer> scale_Y;
 	@FXML Label scale_after;
 	@FXML Button scale_AP;
+
+	public TransformController(AlertFactory alertFactory) {
+		this.alertFactory = alertFactory;
+	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -108,7 +114,7 @@ public class TransformController implements Initializable {
 					uic.ReDraw();
 					stage.close();
 				}catch(NumberFormatException e){
-					Alert alert = new Alert(AlertType.ERROR);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR);
 					alert.setContentText("パラメーターを確認してください。\nパラメーターには半角数字を入力してください。");
 					alert.showAndWait();
 				}
@@ -193,7 +199,7 @@ public class TransformController implements Initializable {
 					uic.ReDraw();
 					stage.close();
 				}catch(NumberFormatException e){
-					Alert alert = new Alert(AlertType.ERROR);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR);
 					alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
 					alert.showAndWait();
 				}
@@ -215,7 +221,7 @@ public class TransformController implements Initializable {
 		scale_after.setText((int)originalSize[0] + " × " + (int)originalSize[1]);
 	}
 	private int confirm(String text){//FreeItemも一緒に移すかやらないかキャンセルかを問うダイアログを作る
-		Alert alert = new Alert(AlertType.CONFIRMATION);
+		Alert alert = alertFactory.createAlert(AlertType.CONFIRMATION);
 		alert.setContentText(text + " を行います。\n"
 				+ "自由挿入アイテムの位置座標も一緒に変更しますか？");
 		ButtonType buttonWithFI = new ButtonType("一緒に変更");

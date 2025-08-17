@@ -1,20 +1,31 @@
 # 路線図メーカー/Route-Map-Maker
-路線図をかんたん、キレイに作成できる路線図メーカーへようこそ！
-実行ファイル（jar）のダウンロード、その他詳しい情報はhttp://wikiwiki.jp/routemapmake/ を参照してください。   
 
-本ソフトウェアは従前gitを使わずに開発しておりましたので、gitに履歴として残るのはver10.2からです。それ以前のバージョンのソースは配布されているjarファイルに同梱されてますのでそちらをご利用ください。  
-	
-路線図メーカーはwikiで告知されたライセンスのもとで自由に利用、改変、再配布ができます。Pull-Requestも歓迎いたします。  
+このリポジトリは [RouteMapMaker](https://github.com/teamhimeh/RouteMapMaker) を基に改変を加えたものです。
 
-gitに上げる前の、各バージョンごとの改変履歴はhistory.txtにあります。　　
+## 変更内容
+- UIフォントの設定機能を追加
+- 設定変更時の内部処理変更
 
-お問合わせはTwitter（@teamhimeh）かthleaderh@gmail.comまでお気軽にどうぞ。
-- - - -
-Welcome to RouteMapMaker! This application enables you to make beautiful route-map very easily.  
-To download execute files and get more information, please visit http://wikiwiki.jp/routemapmake/ (Sorry, Japanese Only.)  
+## ライセンス
+- このプロジェクトは、元のリポジトリ [RouteMapMaker](https://github.com/teamhimeh/RouteMapMaker) の[CC BY-NC 4.0ライセンス](https://creativecommons.org/licenses/by-nc/4.0/deed.ja)に従い提供されています。商業目的での利用は許可されていません。
 
-This application have been developed without github. Only ver10.2 and later versions are recorded on git. To use earlier versions, please download them from wiki site.   
+## 改変元
+- 作者: [Himeshi](https://github.com/teamhimeh)
+- リポジトリ: [RouteMapMaker](https://github.com/teamhimeh/RouteMapMaker)
+- ライセンス: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 
-RouteMapMaker can be used, changed, re-distributed under CC BY-NC 4.0 license(https://creativecommons.org/licenses/by-nc/4.0/).  
+-----
 
-Please feel free to contact me. To contact, use DM of Twitter(@teamhimeh) or e-mail thleaderh@gmail.com
+This repository is a modification of [RouteMapMaker](https://github.com/teamhimeh/RouteMapMaker).
+
+## Changes
+- Added: UI font customization feature.
+- Changed: The handling of settings modifications.
+
+## License
+- This project is provided under the [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/), meaning it cannot be used for commercial purposes.
+
+## Original Repository
+- Creator: [Himeshi](https://github.com/teamhimeh)
+- Repository: [RouteMapMaker](https://github.com/teamhimeh/RouteMapMaker)
+- License: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)

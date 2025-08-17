@@ -121,6 +121,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.Factories.SceneFactory;
+import RouteMapMaker.Factories.SelectFontFactory;
+import RouteMapMaker.Factories.View;
+
 public class UIController implements Initializable{
 	
 	final double EPSILON = 0.00001;//doubleでの比較用。double変数は==で比較しちゃだめです！
@@ -151,7 +156,7 @@ public class UIController implements Initializable{
 	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
-	private Configuration config = new Configuration();
+	private Configuration config;
 	private Stage configStage;
 	private boolean configWindowOpened = false;//環境設定ウィンドウが既に開かれているかどうか
 	private FreeItemsController fic;
@@ -163,6 +168,8 @@ public class UIController implements Initializable{
 	private boolean changeAllWindowOpened = false;
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
+	private final SceneFactory sceneFactory;
+	private final AlertFactory alertFactory;
 	
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
@@ -269,6 +276,12 @@ public class UIController implements Initializable{
 	@FXML Spinner<Integer> re_staLAY_SP;
 	@FXML Spinner<Integer> staSize;
 
+	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory) {
+		this.config = config;
+		this.sceneFactory = sceneFactory;
+		this.alertFactory = alertFactory;
+	}
+
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
@@ -288,11 +301,10 @@ public class UIController implements Initializable{
 				checkUpdate(true);
 			}
 		}).start();
-		config.read();
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> config.save()));
 		//起動時ダイアログの表示
 		if(! config.getNoAlert()){
-			Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+			Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 			alert.getDialogPane().setHeaderText("路線図メーカー使用上の注意・お願い");
 			Text text = new Text("本ソフトウェアの使用にあたり以下の3つをお願いしています。\n"
 					+ "1.不具合によるデータの破損などに十分注意してください。\n"
@@ -345,12 +357,12 @@ public class UIController implements Initializable{
 					lineDraw();
 				}
 			}catch(IOException e){
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("エラーが発生しました。ファイルを読み込めません。");
 				alert.showAndWait();
 			}catch(Exception e){
 				e.printStackTrace();
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("エラーが発生しました。\n"
 						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
 				alert.showAndWait();
@@ -361,7 +373,7 @@ public class UIController implements Initializable{
 				Toggle new_toggle) ->{
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
 					if(RouteIndex == -1){
-						Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("路線を選択してください。");
 						alert.showAndWait();
 						return;
@@ -383,7 +395,7 @@ public class UIController implements Initializable{
 				Toggle new_toggle) ->{
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
 					if(RouteIndex == -1){
-						Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("路線を選択してください。");
 						alert.showAndWait();
 						return;
@@ -487,12 +499,12 @@ public class UIController implements Initializable{
 		StationAdd.setOnAction((ActionEvent) ->{
 			int index = StationList.getSelectionModel().getSelectedIndex();
 			if(index == 0){
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("駅は2番目以降に挿入してください。");
 				alert.showAndWait();
 			}
 			else if(line.getCurveConnection(index) && line.isCurvable(index)) {
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("曲線区間に駅を挿入することはできません．");
 				alert.showAndWait();
 			}
@@ -523,7 +535,7 @@ public class UIController implements Initializable{
 			int index = StationList.getSelectionModel().getSelectedIndex();
 			if(index == 0 || index == line.getStations().size() - 1){
 				//削除は受け付けない
-				Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("始点と終点は削除できません。");
 				alert.showAndWait();
 			}else if(index != -1){
@@ -544,7 +556,7 @@ public class UIController implements Initializable{
 					for(Integer[] id: remove_Candidates){
 						names.append(line.getTrains().get(id[0]).getName()+" ");//空白で区切る
 					}
-					Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+					Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
 					alert.setContentText("運転経路"+names.toString()+"に削除対象駅が含まれています。削除してよろしいですか？");
 					Optional<ButtonType> result = alert.showAndWait();
 					if(result.get() == ButtonType.OK){
@@ -575,7 +587,7 @@ public class UIController implements Initializable{
 				String str = StationList.getSelectionModel().getSelectedItem();//変更しようとしてる駅名
 				//途中駅でも接続することにしました。
 				if(str.equals("")){
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("駅名は空にはできません。\n"
 							+ "中継点を設定するときは駅名大きさパラメーターを-1にしてください。");
 					alert.showAndWait();
@@ -717,11 +729,11 @@ public class UIController implements Initializable{
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexS != -1){
 				if(indexS == 0 || indexS == lineList.get(indexR).getStations().size() - 1){
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("始点または終点の座標固定を解除することはできません");
 					alert.showAndWait();
 				}else if(detectConnectedLine(lineList.get(indexR).getStations().get(indexS)).size() > 1){
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("複数路線に所属する駅の座標固定を解除することはできません。\n"
 							+ "「駅の接続解除」ボタンで駅の接続を解除できます。");
 					alert.showAndWait();
@@ -738,7 +750,7 @@ public class UIController implements Initializable{
 			if(indexR != -1 && indexS != -1){
 				if(detectConnectedLine(lineList.get(indexR).getStations().get(indexS)).size() < 2){
 					//この場合は接続を解除する意味がないのでなにもしない。
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("指定された駅は他の路線と接続していません。");
 					alert.showAndWait();
 				}else{
@@ -847,7 +859,7 @@ public class UIController implements Initializable{
 			try {
 				Image im = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
 				if(im.isError()) { //イメージのロード中にエラーが検出されたことを示す。
-					Alert alert = new Alert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 					alert.showAndWait();
 					return;
@@ -859,7 +871,7 @@ public class UIController implements Initializable{
 				lineDraw();
 			} catch (Exception e) {
 				e.printStackTrace();
-				Alert alert = new Alert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
 				alert.showAndWait();
 			}
@@ -1085,13 +1097,13 @@ public class UIController implements Initializable{
 					readRMMFile(dataFile);
 				}
 			}catch(IOException e){
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("エラーが発生しました。ファイルを読み込めません。");
 				alert.showAndWait();
 				dataFile = null;
 			}catch(Exception e){
 				e.printStackTrace();
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("エラーが発生しました。データファイルに不備があります。\n"
 						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
 				alert.showAndWait();
@@ -1109,10 +1121,10 @@ public class UIController implements Initializable{
 			if(dataFile != null){
 				try{
 					saveRMMFile(dataFile);
-					Alert alert = new Alert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
+					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
 					alert.show();
 				}catch(IOException e){
-					Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
 					alert.showAndWait();
 					dataFile = null;
@@ -1128,10 +1140,10 @@ public class UIController implements Initializable{
 			if(dataFile != null){
 				try{
 					saveRMMFile(dataFile);
-					Alert alert = new Alert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
+					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
 					alert.show();
 				}catch(IOException e){
-					Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
 					alert.showAndWait();
 					dataFile = null;
@@ -1142,7 +1154,7 @@ public class UIController implements Initializable{
 			exportImage();
 		});
 		mb_about.setOnAction((ActionEvent) ->{
-			Alert alert = new Alert(AlertType.NONE,"",ButtonType.CLOSE);
+			Alert alert = alertFactory.createAlert(AlertType.NONE,"",ButtonType.CLOSE);
 			alert.getDialogPane().setHeaderText("バージョン情報");
 			alert.getDialogPane().setContentText("version "+ ReleaseVersion +"　Release：2020年11月28日\n"
 					+ "使い方の参照、不具合報告等はwikiで行うことができます。\n"
@@ -1165,7 +1177,7 @@ public class UIController implements Initializable{
 		mb_checkUpdate.setOnAction((ActionEvent) ->{
 			boolean b = checkUpdate(false);
 			if(! b){
-				Alert alert = new Alert(AlertType.INFORMATION,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.INFORMATION,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("このバージョンは最新版です。");
 				alert.show();
 			}
@@ -1179,14 +1191,20 @@ public class UIController implements Initializable{
 				VBox ap = null;
 				try {
 					editLoader = new FXMLLoader(getClass().getResource("ConfigUIController.fxml"));
+					editLoader.setControllerFactory(param -> {
+						if (param == ConfigUIController.class) {
+							return new ConfigUIController(config, sceneFactory);
+						} else {
+							throw new RuntimeException();
+						}
+					});
 					ap= (VBox)editLoader.load();
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				configEuc = (ConfigUIController)editLoader.getController();
-				configEuc.setObject(configStage, config, this);
-				Scene sc = new Scene(ap);
+				Scene sc = sceneFactory.createScene(ap);
 				configStage.setScene(sc);
 				configStage.setTitle("環境設定");
 				configWindowOpened = true;
@@ -1204,6 +1222,13 @@ public class UIController implements Initializable{
 				VBox ap = null;
 				try {
 					editLoader = new FXMLLoader(getClass().getResource("ChangeAllController.fxml"));
+					editLoader.setControllerFactory(param -> {
+						if (param == ChangeAllController.class) {
+							return new ChangeAllController(alertFactory);
+						} else {
+							throw new RuntimeException();
+						}
+					});
 					ap= (VBox)editLoader.load();
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
@@ -1211,7 +1236,7 @@ public class UIController implements Initializable{
 				}
 				caEuc = editLoader.getController();
 				caEuc.setObject(lineList, customMarks, lineDashes, this);
-				Scene sc = new Scene(ap);
+				Scene sc = sceneFactory.createScene(ap);
 				changeAllStage.setScene(sc);
 				changeAllStage.setTitle("パラメーター 一括変更");
 				changeAllWindowOpened = true;
@@ -1229,6 +1254,13 @@ public class UIController implements Initializable{
 			VBox ap = null;
 			try {
 				editLoader = new FXMLLoader(getClass().getResource("CustomMarkController.fxml"));
+				editLoader.setControllerFactory(param -> {
+					if (param == CustomMarkController.class) {
+						return new CustomMarkController(sceneFactory, alertFactory);
+					} else {
+						throw new RuntimeException();
+					}
+				});
 				ap= (VBox)editLoader.load();
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
@@ -1236,7 +1268,7 @@ public class UIController implements Initializable{
 			}
 			euc = (CustomMarkController)editLoader.getController();
 			euc.setObject(editStage, customMarks);
-			Scene sc = new Scene(ap);
+			Scene sc = sceneFactory.createScene(ap);
 			editStage.setScene(sc);
 			editStage.setTitle("カスタム停車マークの編集");
 			editStage.showAndWait();
@@ -1257,14 +1289,14 @@ public class UIController implements Initializable{
 			}
 			euc = (SetMarkController)editLoader.getController();
 			euc.setObject(lineList, customMarks);
-			Scene sc = new Scene(ap);
+			Scene sc = sceneFactory.createScene(ap);
 			editStage.setScene(sc);
 			editStage.setTitle("停車マークの一括設定");
 			editStage.showAndWait();
 			//運転経路編集モードなら再描画
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
-		fic = new FreeItemsController(freeItems, this);//コントローラーの初期化
+		fic = new FreeItemsController(freeItems, this, alertFactory);//コントローラーの初期化
 		mb_freeItem.setOnAction((ActionEvent e) ->{
 			//ショートカットキーを使って起動するとウィンドウを閉じてももう一度開く問題がある。
 			if(fiWindowOpened){
@@ -1283,7 +1315,7 @@ public class UIController implements Initializable{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				Scene sc = new Scene(ap);
+				Scene sc = sceneFactory.createScene(ap);
 				fiStage.setScene(sc);
 				fiStage.setTitle("テキスト・画像の挿入");
 				fiWindowOpened = true;
@@ -1299,6 +1331,13 @@ public class UIController implements Initializable{
 			VBox ap = null;
 			try {
 				editLoader = new FXMLLoader(getClass().getResource("LineDashesController.fxml"));
+				editLoader.setControllerFactory(param -> {
+					if (param == LineDashesController.class) {
+						return new LineDashesController(alertFactory);
+					} else {
+						throw new RuntimeException();
+					}
+				});
 				ap= (VBox)editLoader.load();
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
@@ -1306,7 +1345,7 @@ public class UIController implements Initializable{
 			}
 			euc = editLoader.getController();
 			euc.setObject(lineDashes);
-			Scene sc = new Scene(ap);
+			Scene sc = sceneFactory.createScene(ap);
 			editStage.setScene(sc);
 			editStage.setTitle("破線パターンの編集");
 			editStage.showAndWait();
@@ -1321,6 +1360,13 @@ public class UIController implements Initializable{
 			VBox ap = null;
 			try {
 				editLoader = new FXMLLoader(getClass().getResource("TransformController.fxml"));
+				editLoader.setControllerFactory(param -> {
+					if (param == TransformController.class) {
+						return new TransformController(alertFactory);
+					} else {
+						throw new RuntimeException();
+					}
+				});
 				ap= (VBox)editLoader.load();
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
@@ -1328,7 +1374,7 @@ public class UIController implements Initializable{
 			}
 			euc = editLoader.getController();
 			euc.setObject(canvasOriginal, editStage, this, lineList, freeItems, urManager);
-			Scene sc = new Scene(ap);
+			Scene sc = sceneFactory.createScene(ap);
 			editStage.setScene(sc);
 			editStage.setTitle("座標変換");
 			editStage.showAndWait();
@@ -1445,7 +1491,7 @@ public class UIController implements Initializable{
 				int indexT = t.getIndex();
 				TrainTable.getItems().set(t.getIndex(), t.getNewValue());
 				if(t.getNewValue().equals("")){//空白の系統名はダメです
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("系統名は空白にできません。何かしら名前をつけてください。");
 					alert.showAndWait();
 				}else{
@@ -1877,6 +1923,39 @@ public class UIController implements Initializable{
 		ZoomSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double d = ZoomSlider.getValue();
 			zoom = Math.pow(2, d);
+			ReDraw();
+		});
+
+		// 設定変更時イベント処理
+		config.getR_gridProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_gridIntervalProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_bindToGridXProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getR_bindToGridYProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getTriangleGridProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getMenubarModeProperty().addListener((obs, oldValue, newValue) -> {
+			setMenuBarMode(newValue);
+		});
+
+		config.getFixedColorProperty().addListener((obs) -> {
+			ReDraw();
+		});
+
+		config.getNonFixedColorProperty().addListener((obs) -> {
 			ReDraw();
 		});
 	}
@@ -2634,7 +2713,7 @@ public class UIController implements Initializable{
 					continue;
 				}
 				if(candName!=null) {
-					Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+					Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
 					alert.setContentText("マップ内に同じ駅名の駅があります。その駅と統合してよろしいですか？");
 					Optional<ButtonType> result = alert.showAndWait();
 					if(result.get() == ButtonType.CANCEL) {
@@ -2872,13 +2951,13 @@ public class UIController implements Initializable{
 		try{
 			pVersion = Double.parseDouble(p.getProperty("version"));
 		}catch(NumberFormatException e){
-			Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+			Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 			alert.getDialogPane().setContentText("ファイルが不正です。読み込みできません。");
 			alert.showAndWait();
 			return;
 		}
 		if(pVersion > version){
-			Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+			Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 			alert.getDialogPane().setContentText("このバージョンのファイルには対応していません。読み込みできません。"
 					+ "データのバージョン："+pVersion);
 			alert.showAndWait();
@@ -2945,7 +3024,7 @@ public class UIController implements Initializable{
 					int img_idx = Integer.valueOf(p.getProperty("FreeItem" + i + ".image"));
 					Image img = imageMap.get(img_idx);
 					if(img==null) {
-						Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("画像ファイル " + img_idx + ".png が見つかりません．");
 						alert.showAndWait();
 						continue;
@@ -2985,7 +3064,7 @@ public class UIController implements Initializable{
 					if(layer.getType() == MarkLayer.IMAGE){
 						Image im = imageMap.get(Integer.valueOf(p.getProperty("Mark" + i + ".layer" + h + ".image")));
 						if(im == null){
-							Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+							Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 							alert.getDialogPane().setContentText("カスタムマーク"+i+"レイヤー"+h+"は画像属性ですが画像が取得"
 									+ "できませんでした。");
 							alert.showAndWait();
@@ -3110,7 +3189,7 @@ public class UIController implements Initializable{
 						("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".NumOfStations"))){
 					System.out.println(p.getProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + 
 							".NumOfStations") +"," +count);
-					Alert alert = new Alert(AlertType.WARNING,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 					alert.getDialogPane().setContentText("データファイルに不備があります。読み込みは続行されます。\n"
 							+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n"
 							+ "line"+i+"train"+h+"で指定された駅数が停車駅として追加されていません。");
@@ -3418,6 +3497,13 @@ public class UIController implements Initializable{
 		AnchorPane ap = null;
 		try {
 			editLoader = new FXMLLoader(getClass().getResource("editUIController.fxml"));
+			editLoader.setControllerFactory(param -> {
+				if (param == editUIController.class) {
+					return new editUIController(alertFactory);
+				} else {
+					throw new RuntimeException();
+				}
+			});
 			ap= (AnchorPane)editLoader.load();
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -3425,7 +3511,7 @@ public class UIController implements Initializable{
 		}
 		euc = (editUIController)editLoader.getController();
 		euc.setObjects(l, t, editStage);
-		Scene sc = new Scene(ap, 600, 300);
+		Scene sc = sceneFactory.createScene(ap, 600, 300);
 		editStage.setScene(sc);
 		editStage.setTitle("駅編集ウィンドウ");
 		editStage.showAndWait();
@@ -3438,23 +3524,10 @@ public class UIController implements Initializable{
 	String selectFontFamily(String current){//フォント選択画面を出す。選択されたフォントファミリ名を返す。（not exactフォント名）
 		//個別のテキスト挿入にも対応したいので選択されたファミリ名を直接変数に代入することはしません
 		String newFont = null;
-		selectFontController euc = null;
-		FXMLLoader editLoader = null;
-		Stage editStage = new Stage();
-		editStage.initModality(Modality.APPLICATION_MODAL);
-		VBox ap = null;
-		try {
-			editLoader = new FXMLLoader(getClass().getResource("selectFontController.fxml"));
-			ap= (VBox)editLoader.load();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		euc = (selectFontController)editLoader.getController();
-		euc.setObject(editStage, current);
-		Scene sc = new Scene(ap, 400, 300);
-		editStage.setScene(sc);
-		editStage.setTitle("フォントの選択");
+		SelectFontFactory factory = new SelectFontFactory(sceneFactory);
+		View<selectFontController> view = factory.createSelectFontView(current);
+		Stage editStage = view.getStage();
+		selectFontController euc = view.getController();
 		editStage.showAndWait();
 		if(euc.shouldSave()){
 			newFont = euc.getFontName();
@@ -3529,7 +3602,7 @@ public class UIController implements Initializable{
 							break;
 						}
 					}catch(IOException e){
-						Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
 						alert.showAndWait();
 					}
@@ -3537,7 +3610,7 @@ public class UIController implements Initializable{
 				expStage.close();
 			}catch(RuntimeException e){
 				e.printStackTrace();
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("出力サイズが大きすぎるようです。倍率を下げてみてください。");
 				alert.showAndWait();
 			}
@@ -3552,7 +3625,7 @@ public class UIController implements Initializable{
 		expBox.getChildren().add(slider);
 		expBox.getChildren().add(b1);
 		expBox.getChildren().add(b2);
-		expStage.setScene(new Scene(expBox));
+		expStage.setScene(sceneFactory.createScene(expBox));
 		expStage.showAndWait();
 	}
 	boolean checkUpdate(boolean onLaunch){//アップデートがあればtrue。なければfalse。このフラグは手動で確認が行われた時用。
@@ -3592,7 +3665,7 @@ public class UIController implements Initializable{
 				if(Double.parseDouble(xmlDatas[0]) > ReleaseVersion){
 					nv = true;
 					Platform.runLater(() ->{
-						Alert alert = new Alert(AlertType.INFORMATION,"",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.INFORMATION,"",ButtonType.CLOSE);
 						alert.getDialogPane().setHeaderText("新しいバージョンがリリースされています。");
 						Hyperlink link = new Hyperlink(xmlDatas[2]);
 						link.setOnAction((ActionEvent) -> {
@@ -3622,7 +3695,7 @@ public class UIController implements Initializable{
 			}else{
 				nv = true;
 				Platform.runLater(() ->{
-					Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 					try {
 						alert.getDialogPane().setContentText("ソフトウェアのアップデートを確認できませんでした。\n" + 
 						conn.getResponseCode() + conn.getResponseMessage());
@@ -3640,7 +3713,7 @@ public class UIController implements Initializable{
 			e.printStackTrace();
 			nv = true;
 			Platform.runLater(() ->{
-				Alert alert = new Alert(AlertType.ERROR,"",ButtonType.CLOSE);
+				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("ソフトウェアのアップデートを確認できませんでした。\n" + 
 				"ネットワークに接続できません。");
 				alert.show();
@@ -3734,7 +3807,7 @@ public class UIController implements Initializable{
 	}
 	void saveHistory(){//現在の状態をヒストリに加える。
 		//最初に保存していいか確認
-		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
 		alert.setContentText("ヒストリに保存するために現在の状態を保存します。よろしいですか？");
 		Optional<ButtonType> result = alert.showAndWait();
 		if(result.get() == ButtonType.OK){

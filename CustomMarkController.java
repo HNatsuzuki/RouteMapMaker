@@ -6,6 +6,10 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.Factories.SceneFactory;
+import RouteMapMaker.Factories.SelectFontFactory;
+import RouteMapMaker.Factories.View;
 import RouteMapMaker.URElements.ArrayCommands;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
@@ -54,6 +58,8 @@ public class CustomMarkController implements Initializable{
 	private ObservableList<String> LayerListOb = FXCollections.observableArrayList();
 	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
 	private URElements urManager = new URElements();//undoとredoを管理する。
+	private final SceneFactory sceneFactory;
+	private final AlertFactory alertFactory;
 	
 	@FXML Canvas markCanvas;
 	@FXML Pane prevPane;
@@ -98,6 +104,11 @@ public class CustomMarkController implements Initializable{
 	@FXML Button Layer_DOWN;
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
+
+	public CustomMarkController(SceneFactory sceneFactory, AlertFactory alertFactory) {
+		this.sceneFactory = sceneFactory;
+		this.alertFactory = alertFactory;
+	}
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -214,23 +225,10 @@ public class CustomMarkController implements Initializable{
 				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
 				String newFont = null;
 				String current = l.getFontName();
-				selectFontController euc = null;
-				FXMLLoader editLoader = null;
-				Stage editStage = new Stage();
-				editStage.initModality(Modality.APPLICATION_MODAL);
-				VBox ap = null;
-				try {
-					editLoader = new FXMLLoader(getClass().getResource("selectFontController.fxml"));
-					ap= (VBox)editLoader.load();
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				euc = (selectFontController)editLoader.getController();
-				euc.setObject(editStage, current);
-				Scene sc = new Scene(ap, 400, 300);
-				editStage.setScene(sc);
-				editStage.setTitle("フォントの選択");
+				SelectFontFactory factory = new SelectFontFactory(sceneFactory);
+				View<selectFontController> view = factory.createSelectFontView(current);
+				selectFontController euc = view.getController();
+				Stage editStage = view.getStage();
 				editStage.showAndWait();
 				if(euc.shouldSave()){
 					newFont = euc.getFontName();
@@ -374,11 +372,11 @@ public class CustomMarkController implements Initializable{
 						newImage.setText(imageFile.getName());
 						if(newImage.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
 							newImage.getImage().getException().printStackTrace();
-							Alert alert = new Alert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
+							Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
 							alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 							alert.showAndWait();
 						}else if(newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0){
-							Alert alert = new Alert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
+							Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
 							alert.getDialogPane().setContentText("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
 							alert.showAndWait();
 						}else{//エラーなし
@@ -406,7 +404,7 @@ public class CustomMarkController implements Initializable{
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-						Alert alert = new Alert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
+						Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
 						alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
 						alert.showAndWait();
 					}
