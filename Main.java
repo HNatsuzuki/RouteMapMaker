@@ -2,6 +2,7 @@ package RouteMapMaker;
 	
 import java.util.Optional;
 
+import RouteMapMaker.Factories.FileChooserFactory;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
@@ -16,10 +17,21 @@ import javafx.fxml.FXMLLoader;
 
 
 public class Main extends Application {
+	private Configuration config = new Configuration();
+	private FileChooserFactory fileChooserFactory = new FileChooserFactory(config);
+
 	@Override
 	public void start(Stage primaryStage) {
 		try {
+			config.read();
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("UIController.fxml"));
+			loader.setControllerFactory(param -> {
+				if (param == UIController.class) {
+					return new UIController(config, fileChooserFactory);
+				} else {
+					throw new IllegalArgumentException();
+				}
+			});
 			AnchorPane root = (AnchorPane)loader.load();
 			UIController uic = loader.getController();
 			uic.setObject(primaryStage);

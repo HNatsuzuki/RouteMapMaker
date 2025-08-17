@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.Factories.FileChooserFactory;
 import RouteMapMaker.URElements.ArrayCommands;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
@@ -44,7 +45,6 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.FileChooser.ExtensionFilter;
 
 public class CustomMarkController implements Initializable{
 	final int prevSize = 40;
@@ -54,6 +54,8 @@ public class CustomMarkController implements Initializable{
 	private ObservableList<String> LayerListOb = FXCollections.observableArrayList();
 	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
 	private URElements urManager = new URElements();//undoとredoを管理する。
+	private final FileChooserFactory fileChooserFactory;
+	private final Configuration config;
 	
 	@FXML Canvas markCanvas;
 	@FXML Pane prevPane;
@@ -98,6 +100,11 @@ public class CustomMarkController implements Initializable{
 	@FXML Button Layer_DOWN;
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
+
+	public CustomMarkController(FileChooserFactory fileChooserFactory, Configuration config) {
+		this.fileChooserFactory = fileChooserFactory;
+		this.config = config;
+	}
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -363,13 +370,11 @@ public class CustomMarkController implements Initializable{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				MarkLayer newImage = new MarkLayer(MarkLayer.IMAGE);
-				FileChooser fileChooser = new FileChooser();
-				fileChooser.setTitle("画像ファイルを選択してください。");
-				fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files(jpg,png,gif,bmp)", 
-						"*.png", "*.jpg", "*.jpeg", "*.gif","*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.GIF","*.BMP"));
+				FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
 				File imageFile = fileChooser.showOpenDialog(null);
 				if(imageFile != null){
 					try {
+						config.setImageFileDir(imageFile.getParent());
 						newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
 						newImage.setText(imageFile.getName());
 						if(newImage.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
