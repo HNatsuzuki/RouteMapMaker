@@ -1,0 +1,42 @@
+package RouteMapMaker.Converters;
+
+import java.util.Properties;
+
+import RouteMapMaker.Station;
+
+/**
+ * Station と Properties の相互変換を行うクラスです。
+ */
+public class StationPropertiesConverter {
+    /**
+     * Station を Properties に変換します。
+     *
+     * @param station 駅データ
+     * @param curve 曲線接続データ (保存上 Station の子にいる構造)
+     * @param prefix 接頭辞
+     * @return Properties
+     */
+    public static Properties toProperties(Station station, boolean curve, String prefix) {
+        Properties properties = new Properties();
+        properties.setProperty(prefix + "name", station.getName());
+        properties.setProperty(prefix + "pointSet", String.valueOf(station.isSet()));
+        if(station.isSet()){
+            properties.setProperty(prefix + "x", String.valueOf(station.getPoint()[0]));
+            properties.setProperty(prefix + "y", String.valueOf(station.getPoint()[1]));
+        }else{
+            properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint()[0]));
+            properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint()[1]));
+        }
+        properties.setProperty(prefix + "stationConnection", String.valueOf(station.getConnection()));
+        properties.setProperty(prefix + "textLocation", String.valueOf(station.getTextLocation()));
+        properties.setProperty(prefix + "tategaki", String.valueOf(station.isTategaki()));
+        properties.setProperty(prefix + "size", String.valueOf(station.getNameSize()));
+        properties.setProperty(prefix + "style", String.valueOf(station.getNameStyle()));
+        properties.setProperty(prefix + "nameX", String.valueOf(station.getNameZure()[0]));
+        properties.setProperty(prefix + "nameY", String.valueOf(station.getNameZure()[1]));
+        properties.setProperty(prefix + "shiftOnStation", String.valueOf(station.shiftBasedOnStation()));
+        properties.setProperty(prefix + "curve", String.valueOf(curve));
+
+        return properties;
+    }
+}

@@ -121,6 +121,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import RouteMapMaker.Converters.BackgroundPropertiesConverter;
+import RouteMapMaker.Converters.FreeItemListPropertiesConverter;
+import RouteMapMaker.Converters.LineDashListPropertiesConverter;
+import RouteMapMaker.Converters.LineListPropertiesConverter;
+import RouteMapMaker.Converters.StopMarkListPropertiesConverter;
 import RouteMapMaker.Factories.AlertFactory;
 import RouteMapMaker.Factories.SceneFactory;
 import RouteMapMaker.Factories.SelectFontFactory;
@@ -3257,202 +3262,30 @@ public class UIController implements Initializable{
 		ZoomSlider.setValue(0);
 		lineDraw();
 	}
-	void saveProp(Properties p, ArrayList<Image> images) throws IOException{//データの保存を行う。
-		//int imageCount = 0;//イメージ番号は追加前にimages.size()で番号取得できるよね。
+	void saveProp(Properties p, ArrayList<Image> images) {//データの保存を行う。
 		p.setProperty("version", String.valueOf(version));
-		p.setProperty("bgColorR", String.valueOf(background.color.getRed()));
-		p.setProperty("bgColorG", String.valueOf(background.color.getGreen()));
-		p.setProperty("bgColorB", String.valueOf(background.color.getBlue()));
-		p.setProperty("bgColorO", String.valueOf(background.color.getOpacity()));
-		p.setProperty("bgImageX", String.valueOf(background.x));
-		p.setProperty("bgImageY", String.valueOf(background.x));
-		p.setProperty("bgImageZoomRatio", String.valueOf(background.zoomRatio));
-		p.setProperty("bgImageOpacity", String.valueOf(background.opacity));
-		if(background.image!=null) {
-			p.setProperty("bgImage", String.valueOf(images.size()));
-			images.add(background.image);
-		}
+
+		// 背景情報
+		Properties backgroundProperties = BackgroundPropertiesConverter.toProperties(background, images, "");
+		p.putAll(backgroundProperties);
+
 		p.setProperty("stationFont", stationFontFamily.get());
-		p.setProperty("NumOfLines", String.valueOf(lineList.size()));
+
 		//lineListを頂点とするデータ群
-		for(int i = 0; i < lineList.size(); i++){
-			p.setProperty("line" + String.valueOf(i) + ".lineName", lineList.get(i).getName());
-			p.setProperty("line" + String.valueOf(i) + ".nameLocation", String.valueOf(lineList.get(i).getNameLocation()));
-			p.setProperty("line" + String.valueOf(i) + ".tategaki",String.valueOf(lineList.get(i).isTategaki()));
-			p.setProperty("line" + String.valueOf(i) + ".nameStyle", String.valueOf(lineList.get(i).getNameStyle()));
-			p.setProperty("line" + String.valueOf(i) + ".nameSize", String.valueOf(lineList.get(i).getNameSize()));
-			p.setProperty("line" + String.valueOf(i) + ".nameColorR", String.valueOf(lineList.get(i).getNameColor().getRed()));
-			p.setProperty("line" + String.valueOf(i) + ".nameColorG", String.valueOf(lineList.get(i).getNameColor().getGreen()));
-			p.setProperty("line" + String.valueOf(i) + ".nameColorB", String.valueOf(lineList.get(i).getNameColor().getBlue()));
-			p.setProperty("line" + String.valueOf(i) + ".nameColorO", String.valueOf(lineList.get(i).getNameColor().getOpacity()));
-			p.setProperty("line" + String.valueOf(i) + ".nameX", String.valueOf(lineList.get(i).getNameZure()[0]));
-			p.setProperty("line" + String.valueOf(i) + ".nameY", String.valueOf(lineList.get(i).getNameZure()[1]));
-			p.setProperty("line" + String.valueOf(i) + ".NumOfStations", String.valueOf(lineList.get(i).getStations().size()));
-			for(int h = 0; h < lineList.get(i).getStations().size(); h++){
-				Station station = lineList.get(i).getStations().get(h);
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".name", 
-						station.getName());
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".pointSet", 
-						String.valueOf(station.isSet()));
-				if(station.isSet()){
-					p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".x", 
-							String.valueOf(station.getPoint()[0]));
-					p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".y", 
-							String.valueOf(station.getPoint()[1]));
-				}else{
-					p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".x", 
-							String.valueOf(station.getInterPoint()[0]));
-					p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".y", 
-							String.valueOf(station.getInterPoint()[1]));
-				}
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".stationConnection", 
-						String.valueOf(station.getConnection()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".textLocation", 
-						String.valueOf(station.getTextLocation()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".tategaki", 
-						String.valueOf(station.isTategaki()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".size", 
-						String.valueOf(station.getNameSize()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".style", 
-						String.valueOf(station.getNameStyle()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".nameX", 
-						String.valueOf(station.getNameZure()[0]));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".nameY", 
-						String.valueOf(station.getNameZure()[1]));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".shiftOnStation", 
-						String.valueOf(station.shiftBasedOnStation()));
-				p.setProperty("line" + String.valueOf(i) + ".sta" + String.valueOf(h) + ".curve", 
-						String.valueOf(lineList.get(i).getConnections().get(h).curve.get()));
-			}
-			p.setProperty("line" + String.valueOf(i) + ".NumOfTrains", String.valueOf(lineList.get(i).getTrains().size()));
-			for(int h = 0; h < lineList.get(i).getTrains().size(); h++){
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".name", 
-						lineList.get(i).getTrains().get(h).getName());
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".NumOfStations", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getStops().size()));
-				for(int k = 0; k < lineList.get(i).getTrains().get(h).getStops().size(); k++){//stationsは駅名のみ記録する。停車駅ごとのループ
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k), 
-							lineList.get(i).getTrains().get(h).getStops().get(k).getSta().getName());
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".shiftX", 
-							String.valueOf(lineList.get(i).getTrains().get(h).getStops().get(k).getShift()[0]));
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".shiftY", 
-							String.valueOf(lineList.get(i).getTrains().get(h).getStops().get(k).getShift()[1]));
-					//停車駅マークタイプに関する記述。カスタムマーク対応したらここも追記必要あり。
-					StopMark sm = lineList.get(i).getTrains().get(h).getStops().get(k).getMark();
-					if(sm == StopMark.OBEY_LINE){
-						p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".mark", 
-								"OBEY_LINE");
-					}else if(sm == StopMark.NO_DRAW){
-						p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".mark", 
-								"NO_DRAW");
-					}else if(sm == StopMark.CIRCLE){
-						p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".mark", 
-								"CIRCLE");
-					}else{//カスタムマークの場合はcustomMarksの番号を記述する。
-						p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".sta" + String.valueOf(k) + ".mark", 
-								String.valueOf(customMarks.indexOf(sm)));
-					}
-				}
-				double[][] cc = lineList.get(i).getTrains().get(h).getColorsInDouble();//色の記録を行う
-				for(int k = 0; k <= 3; k++){//[手動][k]
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".Color0" + String.valueOf(k), 
-							String.valueOf(cc[0][k]));
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".Color1" + String.valueOf(k), 
-							String.valueOf(cc[1][k]));
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".Color2" + String.valueOf(k), 
-							String.valueOf(cc[2][k]));
-				}
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".lineWidth", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getLineWidth()));
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".lineDistance", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getLineDistance()));
-				//マークの保存
-				if(lineList.get(i).getTrains().get(h).getMark() == StopMark.CIRCLE){
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".mark", 
-							"CIRCLE");
-				}else if(lineList.get(i).getTrains().get(h).getMark() == StopMark.NO_DRAW){
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".mark", 
-							"NO_DRAW");
-				}else{//カスタムマークの場合は番号を記録
-					p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".mark", 
-							String.valueOf(customMarks.indexOf(lineList.get(i).getTrains().get(h).getMark())));
-				}
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".markSize", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getMarkSize()));
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".staSize", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getStaSize()));
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".tategaki", 
-						String.valueOf(lineList.get(i).getTrains().get(h).isTategaki()));//この属性本当に使ってるのか謎
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".edgeFixA", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getEdgeA()));
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".edgeFixB", 
-						String.valueOf(lineList.get(i).getTrains().get(h).getEdgeB()));
-				p.setProperty("line" + String.valueOf(i) + ".train" + String.valueOf(h) + ".lineDash",
-						String.valueOf(lineDashes.indexOf(lineList.get(i).getTrains().get(h).getLineDash())));//lineDashは番号で。
-			}
-		}
+		Properties linesProperties = LineListPropertiesConverter.toProperties(lineList, lineDashes, customMarks, "");
+		p.putAll(linesProperties);
+
 		//customMarksを頂点とするデータ群
-		p.setProperty("NumOfMarks", String.valueOf(customMarks.size()));
-		for(int i = 0; i < customMarks.size(); i++){
-			p.setProperty("Mark" + i + ".isRotated", String.valueOf(customMarks.get(i).isRotated()));
-			p.setProperty("Mark" + i + ".NumOfLayers", String.valueOf(customMarks.get(i).getLayers().size()));
-			for(int h = 0; h < customMarks.get(i).getLayers().size(); h++){
-				MarkLayer l = customMarks.get(i).getLayers().get(h);
-				p.setProperty("Mark" + i + ".layer" + h + ".type", String.valueOf(l.getType()));
-				p.setProperty("Mark" + i + ".layer" + h + ".paint", String.valueOf(l.getPaint()));
-				p.setProperty("Mark" + i + ".layer" + h + ".numOfParams", String.valueOf(l.getParamProperty().size()));
-				for(int k = 0; k < l.getParamProperty().size(); k++){
-					p.setProperty("Mark" + i + ".layer" + h + ".param" + k, String.valueOf(l.getParam(k)));
-				}
-				p.setProperty("Mark" + i + ".layer" + h + ".text", String.valueOf(l.getText()));
-				p.setProperty("Mark" + i + ".layer" + h + ".fontName", String.valueOf(l.getFontName()));
-				p.setProperty("Mark" + i + ".layer" + h + ".colorR", String.valueOf(l.getColor().getRed()));
-				p.setProperty("Mark" + i + ".layer" + h + ".colorG", String.valueOf(l.getColor().getGreen()));
-				p.setProperty("Mark" + i + ".layer" + h + ".colorB", String.valueOf(l.getColor().getBlue()));
-				p.setProperty("Mark" + i + ".layer" + h + ".colorO", String.valueOf(l.getColor().getOpacity()));
-				if(l.getType() == MarkLayer.IMAGE && l.getImage() != null){
-					p.setProperty("Mark" + i + ".layer" + h + ".image", String.valueOf(images.size()));
-					images.add(l.getImage());
-				}
-			}
-		}
+		Properties customMarksProperties = StopMarkListPropertiesConverter.toProperties(customMarks, images, "");
+		p.putAll(customMarksProperties);
+
 		//freeItemsを頂点とするデータ群
-		p.setProperty("NumOfFreeItems", String.valueOf(freeItems.size()));
-		for(int i = 0; i < freeItems.size(); i++){
-			p.setProperty("FreeItem" + i + ".type", String.valueOf(freeItems.get(i).getType()));
-			if(freeItems.get(i).getType() == FreeItem.TEXT){
-				p.setProperty("FreeItem" + i + ".text", freeItems.get(i).getText());
-				for(int h = 0; h < freeItems.get(i).getParams().length; h++){
-					p.setProperty("FreeItem" + i + ".params" + h, String.valueOf(freeItems.get(i).getParams()[h].getValue()));
-				}
-				p.setProperty("FreeItem" + i + ".ColorR", String.valueOf(freeItems.get(i).getColor().getRed()));
-				p.setProperty("FreeItem" + i + ".ColorG", String.valueOf(freeItems.get(i).getColor().getGreen()));
-				p.setProperty("FreeItem" + i + ".ColorB", String.valueOf(freeItems.get(i).getColor().getBlue()));
-				p.setProperty("FreeItem" + i + ".ColorO", String.valueOf(freeItems.get(i).getColor().getOpacity()));
-				p.setProperty("FreeItem" + i + ".font", freeItems.get(i).getFontName());
-			}
-			if(freeItems.get(i).getType() == FreeItem.IMAGE){
-				p.setProperty("FreeItem" + i + ".text", freeItems.get(i).getText());
-				for(int h = 0; h < freeItems.get(i).getParams().length; h++){
-					p.setProperty("FreeItem" + i + ".params" + h, String.valueOf(freeItems.get(i).getParams()[h].getValue()));
-				}
-				p.setProperty("FreeItem" + i + ".image", String.valueOf(images.size()));
-				images.add(freeItems.get(i).getImage());
-			}
-		}
-		//lineDashesを頂点とするデータ群。index0は直線=nullなので保存しません。
-		p.setProperty("NumOfLineDashes", String.valueOf(lineDashes.size()));
-		for(int i = 1; i < lineDashes.size(); i++){
-			p.setProperty("LineDash" + i + "length", String.valueOf(lineDashes.get(i).get().length));
-			for(int h = 0; h < lineDashes.get(i).get().length; h++){
-				p.setProperty("LineDash" + i + "." + h, String.valueOf(lineDashes.get(i).get()[h]));
-			}
-		}
-		/*
-		OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-		p.store(osw, null);//書き出し
-		osw.close();
-		*/
+		Properties freeItemsProperties = FreeItemListPropertiesConverter.toProperties(freeItems, images, "");
+		p.putAll(freeItemsProperties);
+
+		//lineDashesを頂点とするデータ群
+		Properties lineDashesProperties = LineDashListPropertiesConverter.toProperties(lineDashes, "");
+		p.putAll(lineDashesProperties);
 	}
 	void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
 		this.mainStage = s;//結局使ってません

@@ -14,6 +14,13 @@ public class Background implements Cloneable{
 	Image image;
 	int x, y; // 原点座標
 	int zoomRatio, opacity; // %単位
+
+	public Color getColor() { return this.color; }
+	public Image getImage() { return this.image; }
+	public int getX() { return this.x; }
+	public int getY() { return this.y; }
+	public int getZoomRatio() { return this.zoomRatio; }
+	public int getOpacity() { return this.opacity; }
 	
 	public Background() {
 		color = Color.WHITESMOKE;
