@@ -1,11 +1,11 @@
 package RouteMapMaker.file;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -44,44 +44,52 @@ public class RmmFileReader implements AutoCloseable {
         Map<Integer, Image> images = new HashMap<>();
 
         ZipEntry entry = null;
-        File mainFile = null;
 
         while ((entry = stream.getNextEntry()) != null ) {
-            if (entry.getName().equals("main.properties")) {
+            String entryFileName = entry.getName();
+            if (entryFileName.equals("main.properties")) {
                 //mainの読み込み
-                mainFile = new File(entry.getName());
-                BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(mainFile));
-                byte[] buf = new byte[1024];
-                int size = 0;
-                while ((size = stream.read(buf)) > 0) {
-                    os.write(buf, 0, size);
-                }
-                os.close();
-                InputStreamReader isr = new InputStreamReader(new FileInputStream(mainFile), "UTF-8");
-                properties.load(isr);
-                isr.close();
-            } else if (FileUtils.getExtension(entry.getName()).equals(".png")) {//画像
-                File imageFile = new File(entry.getName());
-                BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(imageFile));
-                byte[] buf = new byte[1024];
-                int size = 0;
-                while((size = stream.read(buf)) > 0 ){
-                    os.write(buf, 0, size);
-                }
-                os.close();
-                int index = Integer.valueOf(FileUtils.getFileNameWithoutExtension(imageFile));
+                try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] buf = new byte[1024];
+                    int size = 0;
 
-                try (ImageFileReader imageFileReader = new ImageFileReader(imageFile)) {
-                    Image image = imageFileReader.read();
-                    images.put(index, image);
+                    while ((size = stream.read(buf)) > 0) {
+                        outputStream.write(buf, 0, size);
+                    }
+
+                    byte[] propertiesBytes = outputStream.toByteArray();
+
+                    try (InputStreamReader inputStream = new InputStreamReader(new ByteArrayInputStream(propertiesBytes), "UTF-8")) {
+                        properties.load(inputStream);
+                    }
                 }
-                imageFile.delete();
+            } else if (FileUtils.getExtension(entryFileName).equals(".png")) {//画像
+                try {
+                    int index = Integer.valueOf(FileUtils.getFileNameWithoutExtension(entryFileName));
+    
+                    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                        byte[] buf = new byte[1024];
+                        int size = 0;
+
+                        while ((size = stream.read(buf)) > 0) {
+                            outputStream.write(buf, 0, size);
+                        }
+
+                        byte[] imageBytes = outputStream.toByteArray();
+
+                        try (ImageFileReader imageFileReader = new ImageFileReader(new ByteArrayInputStream(imageBytes))) {
+                            Image image = imageFileReader.read();
+                            images.put(index, image);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // ファイル名が数字でない場合は読み込み処理を行わない．
+                    System.out.println("skipped reading: " + entryFileName);
+                }
             }
 
-            stream.closeEntry();;
+            stream.closeEntry();
         }
-        //main.propertiesは全ての画像読み込みが終了してから行う。
-        mainFile.delete();
 
         return new SaveData(properties, images);
     }
