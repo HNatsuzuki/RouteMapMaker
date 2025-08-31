@@ -133,6 +133,7 @@ import RouteMapMaker.Factories.SceneFactory;
 import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
 import RouteMapMaker.file.ErmFileReader;
+import RouteMapMaker.file.RmmFileReader;
 import RouteMapMaker.file.SaveData;
 
 public class UIController implements Initializable{
@@ -2838,46 +2839,10 @@ public class UIController implements Initializable{
 	}
 	
 	void readRMMFile(File file) throws IOException{
-		ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(file)),
-				Charset.forName("UTF-8"));
-		ZipEntry entry = null;
-		HashMap<Integer,Image> imageMap = new HashMap<Integer,Image>();//hashmapを使ってimageの読み込みを管理していく。
-		File mainFile = null;
-		Properties mainP = new Properties();
-		while(( entry = zis.getNextEntry() ) != null ){
-			if(entry.getName().equals("main.properties")){
-				//mainの読み込み
-				mainFile = new File(entry.getName());
-				BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(mainFile));
-				byte[] buf = new byte[1024];
-				int size = 0;
-				while((size = zis.read(buf)) > 0 ){
-					os.write(buf, 0, size);
-				}
-				os.close();
-				zis.closeEntry();
-				InputStreamReader isr = new InputStreamReader(new FileInputStream(mainFile), "UTF-8");
-				mainP.load(isr);
-				isr.close();
-			}
-			if(entry.getName().contains(".png")){//画像
-				File imageFile = new File(entry.getName());
-				BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(imageFile));
-				byte[] buf = new byte[1024];
-				int size = 0;
-				while((size = zis.read(buf)) > 0 ){
-					os.write(buf, 0, size);
-				}
-				os.close();
-				zis.closeEntry();
-				readImage(imageFile, imageMap);
-				imageFile.delete();
-			}
+		try (RmmFileReader rmmFileReader = new RmmFileReader(file)) {
+			SaveData saveData = rmmFileReader.read();
+			readProp(saveData.getProperties(), saveData.getImages());
 		}
-		//main.propertiesは全ての画像読み込みが終了してから行う。
-		readProp(mainP,imageMap);
-		mainFile.delete();
-		zis.close();
 	}
 	
 	//png画像を読みこんでimageMapに格納する
