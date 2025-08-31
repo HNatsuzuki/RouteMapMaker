@@ -133,6 +133,7 @@ import RouteMapMaker.Factories.SceneFactory;
 import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
 import RouteMapMaker.file.ErmFileReader;
+import RouteMapMaker.file.ErmFileWriter;
 import RouteMapMaker.file.RmmFileReader;
 import RouteMapMaker.file.SaveData;
 
@@ -2863,31 +2864,35 @@ public class UIController implements Initializable{
 		SaveData saveData = saveProp();
 		Map<Integer, Image> images = saveData.getImages();
 		try{
-			// propertiesファイルの出力を文字列でソートする
-			String[] prop_str = saveData.getSortedProperties();
-			// ソートした文字列をファイルに書き出し
-			ArrayList<File> files = new ArrayList<File>();
-			File mainF = rmm ? new File("main.properties") : saveFile; // ermの場合はsaveFileに書き込む
-			BufferedWriter bw = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(mainF), "UTF-8"));
-			for(String line: prop_str) {
-				bw.append(line);
-				bw.newLine();
-			}
-			files.add(mainF);
-			bw.close();
-			//画像の書き出し。
-			String fileDir = rmm ? "" : saveFile.getParent() + "/";
+			if (rmm) {
+				// propertiesファイルの出力を文字列でソートする
+				String[] prop_str = saveData.getSortedProperties();
+				// ソートした文字列をファイルに書き出し
+				ArrayList<File> files = new ArrayList<File>();
+				File mainF = new File("main.properties");
+				BufferedWriter bw = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(mainF), "UTF-8"));
+				for(String line: prop_str) {
+					bw.append(line);
+					bw.newLine();
+				}
+				files.add(mainF);
+				bw.close();
+				//画像の書き出し。
+				String fileDir = "";
 
-			for (Entry<Integer, Image> image : images.entrySet()) {
-				File imF = new File(fileDir + image.getKey() + ".png");//番号+".png"
-				ImageIO.write(SwingFXUtils.fromFXImage(image.getValue(), null), "png", imF);
-				files.add(imF);
-			}
+				for (Entry<Integer, Image> image : images.entrySet()) {
+					File imF = new File(fileDir + image.getKey() + ".png");//番号+".png"
+					ImageIO.write(SwingFXUtils.fromFXImage(image.getValue(), null), "png", imF);
+					files.add(imF);
+				}
 
-			if(rmm) {
 				HandleZip.writeZip(saveFile, files);
 				for(File f: files){//一時ファイルを消していく
 					f.delete();
+				}
+			} else {
+				try (ErmFileWriter ermFileWriter = new ErmFileWriter(saveFile)) {
+					ermFileWriter.write(saveData);
 				}
 			}
 			urManager.saveUndoStackSize(); //保存カウントを更新
