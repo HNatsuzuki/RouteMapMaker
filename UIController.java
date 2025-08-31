@@ -132,6 +132,8 @@ import RouteMapMaker.Factories.AlertFactory;
 import RouteMapMaker.Factories.SceneFactory;
 import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
+import RouteMapMaker.file.ErmFileReader;
+import RouteMapMaker.file.SaveData;
 
 public class UIController implements Initializable{
 	
@@ -2829,21 +2831,10 @@ public class UIController implements Initializable{
 	}
 	
 	void readERMFile(File file) throws IOException {
-		// propertiesの読み込み
-		InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
-		Properties p = new Properties();
-		p.load(isr);
-		isr.close();
-		// 画像の読み込み．同ディレクトリの全pngを対象にする．
-		HashMap<Integer,Image> imageMap = new HashMap<Integer,Image>();
-		for(File f: new File(file.getParent()).listFiles()) {
-			System.out.println(f.getParent() + " -> " + f.getName());
-			if(f.getName().substring(f.getName().lastIndexOf(".")).equals(".png")) {
-				System.out.println("read.");
-				readImage(f, imageMap);
-			}
+		try (ErmFileReader ermFileReader = new ErmFileReader(file)) {
+			SaveData saveData = ermFileReader.read();
+			readProp(saveData.getProperties(), saveData.getImages());
 		}
-		readProp(p,imageMap);
 	}
 	
 	void readRMMFile(File file) throws IOException{
@@ -2948,7 +2939,7 @@ public class UIController implements Initializable{
 			//zos.close();
 		}
 	}
-	void readProp(Properties p, HashMap<Integer,Image> imageMap) throws IOException{//各種データをセットする。
+	void readProp(Properties p, Map<Integer,Image> imageMap) throws IOException{//各種データをセットする。
 		//Propertiesを渡す方式に変更しましたので以下の処理は呼び出し元でやってもらう。
 		/*
 		InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
