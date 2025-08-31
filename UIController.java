@@ -2,25 +2,12 @@ package RouteMapMaker;
 
 import java.awt.Desktop;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -39,11 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import javafx.application.Platform;
 import javafx.beans.binding.DoubleBinding;
@@ -135,6 +118,7 @@ import RouteMapMaker.Factories.View;
 import RouteMapMaker.file.ErmFileReader;
 import RouteMapMaker.file.ErmFileWriter;
 import RouteMapMaker.file.RmmFileReader;
+import RouteMapMaker.file.RmmFileWriter;
 import RouteMapMaker.file.SaveData;
 
 public class UIController implements Initializable{
@@ -2862,33 +2846,11 @@ public class UIController implements Initializable{
 		final boolean rmm = (fN.substring(fN.lastIndexOf(".")).equals(".rmm"));
 		//mainの書き出し
 		SaveData saveData = saveProp();
-		Map<Integer, Image> images = saveData.getImages();
+
 		try{
 			if (rmm) {
-				// propertiesファイルの出力を文字列でソートする
-				String[] prop_str = saveData.getSortedProperties();
-				// ソートした文字列をファイルに書き出し
-				ArrayList<File> files = new ArrayList<File>();
-				File mainF = new File("main.properties");
-				BufferedWriter bw = new BufferedWriter (new OutputStreamWriter(new FileOutputStream(mainF), "UTF-8"));
-				for(String line: prop_str) {
-					bw.append(line);
-					bw.newLine();
-				}
-				files.add(mainF);
-				bw.close();
-				//画像の書き出し。
-				String fileDir = "";
-
-				for (Entry<Integer, Image> image : images.entrySet()) {
-					File imF = new File(fileDir + image.getKey() + ".png");//番号+".png"
-					ImageIO.write(SwingFXUtils.fromFXImage(image.getValue(), null), "png", imF);
-					files.add(imF);
-				}
-
-				HandleZip.writeZip(saveFile, files);
-				for(File f: files){//一時ファイルを消していく
-					f.delete();
+				try (RmmFileWriter rmmFileWriter = new RmmFileWriter(saveFile)) {
+					rmmFileWriter.write(saveData);
 				}
 			} else {
 				try (ErmFileWriter ermFileWriter = new ErmFileWriter(saveFile)) {
