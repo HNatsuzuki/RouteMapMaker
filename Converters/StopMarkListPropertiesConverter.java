@@ -21,7 +21,7 @@ public class StopMarkListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(List<StopMark> stopMarks, List<Image> images, String prefix) {
+    public static Properties toProperties(List<StopMark> stopMarks, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfMarks", String.valueOf(stopMarks.size()));
         for(int i = 0; i < stopMarks.size(); i++){

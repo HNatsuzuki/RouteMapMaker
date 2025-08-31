@@ -1,6 +1,5 @@
 package RouteMapMaker.Converters;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,7 +19,7 @@ public class FreeItemPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(FreeItem freeItem, List<Image> images, String prefix) {
+    public static Properties toProperties(FreeItem freeItem, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         int freeItemType = freeItem.getType();
         properties.setProperty(prefix + "type", String.valueOf(freeItemType));
@@ -40,7 +39,7 @@ public class FreeItemPropertiesConverter extends PropertiesConverterBase {
                 break;
             case FreeItem.IMAGE:
                 properties.setProperty(prefix + "image", String.valueOf(images.size()));
-                images.add(freeItem.getImage());
+                images.put(images.size(), freeItem.getImage());
                 break;
         }
 

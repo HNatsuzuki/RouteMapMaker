@@ -20,7 +20,7 @@ public class FreeItemListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(List<FreeItem> freeItems, List<Image> images, String prefix) {
+    public static Properties toProperties(List<FreeItem> freeItems, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfFreeItems", String.valueOf(freeItems.size()));
 

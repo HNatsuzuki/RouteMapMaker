@@ -35,9 +35,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -2901,7 +2903,7 @@ public class UIController implements Initializable{
 	void saveRMMFile(File saveFile) throws IOException{
 		final String fN = saveFile.getName();
 		final boolean rmm = (fN.substring(fN.lastIndexOf(".")).equals(".rmm"));
-		ArrayList<Image> images = new ArrayList<Image>();//書き出す画像を全部ここにストック。
+		Map<Integer, Image> images = new HashMap<Integer, Image>();//書き出す画像を全部ここにストック。
 		//画像はimagesのindex番号のみで識別する。propertiesも番号だけ。
 		//mainの書き出し
 		Properties mainP = new Properties();
@@ -2926,11 +2928,13 @@ public class UIController implements Initializable{
 			bw.close();
 			//画像の書き出し。
 			String fileDir = rmm ? "" : saveFile.getParent() + "/";
-			for(int i = 0; i < images.size(); i++){
-				File imF = new File(fileDir + i + ".png");//番号+".png"
-				ImageIO.write(SwingFXUtils.fromFXImage(images.get(i), null), "png", imF);
+
+			for (Entry<Integer, Image> image : images.entrySet()) {
+				File imF = new File(fileDir + image.getKey() + ".png");//番号+".png"
+				ImageIO.write(SwingFXUtils.fromFXImage(image.getValue(), null), "png", imF);
 				files.add(imF);
 			}
+
 			if(rmm) {
 				HandleZip.writeZip(saveFile, files);
 				for(File f: files){//一時ファイルを消していく
@@ -3064,7 +3068,7 @@ public class UIController implements Initializable{
 		ZoomSlider.setValue(0);
 		lineDraw();
 	}
-	void saveProp(Properties p, ArrayList<Image> images) {//データの保存を行う。
+	void saveProp(Properties p, Map<Integer, Image> images) {//データの保存を行う。
 		p.setProperty("version", String.valueOf(version));
 
 		// 背景情報

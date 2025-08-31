@@ -1,6 +1,5 @@
 package RouteMapMaker.Converters;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,7 +19,7 @@ public class MarkLayerPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(MarkLayer markLayer, List<Image> images, String prefix) {
+    public static Properties toProperties(MarkLayer markLayer, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "type", String.valueOf(markLayer.getType()));
         properties.setProperty(prefix + "paint", String.valueOf(markLayer.getPaint()));
@@ -39,7 +38,7 @@ public class MarkLayerPropertiesConverter extends PropertiesConverterBase {
 
         if (markLayer.getType() == MarkLayer.IMAGE && markLayer.getImage() != null) {
             properties.setProperty(prefix + "image", String.valueOf(images.size()));
-            images.add(markLayer.getImage());
+            images.put(images.size(), markLayer.getImage());
         }
 
         return properties;

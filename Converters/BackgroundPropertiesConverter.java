@@ -1,6 +1,5 @@
 package RouteMapMaker.Converters;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,7 +19,7 @@ public class BackgroundPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(Background background, List<Image> images, String prefix) {
+    public static Properties toProperties(Background background, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "bgColorR", String.valueOf(background.getColor().getRed()));
         properties.setProperty(prefix + "bgColorG", String.valueOf(background.getColor().getGreen()));
@@ -33,7 +32,7 @@ public class BackgroundPropertiesConverter extends PropertiesConverterBase {
 
         if (background.getImage() != null) {
             properties.setProperty(prefix + "bgImage", String.valueOf(images.size()));
-            images.add(background.getImage());
+            images.put(images.size(), background.getImage());
         }
 
         return properties;

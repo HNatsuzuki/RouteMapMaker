@@ -21,7 +21,7 @@ public class MarkLayerListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(List<MarkLayer> markLayers, List<Image> images, String prefix) {
+    public static Properties toProperties(List<MarkLayer> markLayers, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfLayers", String.valueOf(markLayers.size()));
 

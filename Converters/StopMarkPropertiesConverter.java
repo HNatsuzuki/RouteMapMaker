@@ -20,7 +20,7 @@ public class StopMarkPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(StopMark stopMark, List<Image> images, String prefix) {
+    public static Properties toProperties(StopMark stopMark, Map<Integer, Image> images, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "isRotated", String.valueOf(stopMark.isRotated()));
         Properties markLayersProperties = MarkLayerListPropertiesConverter.toProperties(stopMark.getLayers(), images, prefix);
