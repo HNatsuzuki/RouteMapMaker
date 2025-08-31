@@ -2834,14 +2834,14 @@ public class UIController implements Initializable{
 	void readERMFile(File file) throws IOException {
 		try (ErmFileReader ermFileReader = new ErmFileReader(file)) {
 			SaveData saveData = ermFileReader.read();
-			readProp(saveData.getProperties(), saveData.getImages());
+			readProp(saveData);
 		}
 	}
 	
 	void readRMMFile(File file) throws IOException{
 		try (RmmFileReader rmmFileReader = new RmmFileReader(file)) {
 			SaveData saveData = rmmFileReader.read();
-			readProp(saveData.getProperties(), saveData.getImages());
+			readProp(saveData);
 		}
 	}
 	
@@ -2859,11 +2859,10 @@ public class UIController implements Initializable{
 	void saveRMMFile(File saveFile) throws IOException{
 		final String fN = saveFile.getName();
 		final boolean rmm = (fN.substring(fN.lastIndexOf(".")).equals(".rmm"));
-		Map<Integer, Image> images = new HashMap<Integer, Image>();//書き出す画像を全部ここにストック。
-		//画像はimagesのindex番号のみで識別する。propertiesも番号だけ。
 		//mainの書き出し
-		Properties mainP = new Properties();
-		saveProp(mainP, images);
+		SaveData saveData = saveProp();
+		Properties mainP = saveData.getProperties();
+		Map<Integer, Image> images = saveData.getImages();
 		try{
 			// propertiesファイルの出力を文字列でソートする
 			StringWriter sw = new StringWriter();
@@ -2904,7 +2903,7 @@ public class UIController implements Initializable{
 			//zos.close();
 		}
 	}
-	void readProp(Properties p, Map<Integer,Image> imageMap) throws IOException{//各種データをセットする。
+	void readProp(SaveData saveData) throws IOException{//各種データをセットする。
 		//Propertiesを渡す方式に変更しましたので以下の処理は呼び出し元でやってもらう。
 		/*
 		InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "UTF-8");
@@ -2912,6 +2911,8 @@ public class UIController implements Initializable{
 		p.load(isr);
 		isr.close();
 		*/
+		Properties p = saveData.getProperties();
+		Map<Integer, Image> imageMap = saveData.getImages();
 		double pVersion = 0;
 		try{
 			pVersion = Double.parseDouble(p.getProperty("version"));
@@ -3024,7 +3025,10 @@ public class UIController implements Initializable{
 		ZoomSlider.setValue(0);
 		lineDraw();
 	}
-	void saveProp(Properties p, Map<Integer, Image> images) {//データの保存を行う。
+	SaveData saveProp() {//データの保存を行う。
+		Properties p = new Properties();
+		Map<Integer, Image> images = new HashMap<>();
+		
 		p.setProperty("version", String.valueOf(version));
 
 		// 背景情報
@@ -3048,6 +3052,8 @@ public class UIController implements Initializable{
 		//lineDashesを頂点とするデータ群
 		Properties lineDashesProperties = LineDashListPropertiesConverter.toProperties(lineDashes, "");
 		p.putAll(lineDashesProperties);
+
+		return new SaveData(p, images);
 	}
 	void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
 		this.mainStage = s;//結局使ってません
