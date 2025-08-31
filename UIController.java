@@ -2861,16 +2861,10 @@ public class UIController implements Initializable{
 		final boolean rmm = (fN.substring(fN.lastIndexOf(".")).equals(".rmm"));
 		//mainの書き出し
 		SaveData saveData = saveProp();
-		Properties mainP = saveData.getProperties();
 		Map<Integer, Image> images = saveData.getImages();
 		try{
 			// propertiesファイルの出力を文字列でソートする
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			mainP.store(pw, null);
-			pw.flush();
-			List<String> prop_str = Arrays.asList(sw.toString().split("\n"));
-			Collections.sort(prop_str);
+			String[] prop_str = saveData.getSortedProperties();
 			// ソートした文字列をファイルに書き出し
 			ArrayList<File> files = new ArrayList<File>();
 			File mainF = rmm ? new File("main.properties") : saveFile; // ermの場合はsaveFileに書き込む
