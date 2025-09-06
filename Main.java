@@ -24,7 +24,7 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			config.read();
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("UIController.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/UIController.fxml"));
 			loader.setControllerFactory(param -> {
 				if (param == UIController.class) {
 					return new UIController(config, sceneFactory, alertFactory);

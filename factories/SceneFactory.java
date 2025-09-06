@@ -55,7 +55,7 @@ public class SceneFactory {
         scene.getRoot().setStyle(generateFontStyle(config.getUiFont()));
 
         // それ以外のスタイル設定適用 (未使用？)
-        scene.getStylesheets().add(getClass().getResource("/RouteMapMaker/application.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/RouteMapMaker/views/application.css").toExternalForm());
 
         // フォント設定変更時に即座に適用するためのイベント設定
         config.getUiFontProperty().addListener((obs, oldFont, newFont) -> {

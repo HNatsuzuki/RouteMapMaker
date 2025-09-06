@@ -35,7 +35,7 @@ public class SelectFontFactory {
         Parent parent;
 
         try {
-            loader = new FXMLLoader(getClass().getResource("/RouteMapMaker/selectFontController.fxml"));
+            loader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/selectFontController.fxml"));
             parent = loader.load();
         } catch (Exception ex) {
             throw new RuntimeException();

@@ -1237,7 +1237,7 @@ public class UIController implements Initializable{
 				configStage = new Stage();
 				VBox ap = null;
 				try {
-					editLoader = new FXMLLoader(getClass().getResource("ConfigUIController.fxml"));
+					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ConfigUIController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ConfigUIController.class) {
 							return new ConfigUIController(config, sceneFactory);
@@ -1268,7 +1268,7 @@ public class UIController implements Initializable{
 				changeAllStage = new Stage();
 				VBox ap = null;
 				try {
-					editLoader = new FXMLLoader(getClass().getResource("ChangeAllController.fxml"));
+					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ChangeAllController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ChangeAllController.class) {
 							return new ChangeAllController(alertFactory);
@@ -1300,7 +1300,7 @@ public class UIController implements Initializable{
 			editStage.initModality(Modality.APPLICATION_MODAL);
 			VBox ap = null;
 			try {
-				editLoader = new FXMLLoader(getClass().getResource("CustomMarkController.fxml"));
+				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
 						return new CustomMarkController(sceneFactory, alertFactory);
@@ -1328,7 +1328,7 @@ public class UIController implements Initializable{
 			editStage.initModality(Modality.APPLICATION_MODAL);
 			VBox ap = null;
 			try {
-				editLoader = new FXMLLoader(getClass().getResource("SetMarkController.fxml"));
+				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/SetMarkController.fxml"));
 				ap= (VBox)editLoader.load();
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
@@ -1354,7 +1354,7 @@ public class UIController implements Initializable{
 				fiStage.initModality(Modality.NONE);
 				VBox ap = null;
 				try {
-					editLoader = new FXMLLoader(getClass().getResource("FreeItemsController.fxml"));
+					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/FreeItemsController.fxml"));
 					editLoader.setController(fic);
 					ap= (VBox)editLoader.load();
 					fic.initialize(location, resources);
@@ -1377,7 +1377,7 @@ public class UIController implements Initializable{
 			editStage.initModality(Modality.APPLICATION_MODAL);
 			VBox ap = null;
 			try {
-				editLoader = new FXMLLoader(getClass().getResource("LineDashesController.fxml"));
+				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/LineDashesController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == LineDashesController.class) {
 						return new LineDashesController(alertFactory);
@@ -1406,7 +1406,7 @@ public class UIController implements Initializable{
 			editStage.initModality(Modality.APPLICATION_MODAL);
 			VBox ap = null;
 			try {
-				editLoader = new FXMLLoader(getClass().getResource("TransformController.fxml"));
+				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/TransformController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == TransformController.class) {
 						return new TransformController(alertFactory);
@@ -3158,7 +3158,7 @@ public class UIController implements Initializable{
 		editStage.initStyle(StageStyle.UNDECORATED);
 		AnchorPane ap = null;
 		try {
-			editLoader = new FXMLLoader(getClass().getResource("editUIController.fxml"));
+			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/editUIController.fxml"));
 			editLoader.setControllerFactory(param -> {
 				if (param == editUIController.class) {
 					return new editUIController(alertFactory);
