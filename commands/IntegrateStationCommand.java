@@ -6,36 +6,54 @@ import RouteMapMaker.Line;
 import RouteMapMaker.Station;
 import RouteMapMaker.TrainStop;
 
+/**
+ * undo, redo が可能な、駅統合コマンドです。
+ */
 public class IntegrateStationCommand implements Command {
     private final List<Line.Connection> connections; //置き換える駅のConnectionの配列
     private final List<TrainStop> stops; //置き換える駅を含んだTrainStopの配列
-    private final Station prevSta;//置き換え前
-    private final Station replacing;//置き換え後
-    private final boolean fixed;//以前座標固定点だったか否か
+    private final Station oldStation;//置き換え前
+    private final Station newStation;//置き換え後
 
-    public IntegrateStationCommand(List<Line.Connection> con, List<TrainStop> stops,
-            Station prevSta, Station replacing, boolean fixed) {
-        this.connections = con;
+    /**
+     * コンストラクタ
+     *
+     * @param connections 接続
+     * @param stops 駅
+     * @param oldStation 統合前の駅
+     * @param newStation 統合後の駅
+     */
+    public IntegrateStationCommand(List<Line.Connection> connections, List<TrainStop> stops,
+            Station oldStation, Station newStation) {
+        this.connections = connections;
         this.stops = stops;
-        this.prevSta = prevSta;
-        this.replacing = replacing;
-        this.fixed = fixed;
+        this.oldStation = oldStation;
+        this.newStation = newStation;
     }
+
+    /**
+     * コマンドを実行します。
+     */
+    @Override
+    public void execute() {
+        connections.forEach(c -> c.setStation(newStation));
+        stops.forEach(s -> s.setSta(newStation));
+    }
+
+    /**
+     * 実行した処理をもとに戻します。
+     */
     @Override
     public void undo() {
-        connections.forEach(c -> c.setStation(prevSta));
-        stops.forEach(s -> s.setSta(prevSta));
-        if(!fixed) replacing.erasePoint();//座標非固定点ならば非固定にする。
-    }
-    @Override
-    public void redo() {
-        // TODO Auto-generated method stub
-        if(!fixed) replacing.setPoint(replacing.getInterPoint()[0], replacing.getInterPoint()[1]);
-        connections.forEach(c -> c.setStation(replacing));
-        stops.forEach(s -> s.setSta(replacing));
+        connections.forEach(c -> c.setStation(oldStation));
+        stops.forEach(s -> s.setSta(oldStation));
     }
 
-    public void execute() {
-        throw new UnsupportedOperationException("Execute is not supported.");
+    /**
+     * もとに戻した処理をやり直します。
+     */
+    @Override
+    public void redo() {
+        this.execute();
     }
 }

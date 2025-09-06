@@ -2821,17 +2821,23 @@ public class UIController implements Initializable{
 				}
 				//駅オブジェクト自体を置き換えて共通化してしまう。
 				//すべての路線のConnectionとTrainStopを走査し，すべての当該駅を置き換える
-				List<Line.Connection> replaced_cons = lineList.stream().flatMap(l_l -> l_l.getConnections().stream())
-				.filter(l_c -> l_c.getStation()==con.getStation()).collect(Collectors.toList()); //置き換え対象connection
-				List<TrainStop> replaced_stop = lineList.stream().flatMap(l_l -> l_l.getTrains().stream())
-						.flatMap(l_t -> l_t.getStops().stream()).filter(l_s -> l_s.getSta()==con.getStation())
-						.collect(Collectors.toList()); //置き換え対象train stop
-				if(candName!=null) {
-					Command command = new IntegrateStationCommand(replaced_cons, replaced_stop, con.getStation(), c.getStation(), con.getStation().isSet());
+				List<Line.Connection> replaced_cons = lineList.stream()
+					.flatMap(l_l -> l_l.getConnections().stream())
+					.filter(l_c -> l_c.getStation()==con.getStation())
+					.collect(Collectors.toList()); //置き換え対象connection
+				List<TrainStop> replaced_stop = lineList.stream()
+					.flatMap(l_l -> l_l.getTrains().stream())
+					.flatMap(l_t -> l_t.getStops().stream())
+					.filter(l_s -> l_s.getSta()==con.getStation())
+					.collect(Collectors.toList()); //置き換え対象train stop
+
+				Command command = new IntegrateStationCommand(replaced_cons, replaced_stop, con.getStation(), c.getStation());
+				command.execute();
+
+				if (candName != null) {
 					urManager.push(command);
 				}
-				replaced_cons.forEach(rc -> rc.setStation(c.getStation()));
-				replaced_stop.forEach(rs -> rs.setSta(c.getStation()));
+
 				return 0;
 			}
 		}
