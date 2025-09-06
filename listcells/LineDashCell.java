@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.listcells;
 
 import RouteMapMaker.models.DoubleArrayWrapper;
 import javafx.scene.canvas.Canvas;

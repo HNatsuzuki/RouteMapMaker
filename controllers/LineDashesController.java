@@ -3,8 +3,8 @@ package RouteMapMaker.controllers;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.LineDashCell;
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.models.DoubleArrayWrapper;
 import RouteMapMaker.models.Train;
 import javafx.collections.ObservableList;

@@ -6,8 +6,8 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.FreeItemCell;
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.listcells.FreeItemCell;
 import RouteMapMaker.models.FreeItem;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

@@ -3,7 +3,7 @@ package RouteMapMaker.controllers;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.StopMarkCell;
+import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;

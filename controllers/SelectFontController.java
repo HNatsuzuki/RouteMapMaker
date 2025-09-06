@@ -4,7 +4,7 @@ import java.util.List;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.FontFormatCell;
+import RouteMapMaker.listcells.FontFormatCell;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
