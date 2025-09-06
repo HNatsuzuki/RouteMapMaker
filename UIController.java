@@ -117,7 +117,7 @@ import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
-import RouteMapMaker.commands.DeleteStationCommand;
+import RouteMapMaker.commands.CompositeCommand;
 import RouteMapMaker.commands.DisconnectStationLinkCommand;
 import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
@@ -561,37 +561,42 @@ public class UIController implements Initializable{
 				alert.getDialogPane().setContentText("始点と終点は削除できません。");
 				alert.showAndWait();
 			}else if(index != -1){
-				//選択されたlineで削除対象駅が路線に追加されているかを検査する
-				ArrayList<Integer[]> remove_Candidates = new ArrayList<Integer[]>();//{経路番号,停車場番号}
-				ObservableList<TrainStop> removedStops = FXCollections.observableArrayList();
+				Command removeConnectionCommand = new RemoveListItemCommand<>(line.getConnections(), index);
 				Station removeCandidate = line.getStations().get(index);
-				for(int i = 0; i < line.getTrains().size(); i++){
-					for(int h = 0; h < line.getTrains().get(i).getStops().size(); h++){
-						if(line.getTrains().get(i).getStops().get(h).getSta() == removeCandidate){
-							Integer[] id = {i,h};
-							remove_Candidates.add(id);
+				List<Command> commands = new ArrayList<>();
+				List<String> trainNames = new ArrayList<>();
+
+				// 運転系統から削除対象駅を検索する
+				for (int i = 0; i < line.getTrains().size(); ++i) {
+					Train train = line.getTrains().get(i);
+
+					for (int h = 0; h < train.getStops().size(); ++h) {
+						if (train.getStops().get(h).getSta() == removeCandidate) {
+							Command command = new RemoveListItemCommand<>(train.getStops(), h);
+							commands.add(command);
+							trainNames.add(train.getName());
 						}
 					}
 				}
-				if(remove_Candidates.size() > 0){
-					StringBuilder names = new StringBuilder();
-					for(Integer[] id: remove_Candidates){
-						names.append(line.getTrains().get(id[0]).getName()+" ");//空白で区切る
-					}
+
+				if (commands.size() > 0) {
+					// 運転系統に削除対象がある場合は確認ダイアログを出す
+					String trainName = String.join(" ", trainNames);
 					Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-					alert.setContentText("運転経路"+names.toString()+"に削除対象駅が含まれています。削除してよろしいですか？");
+					alert.setContentText("運転経路"+trainName+"に削除対象駅が含まれています。削除してよろしいですか？");
 					Optional<ButtonType> result = alert.showAndWait();
-					if(result.get() == ButtonType.OK){
-						for(Integer[] id: remove_Candidates){
-							TrainStop removedTrainStop = line.getTrains().get(id[0]).getStops().remove(id[1].intValue());
-							removedStops.add(removedTrainStop);
-						}
-						
+
+					if (result.get() == ButtonType.OK) {
+						CompositeCommand compositeCommand = new CompositeCommand(commands);
+						compositeCommand.addCommand(removeConnectionCommand);
+						compositeCommand.execute();
+						urManager.push(compositeCommand);
 					}
+				} else {
+					removeConnectionCommand.execute();
+					urManager.push(removeConnectionCommand);
 				}
-				Line.Connection removedCon = line.removeStation(index);
-				Command command = new DeleteStationCommand(line.getConnections(), index, removedCon, line.getTrains(), remove_Candidates, removedStops);
-				urManager.push(command);
+
 				snList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
 					snList.add(line.getStations().get(i).getName());
