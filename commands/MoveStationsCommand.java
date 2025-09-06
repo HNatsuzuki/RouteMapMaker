@@ -39,7 +39,9 @@ public class MoveStationsCommand implements Command {
      */
     @Override
     public void execute() {
-        throw new UnsupportedOperationException("Execute is not supported.");
+        for (int i = 0; i < stations.size(); ++i) {
+            stations.get(i).setPoint(afterX.get(i), afterY.get(i));
+        }
     }
 
     /**
@@ -61,8 +63,6 @@ public class MoveStationsCommand implements Command {
      */
     @Override
     public void redo() {
-        for (int i = 0; i < stations.size(); ++i) {
-            stations.get(i).setPoint(afterX.get(i), afterY.get(i));
-        }
+        this.execute();
     }
 }
