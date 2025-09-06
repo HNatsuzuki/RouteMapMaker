@@ -1,11 +1,11 @@
 package RouteMapMaker;
 
-import java.util.ArrayList;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -22,7 +22,7 @@ public class Train implements Cloneable{
 	private ColorWrapper staColor = new ColorWrapper();
 	private IntegerProperty lineWidth = new SimpleIntegerProperty();
 	private IntegerProperty lineDistance = new SimpleIntegerProperty();
-	private StopMark mark;
+	private ObjectProperty<StopMark> mark = new SimpleObjectProperty<>();
 	private IntegerProperty markSize = new SimpleIntegerProperty();
 	private IntegerProperty staSize = new SimpleIntegerProperty();
 	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//trueなら縦書き。
@@ -39,7 +39,7 @@ public class Train implements Cloneable{
 		staColor.set(Color.BLACK);
 		lineWidth.set(10);
 		lineDistance.set(0);
-		mark = StopMark.CIRCLE;
+		mark.set(StopMark.CIRCLE);
 		markSize.set(8);
 		tategaki.set(true);
 		staSize.set(15);
@@ -129,11 +129,14 @@ public class Train implements Cloneable{
 	public void setLineDistance(int i){
 		this.lineDistance.set(i);
 	}
+	public ObjectProperty<StopMark> getMarkProperty() {
+		return this.mark;
+	}
 	public StopMark getMark(){
-		return mark;
+		return mark.get();
 	}
 	public void setMark(StopMark m){
-		this.mark = m;
+		this.mark.set(m);
 	}
 	public int getMarkSize(){
 		return markSize.get();

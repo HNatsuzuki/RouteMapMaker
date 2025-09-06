@@ -23,8 +23,8 @@ public class Line {//路線の情報を保持するクラス。
 	public static final int BOTTOM = 3;
 	public static final int CENTER = 4;
 	
-	class Connection {
-		Station station;
+	public class Connection {
+		public Station station;
 		BooleanProperty curve;
 		Connection(Station s, boolean c) {
 			station = s;

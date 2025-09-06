@@ -10,4 +10,16 @@ public class MvSta {//駅座標の移動に関する情報を保持するクラ�
 		this.start[1] = sta.getPointUS()[1];
 		this.isSet = sta.isSet();
 	}
+
+	public Station getStation() {
+		return this.sta;
+	}
+
+	public double[] getStart() {
+		return this.start;
+	}
+
+	public boolean getIsSet() {
+		return this.isSet;
+	}
 }

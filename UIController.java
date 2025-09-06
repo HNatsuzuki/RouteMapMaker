@@ -117,7 +117,13 @@ import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
+import RouteMapMaker.commands.DeleteStationCommand;
+import RouteMapMaker.commands.DisconnectStationLinkCommand;
+import RouteMapMaker.commands.IntegrateStationCommand;
+import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
+import RouteMapMaker.commands.SetBackgroundCommand;
+import RouteMapMaker.commands.SetLineDashesCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
@@ -153,7 +159,7 @@ public class UIController implements Initializable{
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
 	private double zoom = 1.0;//canvas上での表示倍率。mapDrawのみに適用する。
-	protected double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
+	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
 	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
@@ -584,7 +590,8 @@ public class UIController implements Initializable{
 					}
 				}
 				Line.Connection removedCon = line.removeStation(index);
-				urManager.push(line.getConnections(), index, removedCon, line.getTrains(), remove_Candidates, removedStops);
+				Command command = new DeleteStationCommand(line.getConnections(), index, removedCon, line.getTrains(), remove_Candidates, removedStops);
+				urManager.push(command);
 				snList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
 					snList.add(line.getStations().get(i).getName());
@@ -816,8 +823,9 @@ public class UIController implements Initializable{
 							}
 						}
 					}
-					urManager.push(lineList.get(indexR).getStations(), oldSta, newSta, indexS, lineList.get(indexR).getTrains(),
+					Command command = new DisconnectStationLinkCommand(lineList.get(indexR).getStations(), oldSta, newSta, indexS, lineList.get(indexR).getTrains(),
 							setList, stopValue);
+					urManager.push(command);
 					//運転経路編集ウィンドウで変更を反映させる
 					int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
 					int indexT = TrainTable.getSelectionModel().getSelectedIndex();
@@ -875,7 +883,8 @@ public class UIController implements Initializable{
 				background.color = bgColor_CP.getValue();
 				background.image = null;
 				updateBackgroundComponents();
-				urManager.push(prev_bg, background.clone(), background);
+				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
+				urManager.push(command);
 			}
 			lineDraw();
 		});
@@ -897,7 +906,8 @@ public class UIController implements Initializable{
 				}
 				Background prev_bg = background.clone();
 				background.image = im;
-				urManager.push(prev_bg, background.clone(), background);
+				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
+				urManager.push(command);
 				updateBackgroundComponents();
 				lineDraw();
 			} catch (Exception e) {
@@ -924,7 +934,8 @@ public class UIController implements Initializable{
 				else if(spinner==bgImageY) {background.y = newVal;}
 				else if(spinner==bgImageSize) {background.zoomRatio = newVal;}
 				else if(spinner==bgImageOpacity) {background.opacity = newVal;}
-				urManager.push(prev_bg, background.clone(), background);
+				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
+				urManager.push(command);
 				lineDraw();
 			});
 		}
@@ -1035,7 +1046,8 @@ public class UIController implements Initializable{
 							}
 						}
 						if(shouldBePushed){
-							urManager.push(movingStList);
+							Command command = new MoveStationsCommand(movingStList);
+							urManager.push(command);
 							System.out.println("mouseReleased - pushed!");
 						}
 						//canvasのサイズを調整する。
@@ -1709,9 +1721,12 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
 				if(re_mark_CB.getValue() != null){//setMarkList()でこのComboboxの中身が変えられた時にvalueがnullの状態でリスナーがコールされる
-					if(lineList.get(indexR).getTrains().get(indexK).getMark() == oldVal)
-						urManager.push(lineList.get(indexR).getTrains().get(indexK), oldVal, newVal);
-					lineList.get(indexR).getTrains().get(indexK).setMark(re_mark_CB.getValue());
+					Train train = lineList.get(indexR).getTrains().get(indexK);
+					if(train.getMark() == oldVal) {
+						Command command = new ValueSetCommand<>(train.getMarkProperty(), oldVal, newVal);
+						command.execute();
+						urManager.push(command);
+					}
 					mapDraw();
 				}
 			}
@@ -1729,9 +1744,11 @@ public class UIController implements Initializable{
 			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
-				if(oldVal == lineList.get(indexR).getTrains().get(indexK).getLineDash())
-					urManager.push(lineList.get(indexR).getTrains().get(indexK), oldVal, newVal);
-				lineList.get(indexR).getTrains().get(indexK).setLineDash(newVal);
+				if(oldVal == lineList.get(indexR).getTrains().get(indexK).getLineDash()) {
+					Command command = new SetLineDashesCommand(lineList.get(indexR).getTrains().get(indexK), oldVal, newVal);
+					command.execute();;
+					urManager.push(command);
+				}
 			}
 			mapDraw();
 		});
@@ -1970,9 +1987,13 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				if(re_staMark_CB.getValue() != null){//setMarkList()でこのComboboxの中身が変えられた時にvalueがnullの状態でリスナーがコールされる
-					if(oldVal == lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getMark())
-						urManager.push(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS), oldVal, newVal);
-					lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).setMark(re_staMark_CB.getValue());
+					TrainStop trainStop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
+					if (oldVal == trainStop.getMark()) {
+						Command command = new ValueSetCommand<>(trainStop.getMarkProperty(), oldVal, newVal);
+						command.execute();
+						urManager.push(command);
+					}
+
 					mapDraw();
 				}
 			}
@@ -2801,7 +2822,8 @@ public class UIController implements Initializable{
 						.flatMap(l_t -> l_t.getStops().stream()).filter(l_s -> l_s.getSta()==con.station)
 						.collect(Collectors.toList()); //置き換え対象train stop
 				if(candName!=null) {
-					urManager.push(replaced_cons, replaced_stop, con.station, c.station, con.station.isSet());
+					Command command = new IntegrateStationCommand(replaced_cons, replaced_stop, con.station, c.station, con.station.isSet());
+					urManager.push(command);
 				}
 				replaced_cons.forEach(rc -> rc.station = c.station);
 				replaced_stop.forEach(rs -> rs.setSta(c.station));
