@@ -1,8 +1,9 @@
 package RouteMapMaker;
 
+import javafx.beans.value.WritableValue;
 import javafx.scene.paint.Color;
 
-public class ColorWrapper {//javafxのColorをラップするだけ。こうすることでredo/undoに対応する。
+public class ColorWrapper implements WritableValue<Color> {//javafxのColorをラップするだけ。こうすることでredo/undoに対応する。
 	private Color color = Color.BLACK;
 	public ColorWrapper(){
 		
@@ -17,4 +18,11 @@ public class ColorWrapper {//javafxのColorをラップするだけ。こうす�
 		this.color = c;
 	}
 
+	public Color getValue() {
+		return this.get();
+	}
+
+	public void setValue (Color color) {
+		this.set(color);
+	}
 }

@@ -3,6 +3,7 @@ package RouteMapMaker;
 import java.util.ArrayList;
 import java.util.List;
 
+import RouteMapMaker.commands.Command;
 import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,14 +13,8 @@ public class MainURManager extends URElements {
 	
 	public static MainURManager urManager = new MainURManager();
 	
-	private ObservableList<canUR> MainCommandList = FXCollections.observableArrayList();
-	
 	public void push(ObservableList<Line.Connection> staList, int staIndex, Line.Connection removedCon,
 			ObservableList<Train> trains, ArrayList<Integer[]> removeList, ObservableList<TrainStop> stopValue){//DELETE_LINE
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		Station_Delete sd = new Station_Delete();
 		sd.staList = staList;
 		sd.staIndex = staIndex;
@@ -27,115 +22,46 @@ public class MainURManager extends URElements {
 		sd.trains = trains;
 		sd.removeList = removeList;
 		sd.stopValue = stopValue;
-		MainCommandList.add(sd);
-		undoable.set(true);
-		redoable.set(false);
+		push(sd);
 	}
 	public void push(ObservableList<Station> staList,Station oldSta,Station newSta,int staIndex,
 				ObservableList<Train> trains,ArrayList<Integer[]> setList,ObservableList<TrainStop> stopValue){//Deconnect
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		Station_Deconnect sd = new Station_Deconnect(staList,oldSta,newSta,staIndex, trains, setList, stopValue);
-		MainCommandList.add(sd);
-		undoable.set(true);
-		redoable.set(false);
+		push(sd);
 	}
 	public void push(ObservableList<MvSta> movingStList){//moveStations
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		moveStations ms = new moveStations(movingStList);
-		MainCommandList.add(ms);
-		undoable.set(true);
-		redoable.set(false);
+		push(ms);
 	}
 	public void push(Train train, StopMark oldMark, StopMark newMark){
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		setTrainMark tm = new setTrainMark(train,oldMark,newMark);
-		MainCommandList.add(tm);
-		undoable.set(true);
-		redoable.set(false);
+		push(tm);
 	}
 	public void push(TrainStop stop, StopMark oldMark, StopMark newMark){
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		setStopMark sm = new setStopMark(stop,oldMark,newMark);
-		MainCommandList.add(sm);
-		undoable.set(true);
-		redoable.set(false);
+		push(sm);
 	}
 	public void push(Train train, DoubleArrayWrapper oldArray, DoubleArrayWrapper newArray){
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		setLineDashes sl = new setLineDashes(train, oldArray, newArray);
-		MainCommandList.add(sl);
-		undoable.set(true);
-		redoable.set(false);
+		push(sl);
 	}
 	public void push(ObservableList<DoubleProperty> props, ObservableList<Double> oldVals, ObservableList<Double> newVals,
 			double[] oldSize, double[] newSize, UIController uic){
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		transform tf = new transform(props, oldVals, newVals, oldSize, newSize,uic);
-		MainCommandList.add(tf);
-		undoable.set(true);
-		redoable.set(false);
+		push(tf);
 	}
 	public void push(List<Line.Connection> connections, List<TrainStop> stops,
 			Station prevSta, Station replacing, boolean fixed){
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		IntegrateSta is = new IntegrateSta(connections, stops, prevSta, replacing, fixed);
-		MainCommandList.add(is);
-		undoable.set(true);
-		redoable.set(false);
+		push(is);
 	}
 	public void push(Background prev, Background replaced, Background target) {
-		undoTypeStack.push(Type.SUBCLASS);
-		undoIndexStack.push(MainCommandList.size());
-		redoTypeStack.clear();
-		redoIndexStack.clear();
 		SetBackground sbg = new SetBackground(prev, replaced, target);
-		MainCommandList.add(sbg);
-		undoable.set(true);
-		redoable.set(false);
-	}
-	@Override
-	public void undo(){
-		super.undo();
-		if(type == URElements.Type.SUBCLASS){
-			MainCommandList.get(index).undo();
-		}
-	}
-	@Override
-	public void redo(){
-		super.redo();
-		if(type == URElements.Type.SUBCLASS){
-			MainCommandList.get(index).redo();
-		}
-	}
+		push(sbg);
+	}	
 	
-	
-	interface canUR{//各命令を保持する内部クラス群はすべてコレを実装する。
-		void undo();
-		void redo();
-	}
 	//以下、各命令を保持する内部クラス群
-	public class Station_Delete implements canUR{
+	public class Station_Delete implements Command{
 		ObservableList<Line.Connection> staList;
 		int staIndex;
 		Line.Connection removedCon;
@@ -161,8 +87,12 @@ public class MainURManager extends URElements {
 				trains.get(removeIndex[0].intValue()).getStops().remove(removeIndex[1].intValue());
 			}
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class Station_Deconnect implements canUR{
+	public class Station_Deconnect implements Command{
 		ObservableList<Station> staList;
 		Station oldSta;//置き換え前の駅
 		Station newSta;//接続を切った後の新駅
@@ -198,8 +128,12 @@ public class MainURManager extends URElements {
 				trains.get(setIndex[0].intValue()).getStops().set(setIndex[1].intValue(), stopValue.get(i * 2 + 1));
 			}
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class moveStations implements canUR{
+	public class moveStations implements Command{
 		//MvStaオブジェクトをそのまま使うと外部から変更された時にヤバイので全て値をコピーして使います。
 		ObservableList<Station> station = FXCollections.observableArrayList();
 		ObservableList<Boolean> isSet = FXCollections.observableArrayList();//変更前の状態（変更後は必ずtrueなので）
@@ -232,8 +166,12 @@ public class MainURManager extends URElements {
 				station.get(i).setPoint(afterX.get(i), afterY.get(i));
 			}
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class setTrainMark implements canUR{
+	public class setTrainMark implements Command{
 		Train train;
 		StopMark oldMark;
 		StopMark newMark;
@@ -252,8 +190,12 @@ public class MainURManager extends URElements {
 			// TODO Auto-generated method stub
 			train.setMark(newMark);
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class setStopMark implements canUR{
+	public class setStopMark implements Command{
 		TrainStop stop;
 		StopMark oldMark;
 		StopMark newMark;
@@ -272,8 +214,12 @@ public class MainURManager extends URElements {
 			// TODO Auto-generated method stub
 			stop.setMark(newMark);
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class setLineDashes implements canUR{
+	public class setLineDashes implements Command{
 		Train train;
 		DoubleArrayWrapper oldArray;
 		DoubleArrayWrapper newArray;
@@ -292,8 +238,12 @@ public class MainURManager extends URElements {
 			// TODO Auto-generated method stub
 			train.setLineDash(newArray);
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class transform implements canUR{
+	public class transform implements Command{
 		ObservableList<DoubleProperty> props = FXCollections.observableArrayList();
 		ObservableList<Double> oldVals = FXCollections.observableArrayList();
 		ObservableList<Double> newVals = FXCollections.observableArrayList();
@@ -325,8 +275,12 @@ public class MainURManager extends URElements {
 			}
 			uic.canvasOriginal = newSize;
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class IntegrateSta implements canUR{
+	public class IntegrateSta implements Command{
 		List<Line.Connection> connections; //置き換える駅のConnectionの配列
 		List<TrainStop> stops; //置き換える駅を含んだTrainStopの配列
 		Station prevSta;//置き換え前
@@ -353,8 +307,12 @@ public class MainURManager extends URElements {
 			connections.forEach(c -> c.station = replacing);
 			stops.forEach(s -> s.setSta(replacing));
 		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
+		}
 	}
-	public class SetBackground implements canUR {
+	public class SetBackground implements Command {
 		Background prevBg, replacedBg, target;
 		SetBackground(Background prev, Background replaced, Background target) {
 			this.prevBg = prev;
@@ -368,6 +326,10 @@ public class MainURManager extends URElements {
 		@Override
 		public void redo() {
 			target.copyParams(replacedBg);
+		}
+
+		public void execute() {
+			throw new UnsupportedOperationException("Execute is not supported.");
 		}
 	}
 }

@@ -10,16 +10,17 @@ import RouteMapMaker.Factories.AlertFactory;
 import RouteMapMaker.Factories.SceneFactory;
 import RouteMapMaker.Factories.SelectFontFactory;
 import RouteMapMaker.Factories.View;
-import RouteMapMaker.URElements.ArrayCommands;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.value.ChangeListener;
+import RouteMapMaker.commands.AddListItemCommand;
+import RouteMapMaker.commands.Command;
+import RouteMapMaker.commands.RemoveListItemCommand;
+import RouteMapMaker.commands.ValueSetCommand;
+import RouteMapMaker.commands.SwapListItemDownCommand;
+import RouteMapMaker.commands.SwapListItemUpCommand;
+import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
@@ -37,7 +38,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Rectangle;
@@ -46,7 +46,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser.ExtensionFilter;
 
@@ -132,23 +131,26 @@ public class CustomMarkController implements Initializable{
 		MarkAdd.setOnAction((ActionEvent) ->{//空のマークを追加する。
 			System.out.println("add called.");
 			StopMark newMark = new StopMark();
-			urManager.push(customMarks, URElements.ArrayCommands.ADD, customMarks.size(), newMark);
-			customMarks.add(newMark);
+			Command command = new AddListItemCommand<>(customMarks, newMark);
+			command.execute();
+			urManager.push(command);
 			MarkList.getSelectionModel().selectLast();
 		});
 		MarkCopy.setOnAction((ActionEvent) ->{//マークをコピー
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				StopMark cloneMark = customMarks.get(index).clone();
-				urManager.push(customMarks, URElements.ArrayCommands.ADD, customMarks.size(), cloneMark);
-				customMarks.add(cloneMark);
+				Command command = new AddListItemCommand<>(customMarks, cloneMark);
+				command.execute();
+				urManager.push(command);
 			}
 		});
 		MarkDelete.setOnAction((ActionEvent) ->{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
-				urManager.push(customMarks, URElements.ArrayCommands.REMOVE, index, customMarks.get(index));
-				customMarks.remove(index);
+				Command command = new RemoveListItemCommand<>(customMarks, index);
+				command.execute();
+				urManager.push(command);
 			}
 		});
 		prevbgSetter.setValue(Color.BLACK);//初期値は黒。
@@ -159,9 +161,9 @@ public class CustomMarkController implements Initializable{
 			int indexM = MarkList.getSelectionModel().getSelectedIndex();
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
-				urManager.push(customMarks.get(indexM).getLayers().get(indexL).getColorProperty(),
-						customMarks.get(indexM).getLayers().get(indexL).getColor(), paramColor.getValue());
-				customMarks.get(indexM).getLayers().get(indexL).setColor(paramColor.getValue());
+				Command command = new ValueSetCommand<>(customMarks.get(indexM).getLayers().get(indexL).getColorProperty(), paramColor.getValue());
+				command.execute();
+				urManager.push(command);
 			}
 			draw();
 		});
@@ -174,12 +176,18 @@ public class CustomMarkController implements Initializable{
 			if(indexM != -1 && indexL != -1){
 				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
 				if(paramDraw.getSelectionModel().getSelectedIndex() == 0){
-					if(l.getPaint() == MarkLayer.STROKE) urManager.push(l.getPaintProperty(), MarkLayer.STROKE, MarkLayer.FILL);
-					l.setPaint(MarkLayer.FILL);
+					if (l.getPaint() == MarkLayer.STROKE) {
+						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.STROKE, MarkLayer.FILL);
+						command.execute();
+						urManager.push(command);
+					}
 				}
 				if(paramDraw.getSelectionModel().getSelectedIndex() == 1){
-					if(l.getPaint() == MarkLayer.FILL) urManager.push(l.getPaintProperty(), MarkLayer.FILL, MarkLayer.STROKE);
-					l.setPaint(MarkLayer.STROKE);
+					if (l.getPaint() == MarkLayer.FILL) {
+						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.FILL, MarkLayer.STROKE);
+						command.execute();
+						urManager.push(command);
+					}
 				}
 				//レイヤーリスト更新
 				setLayerList(MarkList.getSelectionModel().getSelectedItem());
@@ -201,19 +209,25 @@ public class CustomMarkController implements Initializable{
 			if(indexM != -1 && indexL != -1 && selectedIndex != -1){
 				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
 				if(l.getType() == MarkLayer.ARC){
-					if((int)l.getParam(7) != paramST.getSelectionModel().getSelectedIndex())
-						urManager.push(l.getParamProperty().get(7), l.getParam(7), (double)selectedIndex);
-					l.setParam(7, (double) paramST.getSelectionModel().getSelectedIndex());
+					if((int)l.getParam(7) != paramST.getSelectionModel().getSelectedIndex()) {
+						Command command = new ValueSetCommand<>(l.getParamProperty().get(7), (double)selectedIndex);
+						command.execute();
+						urManager.push(command);
+					}
 				}
 				if(l.getType() == MarkLayer.TEXT){
-					if((int)l.getParam(4) != paramST.getSelectionModel().getSelectedIndex())
-						urManager.push(l.getParamProperty().get(4), l.getParam(4), (double)selectedIndex);
-					l.setParam(4, (double) paramST.getSelectionModel().getSelectedIndex());
+					if((int)l.getParam(4) != paramST.getSelectionModel().getSelectedIndex()) {
+						Command command = new ValueSetCommand<>(l.getParamProperty().get(4), (double)selectedIndex);
+						command.execute();
+						urManager.push(command);
+					}
 				}
 				if(l.getType() == MarkLayer.LINE){
-					if((int)l.getParam(5) != paramST.getSelectionModel().getSelectedIndex())
-						urManager.push(l.getParamProperty().get(5), l.getParam(5), (double)selectedIndex);
-					l.setParam(5, (double) paramST.getSelectionModel().getSelectedIndex());
+					if((int)l.getParam(5) != paramST.getSelectionModel().getSelectedIndex()) {
+						Command command = new ValueSetCommand<>(l.getParamProperty().get(5), (double)selectedIndex);
+						command.execute();
+						urManager.push(command);
+					}
 				}
 				draw();
 			}
@@ -235,8 +249,11 @@ public class CustomMarkController implements Initializable{
 				}else{
 					newFont = current;
 				}
-				if(! current.equals(newFont))urManager.push(l.getFontNameProperty(), current, newFont);
-				l.setFontName(newFont);
+				if (!current.equals(newFont)) {
+					Command command = new ValueSetCommand<>(l.getFontNameProperty(), current, newFont);
+					command.execute();
+					urManager.push(command);
+				}
 			}
 			draw();
 		});
@@ -244,10 +261,13 @@ public class CustomMarkController implements Initializable{
 			int indexM = MarkList.getSelectionModel().getSelectedIndex();
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getText() != paramText.getText())
-				urManager.push(customMarks.get(indexM).getLayers().get(indexL).getTextProperty(),
-						customMarks.get(indexM).getLayers().get(indexL).getText(), paramText.getText());
-				customMarks.get(indexM).getLayers().get(indexL).setText(paramText.getText());
+				MarkLayer layer = customMarks.get(indexM).getLayers().get(indexL);
+
+				if (layer.getText() != paramText.getText()) {
+					Command command = new ValueSetCommand<>(layer.getTextProperty(), paramText.getText());
+					command.execute();
+					urManager.push(command);
+				}
 				draw();
 			}
 		});
@@ -263,9 +283,9 @@ public class CustomMarkController implements Initializable{
 				newOval.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
 				newOval.setPaint(MarkLayer.FILL);
 				newOval.setColor(Color.WHITE);
-				urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-						customMarks.get(index).getLayers().size(), newOval);
-				customMarks.get(index).getLayers().add(newOval);
+				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newOval);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -285,9 +305,9 @@ public class CustomMarkController implements Initializable{
 				newRect.addParam(0.05);//lineWidth
 				newRect.setPaint(MarkLayer.FILL);
 				newRect.setColor(Color.WHITE);
-				urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-						customMarks.get(index).getLayers().size(), newRect);
-				customMarks.get(index).getLayers().add(newRect);
+				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newRect);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -304,9 +324,9 @@ public class CustomMarkController implements Initializable{
 				newLine.addParam(0.05);//lineWidth
 				newLine.addParam(0);//端はSQUARE
 				newLine.setColor(Color.WHITE);
-				urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-						customMarks.get(index).getLayers().size(), newLine);
-				customMarks.get(index).getLayers().add(newLine);
+				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newLine);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -327,9 +347,9 @@ public class CustomMarkController implements Initializable{
 				newArc.addParam(2.0);//closure
 				newArc.setPaint(MarkLayer.FILL);
 				newArc.setColor(Color.WHITE);
-				urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-						customMarks.get(index).getLayers().size(), newArc);
-				customMarks.get(index).getLayers().add(newArc);
+				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newArc);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -349,9 +369,9 @@ public class CustomMarkController implements Initializable{
 				newText.setColor(Color.WHITE);
 				newText.setText("※");
 				newText.setFontName("system");
-				urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-						customMarks.get(index).getLayers().size(), newText);
-				customMarks.get(index).getLayers().add(newText);
+				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newText);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -394,9 +414,9 @@ public class CustomMarkController implements Initializable{
 								newImage.addParam(1.0);//幅
 								newImage.addParam(h/w);//高さ
 							}
-							urManager.push(customMarks.get(index).getLayers(), URElements.ArrayCommands.ADD,
-									customMarks.get(index).getLayers().size(), newImage);
-							customMarks.get(index).getLayers().add(newImage);
+							Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newImage);
+							command.execute();
+							urManager.push(command);
 							setLayerList(customMarks.get(index));
 							LayerList.getSelectionModel().selectLast();
 							draw();
@@ -432,9 +452,9 @@ public class CustomMarkController implements Initializable{
 			int indexM = MarkList.getSelectionModel().getSelectedIndex();
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
-				urManager.push(customMarks.get(indexM).getLayers(), URElements.ArrayCommands.REMOVE,
-						indexL, customMarks.get(indexM).getLayers().get(indexL));
-				customMarks.get(indexM).getLayers().remove(indexL);
+				Command command = new RemoveListItemCommand<>(customMarks.get(indexM).getLayers(), indexL);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(indexM));
 				if(customMarks.get(indexM).getLayers().size() == 0){
 					paramColor.setDisable(true);
@@ -451,11 +471,9 @@ public class CustomMarkController implements Initializable{
 			int indexM = MarkList.getSelectionModel().getSelectedIndex();
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL > 0){//indexLが0だとコレは意味を持たない
-				urManager.push(customMarks.get(indexM).getLayers(), URElements.ArrayCommands.UP, indexL, null);
-				MarkLayer l1 = customMarks.get(indexM).getLayers().get(indexL);
-				MarkLayer l2 = customMarks.get(indexM).getLayers().get(indexL - 1);
-				customMarks.get(indexM).getLayers().set(indexL - 1, l1);
-				customMarks.get(indexM).getLayers().set(indexL, l2);
+				Command command = new SwapListItemUpCommand<>(customMarks.get(indexM).getLayers(), indexL);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(indexM));
 				LayerList.getSelectionModel().select(indexL - 1);
 				draw();
@@ -466,11 +484,9 @@ public class CustomMarkController implements Initializable{
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1 && indexL != customMarks.get(indexM).getLayers().size() - 1){
 				//indexLが最後だとコレは意味を持たない
-				urManager.push(customMarks.get(indexM).getLayers(), URElements.ArrayCommands.DOWN, indexL, null);
-				MarkLayer l1 = customMarks.get(indexM).getLayers().get(indexL);
-				MarkLayer l2 = customMarks.get(indexM).getLayers().get(indexL + 1);
-				customMarks.get(indexM).getLayers().set(indexL + 1, l1);
-				customMarks.get(indexM).getLayers().set(indexL, l2);
+				Command command = new SwapListItemDownCommand<>(customMarks.get(indexM).getLayers(), indexL);
+				command.execute();
+				urManager.push(command);
 				setLayerList(customMarks.get(indexM));
 				LayerList.getSelectionModel().select(indexL + 1);
 				draw();
@@ -479,8 +495,10 @@ public class CustomMarkController implements Initializable{
 		rotateMark.setOnAction((ActionEvent)->{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
-				customMarks.get(index).setRotate(rotateMark.isSelected());
-				urManager.push(customMarks.get(index).getRotateProperty(), rotateMark.isSelected());
+				BooleanProperty property = customMarks.get(index).getRotateProperty();
+				Command command = new ValueSetCommand<>(property, rotateMark.isSelected());
+				command.execute();
+				urManager.push(command);
 			}
 		});
 		Undo.setOnAction((ActionEvent)->{
@@ -783,149 +801,57 @@ public class CustomMarkController implements Initializable{
 	}
 	void setParamsReactions(){//Spinnerのジェネリクス縛り等の関係で全部手書きという頭悪いことしかうまくいかないのでここに隔離します。
 		paramS1.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[0] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(0) * prevSize){
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).
-							getParamProperty().get(0),oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					}
-					customMarks.get(indexM).getLayers().get(indexL).setParam(0, (double) (paramS1.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(0)) 
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).
-							getParamProperty().get(0),oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(0, (double) (paramS1.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(0, oldValue, newValue);
 		});
 		paramS2.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[1] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(1) * prevSize)
-					urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(1),
-							oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(1, (double) (paramS2.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(1))
-					urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(1),
-							oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(1, (double) (paramS2.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(1, oldValue, newValue);
 		});
 		paramS3.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[2] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(2) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(2),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(2, (double) (paramS3.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(2))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(2),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(2, (double) (paramS3.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(2, oldValue, newValue);
 		});
 		paramS4.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[3] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(3) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(3),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(3, (double) (paramS4.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(3))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(3),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(3, (double) (paramS4.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(3, oldValue, newValue);
 		});
 		paramS5.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[4] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(4) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(4),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(4, (double) (paramS5.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(4))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(4),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(4, (double) (paramS5.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(4, oldValue, newValue);
 		});
 		paramS6.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[5] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(5) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(5),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(5, (double) (paramS6.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(5))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(5),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(5, (double) (paramS6.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(5, oldValue, newValue);
 		});
 		paramS7.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[6] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(6) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(6),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(6, (double) (paramS7.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(6))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(6),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(6, (double) (paramS7.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(6, oldValue, newValue);
 		});
 		paramS8.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				if(customMarks.get(indexM).getLayers().get(indexL).getParamsProportion()[7] == true){
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(7) * prevSize)
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(7),
-								oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-					customMarks.get(indexM).getLayers().get(indexL).setParam(7, (double) (paramS8.getValue()) / prevSize);
-				}else{
-					if(oldValue == customMarks.get(indexM).getLayers().get(indexL).getParam(7))
-						urManager.push(customMarks.get(indexM).getLayers().get(indexL).getParamProperty().get(7),
-								oldValue.doubleValue(), newValue.doubleValue());
-					customMarks.get(indexM).getLayers().get(indexL).setParam(7, (double) (paramS8.getValue()));
-				}
-				draw();
-			}
+			parameterChanged(7, oldValue, newValue);
 		});
+	}
+
+	private void parameterChanged(int index, Integer oldValue, Integer newValue) {
+		int markIndex = MarkList.getSelectionModel().getSelectedIndex();
+		int layerIndex = LayerList.getSelectionModel().getSelectedIndex();
+
+		if (markIndex == -1 || layerIndex == -1) {
+			return;
+		}
+
+		MarkLayer layer = customMarks.get(markIndex).getLayers().get(layerIndex);
+
+		if (layer.getParamsProportion()[index]) {
+			if (oldValue == layer.getParam(index) * prevSize) {
+				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
+						oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
+				command.execute();
+				urManager.push(command);
+			}
+		} else {
+			if (oldValue == layer.getParam(index)) {
+				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
+						oldValue.doubleValue(), newValue.doubleValue());
+				command.execute();
+				urManager.push(command);
+			}
+		}
+
+		draw();
 	}
 }
