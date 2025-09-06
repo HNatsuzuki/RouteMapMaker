@@ -2,8 +2,10 @@ package RouteMapMaker;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -23,16 +25,28 @@ public class Line {//路線の情報を保持するクラス。
 	public static final int BOTTOM = 3;
 	public static final int CENTER = 4;
 	
-	class Connection {
-		Station station;
+	public class Connection {
+		private ObjectProperty<Station> station = new SimpleObjectProperty<>();
 		BooleanProperty curve;
 		Connection(Station s, boolean c) {
-			station = s;
+			station.set(s);
 			curve = new SimpleBooleanProperty(c);
 		}
 		Connection(Station s) {
-			station = s;
+			station.set(s);
 			curve = new SimpleBooleanProperty(false);
+		}
+
+		public ObjectProperty<Station> getStationProperty() {
+			return this.station;
+		}
+
+		public Station getStation() {
+			return this.station.get();
+		}
+
+		public void setStation(Station station) {
+			this.station.set(station);
 		}
 	};
 	
@@ -68,7 +82,7 @@ public class Line {//路線の情報を保持するクラス。
 	// ここで得られるListは編集可能ではないので注意
 	public ObservableList<Station> getStations(){
 		ObservableList<Station> staList = FXCollections.observableArrayList();
-		connections.forEach(c -> staList.add(c.station));
+		connections.forEach(c -> staList.add(c.station.get()));
 		return staList;
 	}
 	public void setStations(ObservableList<Station> st){
@@ -167,7 +181,7 @@ public class Line {//路線の情報を保持するクラス。
 	}
 	public boolean isCurvable(int idx) {
 		return idx>1 && connections.size()-idx>1 && //端条件
-				connections.get(idx-1).station.isSet() && connections.get(idx).station.isSet() && //固定条件
+				connections.get(idx-1).station.get().isSet() && connections.get(idx).station.get().isSet() && //固定条件
 				!connections.get(idx-1).curve.get() && !connections.get(idx+1).curve.get(); //連続条件
 	}
 	public boolean getCurveConnection(int idx) {

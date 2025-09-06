@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.commands.Command;
+import RouteMapMaker.commands.TransformCommand;
 import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -109,7 +111,8 @@ public class TransformController implements Initializable {
 							newVals.add(item.getParams()[1].get());
 						}
 					}
-					urManager.push(props, oldVals, newVals, originalSize, canvasSize, uic);
+					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
+					urManager.push(command);
 					System.out.println("pushed.");
 					uic.ReDraw();
 					stage.close();
@@ -195,7 +198,8 @@ public class TransformController implements Initializable {
 							newVals.add(item.getParams()[1].get());
 						}
 					}
-					urManager.push(props, oldVals, newVals, originalSize, canvasSize, uic);
+					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
+					urManager.push(command);
 					uic.ReDraw();
 					stage.close();
 				}catch(NumberFormatException e){
