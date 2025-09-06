@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.services;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;

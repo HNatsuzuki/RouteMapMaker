@@ -106,9 +106,6 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
-import RouteMapMaker.ErrorReporter;
-import RouteMapMaker.IntegerSpinnerEventHandler;
-import RouteMapMaker.MainURManager;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
@@ -138,6 +135,9 @@ import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
+import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.IntegerSpinnerEventHandler;
+import RouteMapMaker.services.MainURManager;
 
 public class UIController implements Initializable{
 	

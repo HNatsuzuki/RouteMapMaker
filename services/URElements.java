@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.services;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

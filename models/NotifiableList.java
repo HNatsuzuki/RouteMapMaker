@@ -1,10 +1,10 @@
 package RouteMapMaker.models;
 
-import RouteMapMaker.URElements;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.SetListItemCommand;
+import RouteMapMaker.services.URElements;
 import javafx.beans.property.SimpleListProperty;
 
 public class NotifiableList<E> extends SimpleListProperty<E> {//これを使うとURElementsへの通知を自動でやります。

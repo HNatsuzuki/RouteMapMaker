@@ -6,6 +6,8 @@ import RouteMapMaker.controllers.UIController;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.MainURManager;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;

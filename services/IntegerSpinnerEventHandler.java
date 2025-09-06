@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.services;
 
 import javafx.event.EventHandler;
 import javafx.scene.control.Spinner;
