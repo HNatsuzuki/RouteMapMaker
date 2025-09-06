@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.Station;
-import RouteMapMaker.StopMark;
-import RouteMapMaker.TrainStop;
+import RouteMapMaker.models.Station;
+import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TrainStop;
 
 /**
  * TrainStop のリストと Properties の相互変換を行うクラスです。

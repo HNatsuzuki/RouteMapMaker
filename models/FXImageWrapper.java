@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 import javafx.scene.image.Image;
 

@@ -3,11 +3,11 @@ package RouteMapMaker.converters;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.DoubleArrayWrapper;
-import RouteMapMaker.Line;
-import RouteMapMaker.Station;
-import RouteMapMaker.StopMark;
-import RouteMapMaker.Train;
+import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Station;
+import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.Train;
 import javafx.scene.paint.Color;
 
 /**

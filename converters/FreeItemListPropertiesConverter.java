@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import RouteMapMaker.FreeItem;
+import RouteMapMaker.models.FreeItem;
 import javafx.scene.image.Image;
 
 /**

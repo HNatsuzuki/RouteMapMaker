@@ -3,8 +3,8 @@ package RouteMapMaker.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import RouteMapMaker.MvSta;
-import RouteMapMaker.Station;
+import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.Station;
 
 /**
  * undo, redo が可能な、駅を移動するコマンドです。

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.DoubleArrayWrapper;
+import RouteMapMaker.models.DoubleArrayWrapper;
 
 /**
  * LineDash (DoubleArrayWrapper) のリストと Properties の相互変換を行うクラスです。

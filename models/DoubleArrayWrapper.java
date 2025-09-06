@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 public class DoubleArrayWrapper {
 	private double[] da;

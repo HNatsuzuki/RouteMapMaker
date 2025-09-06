@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.StopMark;
+import RouteMapMaker.models.StopMark;
 import javafx.scene.image.Image;
 
 /**

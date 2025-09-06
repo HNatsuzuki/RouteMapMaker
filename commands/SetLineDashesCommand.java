@@ -1,7 +1,7 @@
 package RouteMapMaker.commands;
 
-import RouteMapMaker.DoubleArrayWrapper;
-import RouteMapMaker.Train;
+import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.Train;
 
 public class SetLineDashesCommand implements Command {
     private final Train train;

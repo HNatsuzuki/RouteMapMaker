@@ -1,6 +1,6 @@
 package RouteMapMaker.factories;
 
-import RouteMapMaker.Configuration;
+import RouteMapMaker.models.Configuration;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 

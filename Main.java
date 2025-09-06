@@ -4,16 +4,14 @@ import java.util.Optional;
 
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
+import RouteMapMaker.models.Configuration;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.image.Image;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
 import javafx.fxml.FXMLLoader;
 
 

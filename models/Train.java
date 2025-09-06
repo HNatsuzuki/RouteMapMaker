@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;

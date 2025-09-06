@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.MarkLayer;
+import RouteMapMaker.models.MarkLayer;
 import javafx.scene.image.Image;
 
 /**

@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import RouteMapMaker.MarkLayer;
-import RouteMapMaker.StopMark;
+import RouteMapMaker.models.MarkLayer;
+import RouteMapMaker.models.StopMark;
 import javafx.scene.image.Image;
 
 /**

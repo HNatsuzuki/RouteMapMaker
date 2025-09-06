@@ -1,5 +1,6 @@
 package RouteMapMaker;
 
+import RouteMapMaker.models.StopMark;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListCell;
@@ -7,7 +8,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
 import javafx.util.Callback;
 
 public class StopMarkCell extends ListCell<StopMark> implements Callback<ListView<StopMark>, ListCell<StopMark>>{

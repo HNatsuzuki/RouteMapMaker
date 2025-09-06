@@ -2,9 +2,9 @@ package RouteMapMaker.commands;
 
 import java.util.List;
 
-import RouteMapMaker.Line;
-import RouteMapMaker.Station;
-import RouteMapMaker.TrainStop;
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Station;
+import RouteMapMaker.models.TrainStop;
 
 /**
  * undo, redo が可能な、駅統合コマンドです。

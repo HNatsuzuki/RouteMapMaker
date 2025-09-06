@@ -3,8 +3,8 @@ package RouteMapMaker.converters;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.Line;
-import RouteMapMaker.Station;
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Station;
 
 /**
  * Station のリストと Properties の相互変換を行うクラスです。

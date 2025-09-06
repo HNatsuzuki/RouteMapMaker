@@ -1,6 +1,4 @@
-package RouteMapMaker;
-
-import java.util.ArrayList;
+package RouteMapMaker.models;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;

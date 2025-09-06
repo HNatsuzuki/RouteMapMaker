@@ -1,9 +1,12 @@
 package RouteMapMaker;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.Train;
+import RouteMapMaker.models.TrainStop;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;

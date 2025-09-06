@@ -1,6 +1,6 @@
 package RouteMapMaker.commands;
 
-import RouteMapMaker.Background;
+import RouteMapMaker.models.Background;
 
 public class SetBackgroundCommand implements Command {
     private final Background prevBg, replacedBg, target;

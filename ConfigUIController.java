@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
+import RouteMapMaker.models.Configuration;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;

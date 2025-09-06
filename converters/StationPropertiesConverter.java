@@ -2,7 +2,7 @@ package RouteMapMaker.converters;
 
 import java.util.Properties;
 
-import RouteMapMaker.Station;
+import RouteMapMaker.models.Station;
 
 /**
  * Station と Properties の相互変換を行うクラスです。

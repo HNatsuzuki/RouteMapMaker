@@ -11,13 +11,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,9 +26,7 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
-import javafx.beans.binding.DoubleBinding;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
@@ -61,24 +56,20 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -132,6 +123,16 @@ import RouteMapMaker.file.ErmFileWriter;
 import RouteMapMaker.file.RmmFileReader;
 import RouteMapMaker.file.RmmFileWriter;
 import RouteMapMaker.file.SaveData;
+import RouteMapMaker.models.Background;
+import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.FreeItem;
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.Station;
+import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.Train;
+import RouteMapMaker.models.TrainStop;
 
 public class UIController implements Initializable{
 	
@@ -741,7 +742,7 @@ public class UIController implements Initializable{
 		staCurveConnection.setOnAction((ActionEvent)->{
 			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			BooleanProperty cp = lineList.get(indexR).getConnections().get(indexS).curve;
+			BooleanProperty cp = lineList.get(indexR).getConnections().get(indexS).getCurve();
 			Command command = new ValueSetCommand<>(cp, staCurveConnection.isSelected());
 			command.execute();
 			urManager.push(command);
@@ -880,13 +881,12 @@ public class UIController implements Initializable{
 			lineDraw();
 		});
 		
-		bgColor_CP.setValue(background.color);
+		bgColor_CP.setValue(background.getColor());
 		bgColor_CP.setOnAction((ActionEvent) ->{
 			// undo stackにpushする必要があるか？
-			if(!bgColor_CP.getValue().equals(background.color) || background.image!=null) {
+			if(!bgColor_CP.getValue().equals(background.getColor()) || background.getImage()!=null) {
 				Background prev_bg = background.clone();
-				background.color = bgColor_CP.getValue();
-				background.image = null;
+				background.setColor(bgColor_CP.getValue());
 				updateBackgroundComponents();
 				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
 				urManager.push(command);
@@ -910,7 +910,7 @@ public class UIController implements Initializable{
 					return;
 				}
 				Background prev_bg = background.clone();
-				background.image = im;
+				background.setImage(im);
 				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
 				urManager.push(command);
 				updateBackgroundComponents();
@@ -935,10 +935,10 @@ public class UIController implements Initializable{
 			spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
 				if(isLoading) { return; }
 				Background prev_bg = background.clone();
-				if(spinner==bgImageX) {background.x = newVal;}
-				else if(spinner==bgImageY) {background.y = newVal;}
-				else if(spinner==bgImageSize) {background.zoomRatio = newVal;}
-				else if(spinner==bgImageOpacity) {background.opacity = newVal;}
+				if(spinner==bgImageX) {background.setX(newVal);}
+				else if(spinner==bgImageY) {background.setY(newVal);}
+				else if(spinner==bgImageSize) {background.setZoomRatio(newVal);}
+				else if(spinner==bgImageOpacity) {background.setOpacity(newVal);}
 				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
 				urManager.push(command);
 				lineDraw();
@@ -964,13 +964,13 @@ public class UIController implements Initializable{
 					}else{
 						startCoor[0] = movingSt.getPointUS()[0];//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
 						startCoor[1] = movingSt.getPointUS()[1];
-						boolean contain = movingStList.stream().filter(ms -> ms.sta==movingSt).count()>0;
+						boolean contain = movingStList.stream().filter(ms -> ms.getStation()==movingSt).count()>0;
 						if(contain && shortCutKeyPressed){//movingStListから選択されたものを削除する
 							//ConcurrentModificationExceptionを回避するためにIteratorを使う
 							Iterator<MvSta> iter = movingStList.iterator();
 							while(iter.hasNext()){
 								MvSta ms = iter.next();
-								if(ms.sta == movingSt) iter.remove();
+								if(ms.getStation() == movingSt) iter.remove();
 							}
 						}
 						if(! contain){
@@ -978,8 +978,7 @@ public class UIController implements Initializable{
 							movingStList.add(new MvSta(movingSt));
 						}
 						for(MvSta ms: movingStList){//start座標の更新
-							ms.start[0] = ms.sta.getPointUS()[0];
-							ms.start[1] = ms.sta.getPointUS()[1];
+							ms.setStart(ms.getStation().getPointUS());
 						}
 						draggedRect.setVisible(false);
 					}
@@ -1000,7 +999,7 @@ public class UIController implements Initializable{
 					if(movingSt != null){//特定の駅が選択されている時
 						//movingSt.setPoint(e.getX(), e.getY());
 						for(MvSta ms: movingStList){
-							ms.sta.setPoint(ms.start[0] + cc[0] - startCoor[0], ms.start[1] + cc[1] - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart()[0] + cc[0] - startCoor[0], ms.getStart()[1] + cc[1] - startCoor[1]);
 						}
 						//領域の自動拡大
 						if(canvas.getWidth() - e.getX() < canvasMargin) canvas.setWidth(e.getX() + canvasMargin);
@@ -1038,14 +1037,14 @@ public class UIController implements Initializable{
 						double mouseX = gridedPos[0];
 						double mouseY = gridedPos[1];
 						for(MvSta ms: movingStList){
-							ms.sta.setPoint(ms.start[0] + mouseX - startCoor[0], ms.start[1] + mouseY - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart()[0] + mouseX - startCoor[0], ms.getStart()[1] + mouseY - startCoor[1]);
 						}
 						//マウスが全く動いてないかつ全てがもともと座標固定駅だった場合はpushしてはならない
 						boolean shouldBePushed = false;
 						for(MvSta ms: movingStList){
 							//完全にイコールにするとすごく小さな値で差がついてしまう
-							if(! ms.isSet || Math.abs(ms.start[0] - ms.sta.getPoint()[0]) > 0.5  || 
-									Math.abs(ms.start[1] - ms.sta.getPoint()[1]) > 0.5){
+							if(! ms.getIsSet() || Math.abs(ms.getStart()[0] - ms.getStation().getPoint()[0]) > 0.5  || 
+									Math.abs(ms.getStart()[1] - ms.getStation().getPoint()[1]) > 0.5){
 								shouldBePushed = true;
 								break;
 							}
@@ -2062,15 +2061,15 @@ public class UIController implements Initializable{
 		// isLoadingを一時的にtrueにすることでspinnerのsetVauleに対する発火を抑える
 		final boolean isl = isLoading;
 		isLoading = true;
-		bgColor_CP.setValue(background.color);
-		bgImageX.getValueFactory().setValue(background.x);
-		bgImageY.getValueFactory().setValue(background.y);
-		bgImageSize.getValueFactory().setValue(background.zoomRatio);
-		bgImageOpacity.getValueFactory().setValue(background.opacity);
-		bgImageX.setDisable(background.image==null);
-		bgImageY.setDisable(background.image==null);
-		bgImageSize.setDisable(background.image==null);
-		bgImageOpacity.setDisable(background.image==null);
+		bgColor_CP.setValue(background.getColor());
+		bgImageX.getValueFactory().setValue(background.getX());
+		bgImageY.getValueFactory().setValue(background.getY());
+		bgImageSize.getValueFactory().setValue(background.getZoomRatio());
+		bgImageOpacity.getValueFactory().setValue(background.getZoomRatio());
+		bgImageX.setDisable(background.getImage()==null);
+		bgImageY.setDisable(background.getImage()==null);
+		bgImageSize.setDisable(background.getImage()==null);
+		bgImageOpacity.setDisable(background.getImage()==null);
 		isLoading = isl;
 	}
 
@@ -2343,7 +2342,7 @@ public class UIController implements Initializable{
 			for(Station sta: l.getStations()){
 				boolean contain = false;
 				for(MvSta ms: movingStList){
-					if(ms.sta == sta) contain = true;
+					if(ms.getStation() == sta) contain = true;
 				}
 				if(contain) { // 選択中
 					gc.setFill(Color.RED);
@@ -2400,14 +2399,14 @@ public class UIController implements Initializable{
 	
 	void drawBack() {
 		// 画像あるナシに関わらず背景色を設定
-		gc.setFill(background.color);
+		gc.setFill(background.getColor());
 		gc.fillRect(0, 0, canvasOriginal[0], canvasOriginal[1]);
-		if(background.image!=null) {
+		if(background.getImage()!=null) {
 			// 背景画像
-			double r = zoom*background.zoomRatio/100;
-			gc.setTransform(r, 0, 0, r, background.x*zoom, background.y*zoom);
-			gc.setGlobalAlpha(1-background.opacity/100.0);
-			gc.drawImage(background.image, 0, 0);
+			double r = zoom*background.getZoomRatio()/100;
+			gc.setTransform(r, 0, 0, r, background.getX()*zoom, background.getY()*zoom);
+			gc.setGlobalAlpha(1-background.getOpacity()/100.0);
+			gc.drawImage(background.getImage(), 0, 0);
 			gc.setTransform(zoom, 0, 0, zoom, 0, 0);
 			gc.setGlobalAlpha(1.0);
 		}
@@ -2911,7 +2910,7 @@ public class UIController implements Initializable{
 					if(x <= p[0] && p[0] <= x + w && y <= p[1] && p[1] <= y + h){
 						boolean contain = false;
 						for(MvSta ms: staList){
-							if(ms.sta == sta) contain = true;
+							if(ms.getStation() == sta) contain = true;
 						}
 						if(! contain) staList.add(new MvSta(sta));//重複対策
 					}

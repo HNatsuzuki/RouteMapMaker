@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.DoubleArrayWrapper;
-import RouteMapMaker.Station;
-import RouteMapMaker.StopMark;
-import RouteMapMaker.Train;
+import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.Station;
+import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.Train;
 
 /**
  * Train のリストと Properties の相互変換を行うクラスです。

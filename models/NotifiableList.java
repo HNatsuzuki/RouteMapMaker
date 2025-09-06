@@ -1,5 +1,6 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
+import RouteMapMaker.URElements;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;

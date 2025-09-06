@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 import java.util.HashMap;
 import java.util.Properties;

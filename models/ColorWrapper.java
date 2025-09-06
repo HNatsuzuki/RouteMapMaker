@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 import javafx.beans.value.WritableValue;
 import javafx.scene.paint.Color;

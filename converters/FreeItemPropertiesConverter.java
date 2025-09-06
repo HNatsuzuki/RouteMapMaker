@@ -3,7 +3,7 @@ package RouteMapMaker.converters;
 import java.util.Map;
 import java.util.Properties;
 
-import RouteMapMaker.FreeItem;
+import RouteMapMaker.models.FreeItem;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 

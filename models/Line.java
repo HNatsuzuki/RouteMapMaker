@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.models;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -39,6 +39,10 @@ public class Line {//路線の情報を保持するクラス。
 
 		public ObjectProperty<Station> getStationProperty() {
 			return this.station;
+		}
+
+		public BooleanProperty getCurve() {
+			return this.curve;
 		}
 
 		public Station getStation() {

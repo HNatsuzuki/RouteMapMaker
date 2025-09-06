@@ -1,6 +1,6 @@
 package RouteMapMaker.factories;
 
-import RouteMapMaker.Configuration;
+import RouteMapMaker.models.Configuration;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Alert.AlertType;

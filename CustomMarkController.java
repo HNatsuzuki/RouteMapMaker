@@ -10,6 +10,8 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
+import RouteMapMaker.models.MarkLayer;
+import RouteMapMaker.models.StopMark;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;
