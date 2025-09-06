@@ -1,5 +1,6 @@
 package RouteMapMaker;
 
+import RouteMapMaker.controllers.CustomMarkController;
 import RouteMapMaker.models.StopMark;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;

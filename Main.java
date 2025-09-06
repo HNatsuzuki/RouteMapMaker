@@ -2,6 +2,7 @@ package RouteMapMaker;
 	
 import java.util.Optional;
 
+import RouteMapMaker.controllers.UIController;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.models.Configuration;

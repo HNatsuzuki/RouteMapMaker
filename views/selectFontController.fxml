@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="RouteMapMaker.selectFontController">
+<VBox prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="RouteMapMaker.controllers.SelectFontController">
   <children>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="281.0" prefWidth="418.0" VBox.vgrow="ALWAYS">
          <children>

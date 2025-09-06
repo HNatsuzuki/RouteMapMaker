@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.awt.Desktop;
 import java.io.BufferedInputStream;
@@ -106,6 +106,11 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
+import RouteMapMaker.ErrorReporter;
+import RouteMapMaker.IntegerSpinnerEventHandler;
+import RouteMapMaker.LineDashCell;
+import RouteMapMaker.MainURManager;
+import RouteMapMaker.StopMarkCell;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
@@ -3120,7 +3125,7 @@ public class UIController implements Initializable{
 
 		return new SaveData(p, images);
 	}
-	void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
+	public void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
 		this.mainStage = s;//結局使ってません
 	}
 	double[][] shiftPoint(double[] ini, double[] last, int zure){//線分の両端の座標を与えてzureの分だけずらした線分の両端の点を与える
@@ -3151,7 +3156,7 @@ public class UIController implements Initializable{
 		}
 	}
 	void editTrainStops(Line l, Train t){//系統の停車駅編集は処理が長く色んな所で使うのでメソッド化
-		editUIController euc = null;
+		EditUIController euc = null;
 		FXMLLoader editLoader = null;
 		Stage editStage = new Stage();
 		editStage.initModality(Modality.APPLICATION_MODAL);
@@ -3160,8 +3165,8 @@ public class UIController implements Initializable{
 		try {
 			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/editUIController.fxml"));
 			editLoader.setControllerFactory(param -> {
-				if (param == editUIController.class) {
-					return new editUIController(alertFactory);
+				if (param == EditUIController.class) {
+					return new EditUIController(alertFactory);
 				} else {
 					throw new RuntimeException();
 				}
@@ -3171,7 +3176,7 @@ public class UIController implements Initializable{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		euc = (editUIController)editLoader.getController();
+		euc = (EditUIController)editLoader.getController();
 		euc.setObjects(l, t, editStage);
 		Scene sc = sceneFactory.createScene(ap, 600, 300);
 		editStage.setScene(sc);
@@ -3187,9 +3192,9 @@ public class UIController implements Initializable{
 		//個別のテキスト挿入にも対応したいので選択されたファミリ名を直接変数に代入することはしません
 		String newFont = null;
 		SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-		View<selectFontController> view = factory.createSelectFontView(current);
+		View<SelectFontController> view = factory.createSelectFontView(current);
 		Stage editStage = view.getStage();
-		selectFontController euc = view.getController();
+		SelectFontController euc = view.getController();
 		editStage.showAndWait();
 		if(euc.shouldSave()){
 			newFont = euc.getFontName();

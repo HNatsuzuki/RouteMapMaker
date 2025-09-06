@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -67,10 +67,10 @@ public class ConfigUIController implements Initializable{
 		});
 		selectFont.setOnAction((ActionEvent) -> {
 			SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-			View<selectFontController> view = factory.createSelectFontView(config.getUiFont());
+			View<SelectFontController> view = factory.createSelectFontView(config.getUiFont());
 			Stage stage = view.getStage();
 			stage.showAndWait();
-			selectFontController controller = view.getController();
+			SelectFontController controller = view.getController();
 
 			if (controller.shouldSave()) {
 				String newFont = controller.getFontName();

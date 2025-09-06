@@ -1,9 +1,11 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.LineDashCell;
+import RouteMapMaker.StopMarkCell;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.DoubleArrayWrapper;
 import RouteMapMaker.models.Line;

@@ -1,9 +1,10 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.util.List;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.FontFormatCell;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -14,7 +15,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-public class selectFontController implements Initializable{
+public class SelectFontController implements Initializable{
 
 	@FXML Button saveBT;
 	@FXML Button cancelBT;

@@ -1,6 +1,6 @@
 package RouteMapMaker.factories;
 
-import RouteMapMaker.selectFontController;
+import RouteMapMaker.controllers.SelectFontController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -28,7 +28,7 @@ public class SelectFontFactory {
      * @param  current 現在のフォント
      * @return 画面情報
      */
-    public View<selectFontController> createSelectFontView(String current) {
+    public View<SelectFontController> createSelectFontView(String current) {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
         FXMLLoader loader;
@@ -41,12 +41,12 @@ public class SelectFontFactory {
             throw new RuntimeException();
         }
 
-        selectFontController controller = loader.getController();
+        SelectFontController controller = loader.getController();
         controller.setObject(current);
         Scene scene = sceneFactory.createScene(parent, 400, 300);
         stage.setScene(scene);
         stage.setTitle("フォントの選択");
 
-        return new View<selectFontController>(stage, controller);
+        return new View<SelectFontController>(stage, controller);
     }
 }

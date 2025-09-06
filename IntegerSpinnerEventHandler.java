@@ -9,7 +9,7 @@ public class IntegerSpinnerEventHandler implements EventHandler<KeyEvent> {
 	Spinner<Integer> spinner;
 	int val = 0;
 	// constructor実行時のSpinnerの値を初期値とするので，このHandlerはSpinnerValueFactoryを設定後に生成すること
-	IntegerSpinnerEventHandler(Spinner<Integer> s) {
+	public IntegerSpinnerEventHandler(Spinner<Integer> s) {
 		this.spinner = s;
 		this.val = s.getValue();
 	}

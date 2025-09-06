@@ -2,7 +2,7 @@ package RouteMapMaker.commands;
 
 import java.util.List;
 
-import RouteMapMaker.UIController;
+import RouteMapMaker.controllers.UIController;
 import javafx.beans.property.DoubleProperty;
 
 public class TransformCommand implements Command {

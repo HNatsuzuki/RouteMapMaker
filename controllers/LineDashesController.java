@@ -1,8 +1,9 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.LineDashCell;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.DoubleArrayWrapper;
 import RouteMapMaker.models.Train;

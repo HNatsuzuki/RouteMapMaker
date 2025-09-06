@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.net.URL;
 import java.util.Optional;
@@ -23,7 +23,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 
-public class editUIController implements Initializable{
+public class EditUIController implements Initializable{
 	
 	private Line line;
 	private Train train;
@@ -41,7 +41,7 @@ public class editUIController implements Initializable{
 	@FXML ListView listC;
 	@FXML Label infoLabel;
 
-	public editUIController(AlertFactory alertFactory) {
+	public EditUIController(AlertFactory alertFactory) {
 		this.alertFactory = alertFactory;
 	}
 

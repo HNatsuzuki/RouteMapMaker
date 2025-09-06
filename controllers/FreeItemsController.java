@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import RouteMapMaker.FreeItemCell;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.FreeItem;
 import javafx.collections.FXCollections;

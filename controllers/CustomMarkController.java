@@ -1,4 +1,4 @@
-package RouteMapMaker;
+package RouteMapMaker.controllers;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -12,6 +12,8 @@ import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
 import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.StopMarkCell;
+import RouteMapMaker.URElements;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;
@@ -242,8 +244,8 @@ public class CustomMarkController implements Initializable{
 				String newFont = null;
 				String current = l.getFontName();
 				SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-				View<selectFontController> view = factory.createSelectFontView(current);
-				selectFontController euc = view.getController();
+				View<SelectFontController> view = factory.createSelectFontView(current);
+				SelectFontController euc = view.getController();
 				Stage editStage = view.getStage();
 				editStage.showAndWait();
 				if(euc.shouldSave()){
