@@ -85,6 +85,12 @@ public class Line {//路線の情報を保持するクラス。
 		connections.add(c);
 		return c;
 	}
+	public void addStation(Station station, boolean curve) {
+		Connection connection = new Connection(station);
+		connection.curve.set(curve);
+		connections.add(connection);
+	}
+
 	public Connection removeStation(int idx) {
 		return connections.remove(idx);
 	}
