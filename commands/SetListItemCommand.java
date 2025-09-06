@@ -19,6 +19,18 @@ public class SetListItemCommand<T> implements Command {
      * @param oldValue 変更前の値
      * @param newValue 変更後の値
      */
+    public SetListItemCommand(List<T> list, int index, T newValue) {
+        this(list, index, list.get(index), newValue);
+    }
+
+    /**
+     * コンストラクタ
+     *
+     * @param list 変更するリスト
+     * @param index 変更するリストのインデックス
+     * @param oldValue 変更前の値
+     * @param newValue 変更後の値
+     */
     public SetListItemCommand(List<T> list, int index, T oldValue, T newValue) {
         this.list = list;
         this.index = index;

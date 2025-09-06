@@ -23,7 +23,7 @@ public class IntegrateStationCommand implements Command {
     }
     @Override
     public void undo() {
-        connections.forEach(c -> c.station = prevSta);
+        connections.forEach(c -> c.setStation(prevSta));
         stops.forEach(s -> s.setSta(prevSta));
         if(!fixed) replacing.erasePoint();//座標非固定点ならば非固定にする。
     }
@@ -31,7 +31,7 @@ public class IntegrateStationCommand implements Command {
     public void redo() {
         // TODO Auto-generated method stub
         if(!fixed) replacing.setPoint(replacing.getInterPoint()[0], replacing.getInterPoint()[1]);
-        connections.forEach(c -> c.station = replacing);
+        connections.forEach(c -> c.setStation(replacing));
         stops.forEach(s -> s.setSta(replacing));
     }
 

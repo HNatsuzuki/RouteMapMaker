@@ -118,12 +118,12 @@ import RouteMapMaker.Factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
-import RouteMapMaker.commands.DisconnectStationLinkCommand;
 import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.SetBackgroundCommand;
 import RouteMapMaker.commands.SetLineDashesCommand;
+import RouteMapMaker.commands.SetListItemCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
@@ -806,31 +806,31 @@ public class UIController implements Initializable{
 					newSta.setNameSize(oldSta.getNameSize());
 					newSta.setNameStyle(oldSta.getNameStyle());
 					//描画位置設定は引き継がないことにする
-					lineList.get(indexR).getConnections().get(indexS).station = newSta;
+					List<Command> commands = new ArrayList<>();
+					Command stationUpdateCommand = new ValueSetCommand<>(lineList.get(indexR).getConnections().get(indexS).getStationProperty(), newSta);
+					commands.add(stationUpdateCommand);
+
+					//交点駅が登録されている運転経路も新駅にチェンジ
+					for (Train train : lineList.get(indexR).getTrains()) {
+						for (int i = 0; i < train.getStops().size(); ++i) {
+							if (train.getStops().get(i).getSta() == oldSta) {
+								TrainStop newStop = new TrainStop(newSta);
+								Command setStopCommand = new SetListItemCommand<>(train.getStops(), i, newStop);
+								commands.add(setStopCommand);
+							}
+						}
+					}
+
+					Command command = new CompositeCommand(commands);
+					command.execute();
+					urManager.push(command);
+
 					lineDraw();
 					snList.clear();
 					for(int i=0; i < lineList.get(indexR).getStations().size(); i++){
 						snList.add(lineList.get(indexR).getStations().get(i).getName());
 					}
-					//交点駅が登録されている運転経路も新駅にチェンジ
-					ArrayList<Integer[]> setList = new ArrayList<Integer[]>();
-					ObservableList<TrainStop> stopValue = FXCollections.observableArrayList();
-					for(int k = 0; k < lineList.get(indexR).getTrains().size(); k++){
-						Train train = lineList.get(indexR).getTrains().get(k);
-						for(int i = 0; i < train.getStops().size(); i++){
-							if(train.getStops().get(i).getSta() == oldSta){
-								TrainStop newStop = new TrainStop(newSta);
-								Integer[] id = {k,i};
-								setList.add(id);
-								stopValue.add(train.getStops().get(i));
-								stopValue.add(newStop);
-								train.getStops().set(i, newStop);
-							}
-						}
-					}
-					Command command = new DisconnectStationLinkCommand(lineList.get(indexR).getStations(), oldSta, newSta, indexS, lineList.get(indexR).getTrains(),
-							setList, stopValue);
-					urManager.push(command);
+
 					//運転経路編集ウィンドウで変更を反映させる
 					int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
 					int indexT = TrainTable.getSelectionModel().getSelectedIndex();
@@ -2303,7 +2303,7 @@ public class UIController implements Initializable{
 			gc.setStroke(line == this.line ? Color.PERU : Color.BLACK);
 			//まずは始点での処理。
 			List<Line.Connection> pointSetStations = line.getConnections().stream().
-					filter(c -> c.station.isSet()).collect(Collectors.toList());
+					filter(c -> c.getStation().isSet()).collect(Collectors.toList());
 			startP = line.getStations().get(0).getPoint();
 			gc.beginPath();
 			gc.moveTo(startP[0], startP[1]);
@@ -2317,8 +2317,8 @@ public class UIController implements Initializable{
 				if(line.getCurveConnection(i2) && line.isCurvable(i2)) {
 					// ベジエ曲線での接続
 					int idx = pointSetStations.indexOf(line.getConnections().get(i2));
-					double[][] l1 = {pointSetStations.get(idx-2).station.getPoint(), startP};
-					double[][] l2 = {endP, pointSetStations.get(idx+1).station.getPoint()};
+					double[][] l1 = {pointSetStations.get(idx-2).getStation().getPoint(), startP};
+					double[][] l2 = {endP, pointSetStations.get(idx+1).getStation().getPoint()};
 					double[] cp = calcIntersection(l1, l2); //control point
 					gc.quadraticCurveTo(cp[0], cp[1], endP[0], endP[1]);
 				} else {
@@ -2802,7 +2802,7 @@ public class UIController implements Initializable{
 					continue;
 				}
 				//駅名が同じ and 同じ駅objectではない→結合
-				if(!gst.equals(c.station.getName()) || c.station == con.station) {
+				if(!gst.equals(c.getStation().getName()) || c.getStation() == con.getStation()) {
 					continue;
 				}
 				if(candName!=null) {
@@ -2814,24 +2814,24 @@ public class UIController implements Initializable{
 						return 2;
 					}
 				}
-				if(!c.station.isSet()){//座標非設置点だった場合
+				if(!c.getStation().isSet()){//座標非設置点だった場合
 					double[] p = detectCoordinate(i, l);
 					//接続点は座標を固定。
-					c.station.setPoint(p[0], p[1]);
+					c.getStation().setPoint(p[0], p[1]);
 				}
 				//駅オブジェクト自体を置き換えて共通化してしまう。
 				//すべての路線のConnectionとTrainStopを走査し，すべての当該駅を置き換える
 				List<Line.Connection> replaced_cons = lineList.stream().flatMap(l_l -> l_l.getConnections().stream())
-				.filter(l_c -> l_c.station==con.station).collect(Collectors.toList()); //置き換え対象connection
+				.filter(l_c -> l_c.getStation()==con.getStation()).collect(Collectors.toList()); //置き換え対象connection
 				List<TrainStop> replaced_stop = lineList.stream().flatMap(l_l -> l_l.getTrains().stream())
-						.flatMap(l_t -> l_t.getStops().stream()).filter(l_s -> l_s.getSta()==con.station)
+						.flatMap(l_t -> l_t.getStops().stream()).filter(l_s -> l_s.getSta()==con.getStation())
 						.collect(Collectors.toList()); //置き換え対象train stop
 				if(candName!=null) {
-					Command command = new IntegrateStationCommand(replaced_cons, replaced_stop, con.station, c.station, con.station.isSet());
+					Command command = new IntegrateStationCommand(replaced_cons, replaced_stop, con.getStation(), c.getStation(), con.getStation().isSet());
 					urManager.push(command);
 				}
-				replaced_cons.forEach(rc -> rc.station = c.station);
-				replaced_stop.forEach(rs -> rs.setSta(c.station));
+				replaced_cons.forEach(rc -> rc.setStation(c.getStation()));
+				replaced_stop.forEach(rs -> rs.setSta(c.getStation()));
 				return 0;
 			}
 		}
@@ -3127,14 +3127,10 @@ public class UIController implements Initializable{
 			p[1][1] = last[1] - zure * (last[0] - ini[0]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
 		return p;
 	}
-	ArrayList<Line> detectConnectedLine(Station sta){//与えられたstationが所属するlineを全て返す
-		ArrayList<Line> connected = new ArrayList<Line>();
-		for(int i = 0; i < lineList.size(); i++){
-			for(int h = 0; h < lineList.get(i).getStations().size(); h++){
-				if(lineList.get(i).getStations().get(h) == sta) connected.add(lineList.get(i));
-			}
-		}
-		return connected;
+	List<Line> detectConnectedLine(Station sta){//与えられたstationが所属するlineを全て返す
+		List<Line> lines = lineList.stream().filter(l -> l.getStations().contains(sta)).collect(Collectors.toList());
+
+		return lines;
 	}
 	void setMarkList(){//markListをセットする。
 		markList.clear();
