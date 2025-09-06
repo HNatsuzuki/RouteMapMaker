@@ -1,4 +1,4 @@
-package RouteMapMaker.Converters;
+package RouteMapMaker.converters;
 
 import java.util.ArrayList;
 import java.util.List;

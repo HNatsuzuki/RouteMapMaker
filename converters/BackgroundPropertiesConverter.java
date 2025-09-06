@@ -1,4 +1,4 @@
-package RouteMapMaker.Converters;
+package RouteMapMaker.converters;
 
 import java.util.Map;
 import java.util.Properties;
