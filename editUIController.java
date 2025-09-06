@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.factories.AlertFactory;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;

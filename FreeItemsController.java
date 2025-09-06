@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.factories.AlertFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;

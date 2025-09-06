@@ -1,4 +1,4 @@
-package RouteMapMaker.Factories;
+package RouteMapMaker.factories;
 
 import javafx.stage.Stage;
 

@@ -2,8 +2,8 @@ package RouteMapMaker;
 	
 import java.util.Optional;
 
-import RouteMapMaker.Factories.AlertFactory;
-import RouteMapMaker.Factories.SceneFactory;
+import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.SceneFactory;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;

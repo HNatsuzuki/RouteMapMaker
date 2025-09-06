@@ -1,4 +1,4 @@
-package RouteMapMaker.Factories;
+package RouteMapMaker.factories;
 
 import RouteMapMaker.Configuration;
 import javafx.scene.control.Alert;

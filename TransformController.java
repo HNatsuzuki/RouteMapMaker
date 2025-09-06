@@ -4,7 +4,7 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.AlertFactory;
+import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.TransformCommand;
 import javafx.beans.property.DoubleProperty;

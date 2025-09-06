@@ -6,10 +6,10 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.AlertFactory;
-import RouteMapMaker.Factories.SceneFactory;
-import RouteMapMaker.Factories.SelectFontFactory;
-import RouteMapMaker.Factories.View;
+import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.SceneFactory;
+import RouteMapMaker.factories.SelectFontFactory;
+import RouteMapMaker.factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;

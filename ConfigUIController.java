@@ -3,9 +3,9 @@ package RouteMapMaker;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.SceneFactory;
-import RouteMapMaker.Factories.SelectFontFactory;
-import RouteMapMaker.Factories.View;
+import RouteMapMaker.factories.SceneFactory;
+import RouteMapMaker.factories.SelectFontFactory;
+import RouteMapMaker.factories.View;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
