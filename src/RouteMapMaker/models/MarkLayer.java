@@ -41,7 +41,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	private final boolean[] paramsProportion;//格納されているパラメーターはマークの大きさに依存するか。
 	private StringProperty text = new SimpleStringProperty();//文字列だった場合にはtextを保持。IMAGEの場合は画像名
 	private StringProperty fontName = new SimpleStringProperty();//文字列だった場合にfontNameを保持
-	private FXImageWrapper imageWrapper = new FXImageWrapper();//IMAGEだった場合には内容を保持
+	private ObjectProperty<Image> imageWrapper = new SimpleObjectProperty<>();//IMAGEだった場合には内容を保持
 	private ObjectProperty<Color> color = new SimpleObjectProperty<>();//図形の色を保持
 	
 	//typeは始めに設定し、設定したらもう変更できない仕様にする。
@@ -133,7 +133,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public Image getImage(){
 		return this.imageWrapper.get();
 	}
-	public FXImageWrapper getImageProperty(){
+	public ObjectProperty<Image> getImageProperty(){
 		return this.imageWrapper;
 	}
 	public void setImage(Image image){
@@ -151,7 +151,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			t.text = new SimpleStringProperty(this.text.get());
 			t.fontName = new SimpleStringProperty(this.fontName.get());
 			t.color = new SimpleObjectProperty<>(this.color.get());
-			t.imageWrapper = new FXImageWrapper(this.imageWrapper.get());
+			t.imageWrapper = new SimpleObjectProperty<>(this.imageWrapper.get());
 		} catch (CloneNotSupportedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
