@@ -17,9 +17,9 @@ public class Train implements Cloneable{
 	
 	private ObservableList<TrainStop> stops;//この運転系統の駅オブジェクトを保持する。
 	private StringProperty name = new SimpleStringProperty();//駅名
-	private ColorWrapper lineColor = new ColorWrapper();
-	private ColorWrapper markColor = new ColorWrapper();
-	private ColorWrapper staColor = new ColorWrapper();
+	private ObjectProperty<Color> lineColor = new SimpleObjectProperty<>();
+	private ObjectProperty<Color> markColor = new SimpleObjectProperty<>();
+	private ObjectProperty<Color> staColor = new SimpleObjectProperty<>();
 	private IntegerProperty lineWidth = new SimpleIntegerProperty();
 	private IntegerProperty lineDistance = new SimpleIntegerProperty();
 	private ObjectProperty<StopMark> mark = new SimpleObjectProperty<>();
@@ -62,7 +62,7 @@ public class Train implements Cloneable{
 	public void setLineColor(Color c){
 		lineColor.set(c);
 	}
-	public ColorWrapper getLineColorProperty(){
+	public ObjectProperty<Color> getLineColorProperty(){
 		return this.lineColor;
 	}
 	public Color getLineColor(){
@@ -71,7 +71,7 @@ public class Train implements Cloneable{
 	public void setMarkColor(Color c){
 		markColor.set(c);
 	}
-	public ColorWrapper getMarkColorProperty(){
+	public ObjectProperty<Color> getMarkColorProperty(){
 		return this.markColor;
 	}
 	public Color getMarkColor(){
@@ -80,7 +80,7 @@ public class Train implements Cloneable{
 	public void setStaColor(Color c){
 		staColor.set(c);
 	}
-	public ColorWrapper getStaColorProperty(){
+	public ObjectProperty<Color> getStaColorProperty(){
 		return this.staColor;
 	}
 	public Color getStaColor(){
@@ -196,9 +196,9 @@ public class Train implements Cloneable{
 				t.stops.add(ts);
 			}
 			t.name = new SimpleStringProperty(this.name.get());
-			t.lineColor = new ColorWrapper(this.lineColor.get());
-			t.markColor = new ColorWrapper(this.markColor.get());
-			t.staColor = new ColorWrapper(this.staColor.get());
+			t.lineColor = new SimpleObjectProperty<>(this.lineColor.get());
+			t.markColor = new SimpleObjectProperty<>(this.markColor.get());
+			t.staColor = new SimpleObjectProperty<>(this.staColor.get());
 			t.lineWidth = new SimpleIntegerProperty(this.lineWidth.get());
 			t.lineDistance = new SimpleIntegerProperty(this.lineDistance.get());
 			t.markSize = new SimpleIntegerProperty(this.markSize.get());

@@ -61,7 +61,7 @@ public class Line {//路線の情報を保持するクラス。
 	private IntegerProperty nameStyle = new SimpleIntegerProperty(REGULAR);
 	private IntegerProperty nameSize = new SimpleIntegerProperty(15);
 	private IntegerProperty nameLocation = new SimpleIntegerProperty(BOTTOM);
-	private ColorWrapper nameColor = new ColorWrapper(Color.BLACK);
+	private ObjectProperty<Color> nameColor = new SimpleObjectProperty<>(Color.BLACK);
 	private IntegerProperty NameX = new SimpleIntegerProperty(0);
 	private IntegerProperty NameY = new SimpleIntegerProperty(0);
 	
@@ -155,7 +155,7 @@ public class Line {//路線の情報を保持するクラス。
 	public Color getNameColor(){
 		return this.nameColor.get();
 	}
-	public ColorWrapper getNameColorProperty(){
+	public ObjectProperty<Color> getNameColorProperty(){
 		return this.nameColor;
 	}
 	public void setNameColor(Color c){
