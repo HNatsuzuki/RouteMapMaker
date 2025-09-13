@@ -7,7 +7,6 @@ import java.util.ResourceBundle;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.models.LineDash;
-import RouteMapMaker.models.Train;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -53,7 +52,7 @@ public class LineDashesController implements Initializable{
 				label.setText("左のリストから選択してください");
 				gc.clearRect(0, 0, 200, 20);
 				delete.setDisable(true);
-			}else if(daw == Train.NORMAL_LINE){
+			}else if(daw == LineDash.SOLID){
 				textField.setDisable(true);
 				label.setText("この項目は編集できません。");
 				gc.clearRect(0, 0, 200, 20);

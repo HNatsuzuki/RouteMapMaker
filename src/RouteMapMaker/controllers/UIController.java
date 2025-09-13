@@ -3018,7 +3018,7 @@ public class UIController implements Initializable{
 		if(pVersion < 8){//バージョン8未満は初期化して終わり
 			initializeLineDashes();
 		}else{
-			lineDashes.add(Train.NORMAL_LINE);//null値は先に入れておく。
+			lineDashes.add(LineDash.SOLID);//null値は先に入れておく。
 			List<LineDash> lineDashList = LineDashListPropertiesConverter.fromProperties(p, "");
 			lineDashes.addAll(lineDashList);
 		}
@@ -3488,7 +3488,7 @@ public class UIController implements Initializable{
 		lineDashes.clear();
 		double[] d1 = {5d,5d};
 		double[] d2 = {12d,8d};
-		lineDashes.add(Train.NORMAL_LINE);//直線
+		lineDashes.add(LineDash.SOLID);//直線
 		lineDashes.add(new LineDash(d1));
 		lineDashes.add(new LineDash(d2));
 	}

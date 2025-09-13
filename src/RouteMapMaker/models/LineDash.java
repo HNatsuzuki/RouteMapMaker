@@ -6,6 +6,8 @@ import java.text.ParseException;
  * 破線パターンを表すクラスです。
  */
 public class LineDash {
+    /** 実線 */
+    public static final LineDash SOLID = new LineDash(null);
     private double[] lineDashPattern;
 
     public LineDash(double[] pattern){

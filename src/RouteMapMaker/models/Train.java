@@ -13,8 +13,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 
 public class Train implements Cloneable{
-	public static final LineDash NORMAL_LINE = new LineDash(null);
-	
 	private ObservableList<TrainStop> stops;//この運転系統の駅オブジェクトを保持する。
 	private StringProperty name = new SimpleStringProperty();//駅名
 	private ObjectProperty<Color> lineColor = new SimpleObjectProperty<>();
@@ -45,7 +43,7 @@ public class Train implements Cloneable{
 		staSize.set(15);
 		edgeFixA.set(0);
 		edgeFixB.set(0);
-		lineDash = NORMAL_LINE;
+		lineDash = LineDash.SOLID;
 	}
 	public ObservableList<TrainStop> getStops(){
 		return stops;
