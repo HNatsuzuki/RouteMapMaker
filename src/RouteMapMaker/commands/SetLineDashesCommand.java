@@ -1,14 +1,14 @@
 package RouteMapMaker.commands;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Train;
 
 public class SetLineDashesCommand implements Command {
     private final Train train;
-    private final DoubleArrayWrapper oldArray;
-    private final DoubleArrayWrapper newArray;
+    private final LineDash oldArray;
+    private final LineDash newArray;
 
-    public SetLineDashesCommand(Train train, DoubleArrayWrapper oldArray, DoubleArrayWrapper newArray){
+    public SetLineDashesCommand(Train train, LineDash oldArray, LineDash newArray){
         this.train = train;
         this.oldArray = oldArray;
         this.newArray = newArray;

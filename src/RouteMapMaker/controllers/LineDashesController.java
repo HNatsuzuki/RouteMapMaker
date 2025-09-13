@@ -5,7 +5,7 @@ import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Train;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -23,13 +23,13 @@ import javafx.scene.paint.Color;
 
 public class LineDashesController implements Initializable{
 
-	@FXML ListView<DoubleArrayWrapper> list;
+	@FXML ListView<LineDash> list;
 	@FXML Canvas canvas;
 	@FXML Label label;
 	@FXML TextField textField;
 	@FXML Button add;
 	@FXML Button delete;
-	ObservableList<DoubleArrayWrapper> lineDashes;
+	ObservableList<LineDash> lineDashes;
 	LineDashCell ldCell;
 	private final AlertFactory alertFactory;
 
@@ -46,7 +46,7 @@ public class LineDashesController implements Initializable{
 		ldCell = new LineDashCell();
 		list.setCellFactory(ldCell);
 		list.getSelectionModel().selectedItemProperty().addListener((ov, oldVal, newVal) ->{
-			DoubleArrayWrapper daw = list.getSelectionModel().getSelectedItem();
+			LineDash daw = list.getSelectionModel().getSelectedItem();
 			if(daw == null){
 				textField.setDisable(true);
 				label.setText("左のリストから選択してください");
@@ -73,10 +73,10 @@ public class LineDashesController implements Initializable{
 			int selectedIndex = list.getSelectionModel().getSelectedIndex();
 			double[] da = {10d,10d};
 			if(selectedIndex == -1){
-				lineDashes.add(new DoubleArrayWrapper(da));//最後に追加
+				lineDashes.add(new LineDash(da));//最後に追加
 				list.getSelectionModel().selectLast();
 			}else{//直後に追加する
-				lineDashes.add(selectedIndex + 1,new DoubleArrayWrapper(da));
+				lineDashes.add(selectedIndex + 1,new LineDash(da));
 				list.getSelectionModel().select(selectedIndex + 1);
 			}
 		});
@@ -99,7 +99,7 @@ public class LineDashesController implements Initializable{
 			String text = textField.getText();
 			//以下テキスト解析
 			String[] split = text.split(",",0);
-			DoubleArrayWrapper daw = list.getSelectionModel().getSelectedItem();
+			LineDash daw = list.getSelectionModel().getSelectedItem();
 			if(daw == null){
 				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("項目を選択してください");
@@ -142,11 +142,11 @@ public class LineDashesController implements Initializable{
 			}
 		});
 	}
-	public void setObject(ObservableList<DoubleArrayWrapper> lineDashes){
+	public void setObject(ObservableList<LineDash> lineDashes){
 		this.lineDashes = lineDashes;
 		list.setItems(lineDashes);
 	}
-	private void setText(DoubleArrayWrapper daw){
+	private void setText(LineDash daw){
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < daw.get().length - 1; i++){
 			sb.append(String.valueOf((int)daw.get()[i]) + ",");

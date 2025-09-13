@@ -1,15 +1,20 @@
 package RouteMapMaker.models;
 
-public class DoubleArrayWrapper {
-	private double[] da;
-	DoubleArrayWrapper(){}
-	public DoubleArrayWrapper(double[] d){
-		da = d;
+/**
+ * 破線パターンを表すクラスです。
+ */
+public class LineDash {
+	private double[] lineDashPattern;
+
+	public LineDash(double[] pattern){
+		lineDashPattern = pattern;
 	}
-	public void set(double[] d){
-		da = d;
+
+	public void set(double[] pattern){
+		lineDashPattern = pattern;
 	}
+
 	public double[] get(){
-		return da;
+		return lineDashPattern;
 	}
 }

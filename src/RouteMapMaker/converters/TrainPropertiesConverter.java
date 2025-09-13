@@ -3,7 +3,7 @@ package RouteMapMaker.converters;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
@@ -22,7 +22,7 @@ public class TrainPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return properties
      */
-    public static Properties toProperties(Train train, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, String prefix) {
+    public static Properties toProperties(Train train, List<LineDash> lineDashes, List<StopMark> customMarks, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "name", train.getName());
 
@@ -69,7 +69,7 @@ public class TrainPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Train
      */
-    public Train fromProperties(Properties properties, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, List<Station> stations, String prefix) {
+    public Train fromProperties(Properties properties, List<LineDash> lineDashes, List<StopMark> customMarks, List<Station> stations, String prefix) {
         errorMessages.clear();
 
         Train train = new Train(properties.getProperty(prefix + "name"));

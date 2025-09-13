@@ -7,7 +7,7 @@ import java.util.ResourceBundle;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
@@ -36,7 +36,7 @@ public class ChangeAllController implements Initializable{
 
 	ObservableList<Line> lineList;
 	ObservableList<StopMark> B_markList = FXCollections.observableArrayList();
-	ObservableList<DoubleArrayWrapper> lineDashes;
+	ObservableList<LineDash> lineDashes;
 	UIController uic;
 	private final AlertFactory alertFactory;
 	
@@ -60,7 +60,7 @@ public class ChangeAllController implements Initializable{
 	@FXML Button B_lineZure_AP;
 	@FXML Spinner<Integer> B_lineWidth;
 	@FXML Button B_lineWidth_AP;
-	@FXML ComboBox<DoubleArrayWrapper> B_linePattern;
+	@FXML ComboBox<LineDash> B_linePattern;
 	@FXML Button B_linePattern_AP;
 	@FXML Spinner<Integer> B_lineA;
 	@FXML Button B_lineA_AP;
@@ -576,7 +576,7 @@ public class ChangeAllController implements Initializable{
 		return list;
 	}
 	public void setObject(ObservableList<Line> lineList, ObservableList<StopMark> markList, 
-			ObservableList<DoubleArrayWrapper> lineDashes, UIController uic){
+			ObservableList<LineDash> lineDashes, UIController uic){
 		this.lineList = lineList;
 		B_markList.add(StopMark.CIRCLE);
 		B_markList.add(StopMark.NO_DRAW);

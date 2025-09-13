@@ -13,7 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 
 public class Train implements Cloneable{
-	public static final DoubleArrayWrapper NORMAL_LINE = new DoubleArrayWrapper(null);
+	public static final LineDash NORMAL_LINE = new LineDash(null);
 	
 	private ObservableList<TrainStop> stops;//この運転系統の駅オブジェクトを保持する。
 	private StringProperty name = new SimpleStringProperty();//駅名
@@ -28,7 +28,7 @@ public class Train implements Cloneable{
 	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//trueなら縦書き。
 	private IntegerProperty edgeFixA = new SimpleIntegerProperty();//端の補正をどれだけするか。
 	private IntegerProperty edgeFixB = new SimpleIntegerProperty();
-	private DoubleArrayWrapper lineDash;//ラインの破線パターン。nullでただの線。
+	private LineDash lineDash;//ラインの破線パターン。nullでただの線。
 	
 	public Train(String name){
 		stops = FXCollections.observableArrayList();
@@ -180,10 +180,10 @@ public class Train implements Cloneable{
 	public void setEdgeB(int i){
 		this.edgeFixB.set(i);
 	}
-	public DoubleArrayWrapper getLineDash(){
+	public LineDash getLineDash(){
 		return this.lineDash;
 	}
-	public void setLineDash(DoubleArrayWrapper d){
+	public void setLineDash(LineDash d){
 		this.lineDash = d;
 	}
 	@Override

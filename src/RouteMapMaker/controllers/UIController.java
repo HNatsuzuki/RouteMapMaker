@@ -127,7 +127,7 @@ import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
@@ -176,7 +176,7 @@ public class UIController implements Initializable{
 	private Stage fiStage;
 	private boolean fiWindowOpened = false;//freeItemウィンドウが既に開かれているかどうか
 	private MainURManager urManager = MainURManager.urManager;
-	private ObservableList<DoubleArrayWrapper> lineDashes = FXCollections.observableArrayList();//ライン点線パターンを記憶。
+	private ObservableList<LineDash> lineDashes = FXCollections.observableArrayList();//ライン点線パターンを記憶。
 	private Stage changeAllStage;
 	private boolean changeAllWindowOpened = false;
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
@@ -213,7 +213,7 @@ public class UIController implements Initializable{
 	@FXML ColorPicker RouteColor;
 	@FXML ComboBox<StopMark> re_mark_CB;
 	@FXML ComboBox<StopMark> re_staMark_CB;
-	@FXML ComboBox<DoubleArrayWrapper> re_linePattern_CB;
+	@FXML ComboBox<LineDash> re_linePattern_CB;
 	@FXML ComboBox<String> re_staPStyle_CB;
 	@FXML ComboBox<String> RouteStyle;
 	@FXML ComboBox<String> staStyle;
@@ -3019,7 +3019,7 @@ public class UIController implements Initializable{
 			initializeLineDashes();
 		}else{
 			lineDashes.add(Train.NORMAL_LINE);//null値は先に入れておく。
-			List<DoubleArrayWrapper> lineDashList = LineDashListPropertiesConverter.fromProperties(p, "");
+			List<LineDash> lineDashList = LineDashListPropertiesConverter.fromProperties(p, "");
 			lineDashes.addAll(lineDashList);
 		}
 		//freeItemsを頂点とするデータ群
@@ -3489,7 +3489,7 @@ public class UIController implements Initializable{
 		double[] d1 = {5d,5d};
 		double[] d2 = {12d,8d};
 		lineDashes.add(Train.NORMAL_LINE);//直線
-		lineDashes.add(new DoubleArrayWrapper(d1));
-		lineDashes.add(new DoubleArrayWrapper(d2));
+		lineDashes.add(new LineDash(d1));
+		lineDashes.add(new LineDash(d2));
 	}
 }

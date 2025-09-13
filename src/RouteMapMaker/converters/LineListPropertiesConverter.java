@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.StopMark;
 
@@ -22,7 +22,7 @@ public class LineListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(List<Line> lines, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, String prefix) {
+    public static Properties toProperties(List<Line> lines, List<LineDash> lineDashes, List<StopMark> customMarks, String prefix) {
         Properties properties = new Properties();
         properties.setProperty("NumOfLines", String.valueOf(lines.size()));
 
@@ -46,7 +46,7 @@ public class LineListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Line のリスト
      */
-    public List<Line> fromProperties(Properties properties, double version, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, String prefix) {
+    public List<Line> fromProperties(Properties properties, double version, List<LineDash> lineDashes, List<StopMark> customMarks, String prefix) {
         errorMessages.clear();
 
         List<Line> lines = new ArrayList<>();

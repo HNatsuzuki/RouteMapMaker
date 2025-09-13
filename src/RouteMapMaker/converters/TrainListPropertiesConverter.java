@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
@@ -23,7 +23,7 @@ public class TrainListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return properties
      */
-    public static Properties toProperties(List<Train> trains, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, String prefix) {
+    public static Properties toProperties(List<Train> trains, List<LineDash> lineDashes, List<StopMark> customMarks, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfTrains", String.valueOf(trains.size()));
 
@@ -47,7 +47,7 @@ public class TrainListPropertiesConverter extends PropertiesConverterBase {
      * @param prefix 接頭辞
      * @return Train のリスト
      */
-    public List<Train> fromProperties(Properties properties, List<DoubleArrayWrapper> lineDashes, List<StopMark> customMarks, List<Station> stations, String prefix) {
+    public List<Train> fromProperties(Properties properties, List<LineDash> lineDashes, List<StopMark> customMarks, List<Station> stations, String prefix) {
         errorMessages.clear();
 
         TrainPropertiesConverter trainPropertiesConverter = new TrainPropertiesConverter();
