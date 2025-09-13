@@ -113,7 +113,6 @@ import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.SetBackgroundCommand;
-import RouteMapMaker.commands.SetLineDashesCommand;
 import RouteMapMaker.commands.SetListItemCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
@@ -1754,7 +1753,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
 				if(oldVal == lineList.get(indexR).getTrains().get(indexK).getLineDash()) {
-					Command command = new SetLineDashesCommand(lineList.get(indexR).getTrains().get(indexK), oldVal, newVal);
+					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexK).getLineDashProperty(), oldVal, newVal);
 					command.execute();;
 					urManager.push(command);
 				}

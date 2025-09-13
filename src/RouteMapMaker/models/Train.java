@@ -26,7 +26,7 @@ public class Train implements Cloneable{
 	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//trueなら縦書き。
 	private IntegerProperty edgeFixA = new SimpleIntegerProperty();//端の補正をどれだけするか。
 	private IntegerProperty edgeFixB = new SimpleIntegerProperty();
-	private LineDash lineDash;//ラインの破線パターン。nullでただの線。
+	private ObjectProperty<LineDash> lineDash = new SimpleObjectProperty<>(LineDash.SOLID);//ラインの破線パターン。nullでただの線。
 	
 	public Train(String name){
 		stops = FXCollections.observableArrayList();
@@ -43,7 +43,6 @@ public class Train implements Cloneable{
 		staSize.set(15);
 		edgeFixA.set(0);
 		edgeFixB.set(0);
-		lineDash = LineDash.SOLID;
 	}
 	public ObservableList<TrainStop> getStops(){
 		return stops;
@@ -178,11 +177,14 @@ public class Train implements Cloneable{
 	public void setEdgeB(int i){
 		this.edgeFixB.set(i);
 	}
-	public LineDash getLineDash(){
+	public ObjectProperty<LineDash> getLineDashProperty() {
 		return this.lineDash;
 	}
+	public LineDash getLineDash(){
+		return this.lineDash.get();
+	}
 	public void setLineDash(LineDash d){
-		this.lineDash = d;
+		this.lineDash.set(d);
 	}
 	@Override
 	public Train clone(){
