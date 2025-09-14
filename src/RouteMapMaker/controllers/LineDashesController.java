@@ -1,12 +1,12 @@
 package RouteMapMaker.controllers;
 
 import java.net.URL;
+import java.text.ParseException;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
-import RouteMapMaker.models.DoubleArrayWrapper;
-import RouteMapMaker.models.Train;
+import RouteMapMaker.models.LineDash;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -23,13 +23,13 @@ import javafx.scene.paint.Color;
 
 public class LineDashesController implements Initializable{
 
-	@FXML ListView<DoubleArrayWrapper> list;
+	@FXML ListView<LineDash> list;
 	@FXML Canvas canvas;
 	@FXML Label label;
 	@FXML TextField textField;
 	@FXML Button add;
 	@FXML Button delete;
-	ObservableList<DoubleArrayWrapper> lineDashes;
+	ObservableList<LineDash> lineDashes;
 	LineDashCell ldCell;
 	private final AlertFactory alertFactory;
 
@@ -46,13 +46,13 @@ public class LineDashesController implements Initializable{
 		ldCell = new LineDashCell();
 		list.setCellFactory(ldCell);
 		list.getSelectionModel().selectedItemProperty().addListener((ov, oldVal, newVal) ->{
-			DoubleArrayWrapper daw = list.getSelectionModel().getSelectedItem();
+			LineDash daw = list.getSelectionModel().getSelectedItem();
 			if(daw == null){
 				textField.setDisable(true);
 				label.setText("左のリストから選択してください");
 				gc.clearRect(0, 0, 200, 20);
 				delete.setDisable(true);
-			}else if(daw == Train.NORMAL_LINE){
+			}else if(daw == LineDash.SOLID){
 				textField.setDisable(true);
 				label.setText("この項目は編集できません。");
 				gc.clearRect(0, 0, 200, 20);
@@ -73,10 +73,10 @@ public class LineDashesController implements Initializable{
 			int selectedIndex = list.getSelectionModel().getSelectedIndex();
 			double[] da = {10d,10d};
 			if(selectedIndex == -1){
-				lineDashes.add(new DoubleArrayWrapper(da));//最後に追加
+				lineDashes.add(new LineDash(da));//最後に追加
 				list.getSelectionModel().selectLast();
 			}else{//直後に追加する
-				lineDashes.add(selectedIndex + 1,new DoubleArrayWrapper(da));
+				lineDashes.add(selectedIndex + 1,new LineDash(da));
 				list.getSelectionModel().select(selectedIndex + 1);
 			}
 		});
@@ -96,57 +96,42 @@ public class LineDashesController implements Initializable{
 			}
 		});
 		textField.setOnAction((ActionEvent) ->{
-			String text = textField.getText();
-			//以下テキスト解析
-			String[] split = text.split(",",0);
-			DoubleArrayWrapper daw = list.getSelectionModel().getSelectedItem();
-			if(daw == null){
+			LineDash daw = list.getSelectionModel().getSelectedItem();
+
+			if (daw == null) {
 				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
 				alert.getDialogPane().setContentText("項目を選択してください");
 				alert.showAndWait();
-			}else{
-				if(split.length == 0 || split.length == 1){
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("破線パターンを表す要素数は2つ以上の必要があります。");
-					alert.showAndWait();
-					setText(daw);
-				}else{
-					double[] da = new double[split.length];
-					boolean error = false;
-					for(int i = 0; i < split.length; i++){
-						try{
-							da[i] = Double.valueOf(split[i]);
-							if(da[i] < 1){
-								Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-								alert.getDialogPane().setContentText("要素として使用できるのは1以上の半角数字のみです。");
-								alert.showAndWait();
-								error = true;
-								break;
-							}
-						}catch(NumberFormatException e){
-							error = true;
-							Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-							alert.getDialogPane().setContentText("不適切な文字が使用されています。使用できるのは1以上の半角数字と区切りカンマのみです。");
-							alert.showAndWait();
-						}
-					}
-					if(! error) daw.set(da);
-					setText(daw);
-					gc.clearRect(0, 0, 200, 20);
-					gc.setLineDashes(daw.get());
-					gc.strokeLine(0, 10, 200, 10);
-					list.setItems(null);
-					list.setItems(lineDashes);
-					list.getSelectionModel().select(daw);
-				}
+
+				return;
 			}
+
+			//以下テキスト解析
+			String text = textField.getText();
+
+			try {
+				int index = lineDashes.indexOf(daw);
+				daw = LineDash.parse(text);
+				lineDashes.set(index, daw);
+			} catch (ParseException ex) {
+				Alert alert = alertFactory.createAlert(AlertType. WARNING,ex.getMessage(), ButtonType.CLOSE);
+				alert.showAndWait();
+			}
+
+			setText(daw);
+			gc.clearRect(0, 0, 200, 20);
+			gc.setLineDashes(daw.get());
+			gc.strokeLine(0, 10, 200, 10);
+			list.setItems(null);
+			list.setItems(lineDashes);
+			list.getSelectionModel().select(daw);
 		});
 	}
-	public void setObject(ObservableList<DoubleArrayWrapper> lineDashes){
+	public void setObject(ObservableList<LineDash> lineDashes){
 		this.lineDashes = lineDashes;
 		list.setItems(lineDashes);
 	}
-	private void setText(DoubleArrayWrapper daw){
+	private void setText(LineDash daw){
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < daw.get().length - 1; i++){
 			sb.append(String.valueOf((int)daw.get()[i]) + ",");

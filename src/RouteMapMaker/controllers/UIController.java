@@ -39,6 +39,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -103,6 +104,7 @@ import RouteMapMaker.converters.LineDashListPropertiesConverter;
 import RouteMapMaker.converters.LineListPropertiesConverter;
 import RouteMapMaker.converters.StopMarkListPropertiesConverter;
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.LineFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
@@ -113,7 +115,6 @@ import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.SetBackgroundCommand;
-import RouteMapMaker.commands.SetLineDashesCommand;
 import RouteMapMaker.commands.SetListItemCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
@@ -127,7 +128,8 @@ import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
+import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
@@ -148,7 +150,7 @@ public class UIController implements Initializable{
 	private ObservableList<String> trList = FXCollections.observableArrayList();
 	private ObservableList<StopMark> markList = FXCollections.observableArrayList();//駅ごと
 	private ObservableList<StopMark> trainMarkList = FXCollections.observableArrayList();//経路ごと
-	private ObservableList<Line> lineList;
+	private final LineList lineList = new LineList();
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
 	private ObservableList<MvSta> movingStList = FXCollections.observableArrayList();
@@ -176,7 +178,7 @@ public class UIController implements Initializable{
 	private Stage fiStage;
 	private boolean fiWindowOpened = false;//freeItemウィンドウが既に開かれているかどうか
 	private MainURManager urManager = MainURManager.urManager;
-	private ObservableList<DoubleArrayWrapper> lineDashes = FXCollections.observableArrayList();//ライン点線パターンを記憶。
+	private ObservableList<LineDash> lineDashes = FXCollections.observableArrayList();//ライン点線パターンを記憶。
 	private Stage changeAllStage;
 	private boolean changeAllWindowOpened = false;
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
@@ -213,7 +215,7 @@ public class UIController implements Initializable{
 	@FXML ColorPicker RouteColor;
 	@FXML ComboBox<StopMark> re_mark_CB;
 	@FXML ComboBox<StopMark> re_staMark_CB;
-	@FXML ComboBox<DoubleArrayWrapper> re_linePattern_CB;
+	@FXML ComboBox<LineDash> re_linePattern_CB;
 	@FXML ComboBox<String> re_staPStyle_CB;
 	@FXML ComboBox<String> RouteStyle;
 	@FXML ComboBox<String> staStyle;
@@ -298,13 +300,12 @@ public class UIController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
-		lineList = FXCollections.observableArrayList();
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
 		RouteTable.setCellFactory(TextFieldListCell.forListView());
-		lineList.add(new Line("路線1"));
-		newLinePointSet(lineList.get(0));
-		rnList.add(lineList.get(0).getName());
+		Line newLine = lineList.createAndAddLine("路線1");
+		setCanvasOriginal(lineList.getMaxPoint());
+		rnList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
 		gc = canvas.getGraphicsContext2D();
 		gc.save();
@@ -539,9 +540,9 @@ public class UIController implements Initializable{
 				int staNum = 0;
 				while(true){
 					String d = staNum + "駅";
-					if(findStaByName(d)!=null){
+					if (lineList.hasStationWithName(d)) {
 						staNum++;
-					}else{
+					} else {
 						break;
 					}
 				}
@@ -1122,9 +1123,9 @@ public class UIController implements Initializable{
 			customMarks.clear();
 			freeItems.clear();
 			rnList.clear();
-			lineList.add(new Line("路線1"));
-			newLinePointSet(lineList.get(0));
-			rnList.add(lineList.get(0).getName());
+			Line newLine1 = lineList.createAndAddLine("路線1");
+			setCanvasOriginal(lineList.getMaxPoint());
+			rnList.add(newLine1.getName());
 			RouteTable.getSelectionModel().select(0);
 			urManager.clear();
 			lineDraw();
@@ -1754,7 +1755,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
 				if(oldVal == lineList.get(indexR).getTrains().get(indexK).getLineDash()) {
-					Command command = new SetLineDashesCommand(lineList.get(indexR).getTrains().get(indexK), oldVal, newVal);
+					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexK).getLineDashProperty(), oldVal, newVal);
 					command.execute();;
 					urManager.push(command);
 				}
@@ -2080,7 +2081,9 @@ public class UIController implements Initializable{
 
 	// 路線を作成し，作成されたLineを返す
 	Line createNewLine(ArrayList<String> staNames) {
-		Line newLine = new Line("路線" + (lineList.size()+1));
+		Point2D point = lineList.getMaxPoint();
+		Line newLine = LineFactory.create("路線" + (lineList.size() + 1), LineList.INITIAL_LINE_OFFSET_X, point.getY() + LineList.INITIAL_LINE_OFFSET_Y);
+
 		if(lineList.size() > 0){//既に路線があった場合は入力補助として駅名色、駅名大きさ、駅名スタイルを引き継ぐ
 			final Line lastLine = lineList.get(lineList.size()-1);
 			newLine.setTategaki(lastLine.isTategaki());
@@ -2106,40 +2109,29 @@ public class UIController implements Initializable{
 			int dup_process = 1; // 0:問い合わせ 1:すべて統合　2:すべて不統合
 			for(int i=0; i<newLineStations.size(); i++) {
 				final Station s = newLineStations.get(i);
-				final Station dup = findStaByName(s.getName());
-				if(dup==null || dup_process==2) {
+				final Optional<Station> dup = lineList.findStationByName(s.getName());
+				if(!dup.isPresent() || dup_process==2) {
 					// 重複なし or すべて不統合 → そのまま
 					continue;
 				}
 				else if(dup_process==1) {
 					// すべて統合 → 置き換え
-					newLineStations.set(i, dup);
+					newLineStations.set(i, dup.get());
 				}
 				else {
 					// 問い合わせ
 				}
 			}
-			newLine.setStations(FXCollections.observableList(newLineStations));
+			newLine.setStations(newLineStations);
 		}
 		
 		Command command = new AddListItemCommand<>(lineList, newLine);
 		command.execute();
 		urManager.push(command);
-		newLinePointSet(newLine);
+		setCanvasOriginal(lineList.getMaxPoint());
 		rnList.add(newLine.getName());
 		RouteTable.getSelectionModel().select(rnList.size() - 1);
 		return newLine;
-	}
-	
-	Station findStaByName(String Cname){//候補の駅名がOKかどうか調べる。trueだとアウト。
-		for (Line l : lineList) {
-			for (Station s : l.getStations()) {
-				if(Cname.equals(s.getName())) {
-					return s;
-				}
-			}
-		}
-		return null;
 	}
 	
 	double[] getGridedPoint(double org_x, double org_y) {
@@ -2172,16 +2164,10 @@ public class UIController implements Initializable{
 		}
 		return pos;
 	}
-	
-	void newLinePointSet(Line l){//新しく追加された路線のとりあえずの描画位置を決める。
-		final double start = 50;
-		final double x_interval = 200;
-		final double y_interval = 50;
-		l.getStations().get(0).setPoint(start, y_largest + y_interval);//スタート地点
-		l.getStations().get(l.getStations().size() - 1).setPoint(start + x_interval, y_largest + y_interval);
-		y_largest = y_largest + y_interval;
-		canvasOriginal[0] = x_largest + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
-		canvasOriginal[1] = y_largest + canvasMargin * 2;
+
+	private void setCanvasOriginal(Point2D point) {
+		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
+		canvasOriginal[1] = point.getY() + canvasMargin * 2;
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
@@ -3018,8 +3004,8 @@ public class UIController implements Initializable{
 		if(pVersion < 8){//バージョン8未満は初期化して終わり
 			initializeLineDashes();
 		}else{
-			lineDashes.add(Train.NORMAL_LINE);//null値は先に入れておく。
-			List<DoubleArrayWrapper> lineDashList = LineDashListPropertiesConverter.fromProperties(p, "");
+			lineDashes.add(LineDash.SOLID);//null値は先に入れておく。
+			List<LineDash> lineDashList = LineDashListPropertiesConverter.fromProperties(p, "");
 			lineDashes.addAll(lineDashList);
 		}
 		//freeItemsを頂点とするデータ群
@@ -3488,8 +3474,8 @@ public class UIController implements Initializable{
 		lineDashes.clear();
 		double[] d1 = {5d,5d};
 		double[] d2 = {12d,8d};
-		lineDashes.add(Train.NORMAL_LINE);//直線
-		lineDashes.add(new DoubleArrayWrapper(d1));
-		lineDashes.add(new DoubleArrayWrapper(d2));
+		lineDashes.add(LineDash.SOLID);//直線
+		lineDashes.add(new LineDash(d1));
+		lineDashes.add(new LineDash(d2));
 	}
 }

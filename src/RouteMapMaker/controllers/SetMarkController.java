@@ -5,6 +5,7 @@ import java.util.ResourceBundle;
 
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Line;
+import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
@@ -16,7 +17,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 
 public class SetMarkController implements Initializable{
-	ObservableList<Line> lineList = null;
+	LineList lineList = null;
 	ObservableList<StopMark> marks = FXCollections.observableArrayList();
 	ObservableList<String> ObA = FXCollections.observableArrayList();
 	ObservableList<String> ObB = FXCollections.observableArrayList();
@@ -86,7 +87,7 @@ public class SetMarkController implements Initializable{
 		});
 	}
 
-	public void setObject(ObservableList<Line> lineList, ObservableList<StopMark> customMarks){
+	public void setObject(LineList lineList, ObservableList<StopMark> customMarks){
 		this.lineList = lineList;
 		//marksの初期設定。
 		marks.add(StopMark.OBEY_LINE);

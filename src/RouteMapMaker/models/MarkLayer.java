@@ -2,8 +2,10 @@ package RouteMapMaker.models;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -39,8 +41,8 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	private final boolean[] paramsProportion;//格納されているパラメーターはマークの大きさに依存するか。
 	private StringProperty text = new SimpleStringProperty();//文字列だった場合にはtextを保持。IMAGEの場合は画像名
 	private StringProperty fontName = new SimpleStringProperty();//文字列だった場合にfontNameを保持
-	private FXImageWrapper imageWrapper = new FXImageWrapper();//IMAGEだった場合には内容を保持
-	private ColorWrapper color = new ColorWrapper();//図形の色を保持
+	private ObjectProperty<Image> imageWrapper = new SimpleObjectProperty<>();//IMAGEだった場合には内容を保持
+	private ObjectProperty<Color> color = new SimpleObjectProperty<>();//図形の色を保持
 	
 	//typeは始めに設定し、設定したらもう変更できない仕様にする。
 	public MarkLayer(int type){
@@ -122,7 +124,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public Color getColor(){
 		return this.color.get();
 	}
-	public ColorWrapper getColorProperty(){
+	public ObjectProperty<Color> getColorProperty(){
 		return this.color;
 	}
 	public void setColor(Color c){
@@ -131,7 +133,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public Image getImage(){
 		return this.imageWrapper.get();
 	}
-	public FXImageWrapper getImageProperty(){
+	public ObjectProperty<Image> getImageProperty(){
 		return this.imageWrapper;
 	}
 	public void setImage(Image image){
@@ -148,8 +150,8 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			t.paint = new SimpleIntegerProperty(this.paint.get());
 			t.text = new SimpleStringProperty(this.text.get());
 			t.fontName = new SimpleStringProperty(this.fontName.get());
-			t.color = new ColorWrapper(this.color.get());
-			t.imageWrapper = new FXImageWrapper(this.imageWrapper.get());
+			t.color = new SimpleObjectProperty<>(this.color.get());
+			t.imageWrapper = new SimpleObjectProperty<>(this.imageWrapper.get());
 		} catch (CloneNotSupportedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

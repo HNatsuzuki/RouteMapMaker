@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 
 /**
  * LineDash (DoubleArrayWrapper) のリストと Properties の相互変換を行うクラスです。
@@ -17,7 +17,7 @@ public class LineDashListPropertiesConverter {
      * @param prefix 接頭辞
      * @return Properties
      */
-    public static Properties toProperties(List<DoubleArrayWrapper> lineDashes, String prefix) {
+    public static Properties toProperties(List<LineDash> lineDashes, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "NumOfLineDashes", String.valueOf(lineDashes.size()));
 
@@ -42,8 +42,8 @@ public class LineDashListPropertiesConverter {
      * @param prefix 接頭辞
      * @return LineDash のリスト
      */
-    public static List<DoubleArrayWrapper> fromProperties(Properties properties, String prefix) {
-        List<DoubleArrayWrapper> lineDashes = new ArrayList<DoubleArrayWrapper>();
+    public static List<LineDash> fromProperties(Properties properties, String prefix) {
+        List<LineDash> lineDashes = new ArrayList<LineDash>();
         int numOfLineDashes = Integer.valueOf(properties.getProperty(prefix + "NumOfLineDashes"));
 
         //iは1から。（0はNORMAL_LINE）
@@ -56,7 +56,7 @@ public class LineDashListPropertiesConverter {
                 da[j] = Double.valueOf(properties.getProperty(indexedPrefix + "." + j));
             }
 
-            lineDashes.add(new DoubleArrayWrapper(da));
+            lineDashes.add(new LineDash(da));
         }
 
         return lineDashes;

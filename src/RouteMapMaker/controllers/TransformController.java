@@ -7,6 +7,7 @@ import java.util.ResourceBundle;
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
+import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.TransformCommand;
@@ -32,7 +33,7 @@ public class TransformController implements Initializable {
 	private double[] canvasSize;//キャンバスのサイズを取得、設定
 	private UIController uic;//Redraw用
 	private Stage stage;
-	private ObservableList<Line> lineList;
+	private LineList lineList;
 	private ObservableList<FreeItem> freeItems;
 	private MainURManager urManager;
 	private double[] originalSize = new double[2];
@@ -212,7 +213,7 @@ public class TransformController implements Initializable {
 			}
 		});
 	}
-	public void setObject(double[] canvasOriginal, Stage stage, UIController uic, ObservableList<Line> lineList, 
+	public void setObject(double[] canvasOriginal, Stage stage, UIController uic, LineList lineList, 
 			ObservableList<FreeItem> freeItems, MainURManager urManager){
 		this.canvasSize = canvasOriginal;
 		this.uic = uic;

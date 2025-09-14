@@ -1,6 +1,6 @@
 package RouteMapMaker.listcells;
 
-import RouteMapMaker.models.DoubleArrayWrapper;
+import RouteMapMaker.models.LineDash;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListCell;
@@ -9,15 +9,15 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 
-public class LineDashCell  extends ListCell<DoubleArrayWrapper> 
-implements Callback<ListView<DoubleArrayWrapper>, ListCell<DoubleArrayWrapper>>{
+public class LineDashCell  extends ListCell<LineDash> 
+implements Callback<ListView<LineDash>, ListCell<LineDash>>{
 
 	@Override
-	public ListCell<DoubleArrayWrapper> call(ListView<DoubleArrayWrapper> param) {
+	public ListCell<LineDash> call(ListView<LineDash> param) {
 		// TODO Auto-generated method stub
 		return new LineDashCell(){
 			@Override
-			protected void updateItem(DoubleArrayWrapper item, boolean empty){
+			protected void updateItem(LineDash item, boolean empty){
 				super.updateItem(item, empty);
 				if (empty || item == null) {
 					setText(null);
