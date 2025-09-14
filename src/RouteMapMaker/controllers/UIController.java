@@ -127,6 +127,7 @@ import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.LineDash;
+import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
@@ -147,7 +148,7 @@ public class UIController implements Initializable{
 	private ObservableList<String> trList = FXCollections.observableArrayList();
 	private ObservableList<StopMark> markList = FXCollections.observableArrayList();//駅ごと
 	private ObservableList<StopMark> trainMarkList = FXCollections.observableArrayList();//経路ごと
-	private ObservableList<Line> lineList;
+	private final LineList lineList = new LineList();
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
 	private ObservableList<MvSta> movingStList = FXCollections.observableArrayList();
@@ -297,7 +298,6 @@ public class UIController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
-		lineList = FXCollections.observableArrayList();
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
 		RouteTable.setCellFactory(TextFieldListCell.forListView());

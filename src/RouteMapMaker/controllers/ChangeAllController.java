@@ -8,6 +8,7 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.LineDash;
+import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
@@ -34,7 +35,7 @@ import javafx.util.Callback;
 
 public class ChangeAllController implements Initializable{
 
-	ObservableList<Line> lineList;
+	LineList lineList;
 	ObservableList<StopMark> B_markList = FXCollections.observableArrayList();
 	ObservableList<LineDash> lineDashes;
 	UIController uic;
@@ -575,7 +576,7 @@ public class ChangeAllController implements Initializable{
 		}
 		return list;
 	}
-	public void setObject(ObservableList<Line> lineList, ObservableList<StopMark> markList, 
+	public void setObject(LineList lineList, ObservableList<StopMark> markList, 
 			ObservableList<LineDash> lineDashes, UIController uic){
 		this.lineList = lineList;
 		B_markList.add(StopMark.CIRCLE);
@@ -583,18 +584,18 @@ public class ChangeAllController implements Initializable{
 		B_markList.addAll(markList);
 		this.lineDashes = lineDashes;
 		this.uic = uic;
-		A_list.setItems(lineList);
-		B_LineList.setItems(lineList);
+		A_list.setItems(lineList.asObservableList());
+		B_LineList.setItems(lineList.asObservableList());
 		B_linePattern.setItems(lineDashes);
 		B_linePattern.getSelectionModel().selectFirst();
 		B_markType.setItems(B_markList);
 		B_markType.getSelectionModel().selectFirst();
-		C_LineList.setItems(lineList);
+		C_LineList.setItems(lineList.asObservableList());
 		ObservableList<StopMark> mlC = FXCollections.observableArrayList(StopMark.OBEY_LINE,StopMark.NO_DRAW,StopMark.CIRCLE);
 		mlC.addAll(markList);
 		C_Mark.setItems(mlC);
 		C_Mark.getSelectionModel().selectFirst();
-		D_LineList.setItems(lineList);
+		D_LineList.setItems(lineList.asObservableList());
 	}
 	//以下、セルファクトリ用の内部クラス
 	class LineCell extends ListCell<Line> implements Callback<ListView<Line>, ListCell<Line>>{
