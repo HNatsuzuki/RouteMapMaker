@@ -540,9 +540,9 @@ public class UIController implements Initializable{
 				int staNum = 0;
 				while(true){
 					String d = staNum + "駅";
-					if(findStaByName(d)!=null){
+					if (lineList.hasStationWithName(d)) {
 						staNum++;
-					}else{
+					} else {
 						break;
 					}
 				}
@@ -2109,20 +2109,20 @@ public class UIController implements Initializable{
 			int dup_process = 1; // 0:問い合わせ 1:すべて統合　2:すべて不統合
 			for(int i=0; i<newLineStations.size(); i++) {
 				final Station s = newLineStations.get(i);
-				final Station dup = findStaByName(s.getName());
-				if(dup==null || dup_process==2) {
+				final Optional<Station> dup = lineList.findStationByName(s.getName());
+				if(!dup.isPresent() || dup_process==2) {
 					// 重複なし or すべて不統合 → そのまま
 					continue;
 				}
 				else if(dup_process==1) {
 					// すべて統合 → 置き換え
-					newLineStations.set(i, dup);
+					newLineStations.set(i, dup.get());
 				}
 				else {
 					// 問い合わせ
 				}
 			}
-			newLine.setStations(FXCollections.observableList(newLineStations));
+			newLine.setStations(newLineStations);
 		}
 		
 		Command command = new AddListItemCommand<>(lineList, newLine);
@@ -2132,17 +2132,6 @@ public class UIController implements Initializable{
 		rnList.add(newLine.getName());
 		RouteTable.getSelectionModel().select(rnList.size() - 1);
 		return newLine;
-	}
-	
-	Station findStaByName(String Cname){//候補の駅名がOKかどうか調べる。trueだとアウト。
-		for (Line l : lineList) {
-			for (Station s : l.getStations()) {
-				if(Cname.equals(s.getName())) {
-					return s;
-				}
-			}
-		}
-		return null;
 	}
 	
 	double[] getGridedPoint(double org_x, double org_y) {

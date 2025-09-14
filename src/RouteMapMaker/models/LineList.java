@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -64,6 +65,31 @@ public class LineList implements List<Line> {
         this.add(line);
 
         return line;
+    }
+
+    /**
+     * 指定した名称の駅が存在するかどうか判定します。
+     *
+     * @param name 駅名
+     * @return 指定した名称の駅が存在する場合 true
+     */
+    public boolean hasStationWithName(String name) {
+        return this.lines.stream()
+            .flatMap(l -> l.getStations().stream())
+            .anyMatch(s -> s.getName().equals(name));
+    }
+
+    /**
+     * 名称が一致する駅を探します。
+     *
+     * @param name 検索する駅名
+     * @return 指定した駅名に一致する駅。
+     */
+    public Optional<Station> findStationByName(String name) {
+        return this.lines.stream()
+            .flatMap(l -> l.getStations().stream())
+            .filter(s -> s.getName().equals(name))
+            .findFirst();
     }
 
     /**

@@ -1,5 +1,7 @@
 package RouteMapMaker.models;
 
+import java.util.List;
+
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -86,9 +88,13 @@ public class Line {//路線の情報を保持するクラス。
 		connections.forEach(c -> staList.add(c.station.get()));
 		return staList;
 	}
-	public void setStations(ObservableList<Station> st){
+	public void setStations(List<Station> st){
+		double[] start = connections.get(0).station.get().getPoint();
+		double[] terminal = connections.get(connections.size() - 1).station.get().getPoint();
 		connections.clear();
 		st.forEach(s -> connections.add(new Connection(s)));
+		connections.get(0).station.get().setPoint(start[0], start[1]);
+		connections.get(connections.size() - 1).station.get().setPoint(terminal[0], terminal[1]);
 	}
 	public Connection insertStation(int idx, Station sta) {
 		Connection c = new Connection(sta);
