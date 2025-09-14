@@ -14,11 +14,11 @@ public class TextStyle {
     private final int size;
     private final String fontFamily;
     private final int style;
-    private final int location;
+    private final TextLocation location;
     private final boolean isVertical;
     private final Color color;
 
-    public TextStyle(int size, String fontFamily, int style, int location, boolean isVertical, Color color) {
+    public TextStyle(int size, String fontFamily, int style, TextLocation location, boolean isVertical, Color color) {
         this.size = size;
         this.fontFamily = fontFamily;
         this.style = style;
@@ -70,17 +70,23 @@ public class TextStyle {
      */
     public double getHorizontalOffset() {
         if (isVertical) {
-            // 縦書きは水平オフセットなし
-            return 0;
-        }
-
-        switch (location) {
-            case Line.LEFT:
-                return -5;
-            case Line.RIGHT:
-                return 5;
-            default:
-                return 0;
+            switch (location) {
+                case LEFT:
+                    return -size / 2;
+                case RIGHT:
+                    return size / 2;
+                default:
+                    return 0;
+            }
+        } else {
+            switch (location) {
+                case LEFT:
+                    return -5;
+                case RIGHT:
+                    return 5;
+                default:
+                    return 0;
+            }
         }
     }
 
@@ -96,9 +102,9 @@ public class TextStyle {
         }
 
         switch (location) {
-            case Line.LEFT:
+            case LEFT:
                 return TextAlignment.RIGHT;
-            case Line.RIGHT:
+            case RIGHT:
                 return TextAlignment.LEFT;
             default:
                 return TextAlignment.CENTER;
@@ -112,9 +118,9 @@ public class TextStyle {
      */
     public VPos getVPos() {
         switch (location) {
-            case Line.TOP:
+            case TOP:
                 return VPos.BOTTOM;
-            case Line.BOTTOM:
+            case BOTTOM:
                 return VPos.TOP;
             default:
                 return VPos.CENTER;

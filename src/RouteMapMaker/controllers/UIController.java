@@ -135,6 +135,7 @@ import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.TextStyle;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
@@ -2360,26 +2361,24 @@ public class UIController implements Initializable{
 	void textDraw(boolean mode){//駅名描画メソッド。modeがtrueなら路線編集モード。falseなら運転経路編集モード。
 		List<Station> drawnStations = new ArrayList<>();
 		//駅名描画
-		for(Line l : lineList) {
-			for(Station station : l.getStations()) {
+		for (Line l : lineList) {
+			for (Station station : l.getStations()) {
 				int size = station.getNameSize()==0 ? l.getNameSize() : station.getNameSize();
-				if(size == -1 || drawnStations.contains(station)) {
+				if (size == -1 || drawnStations.contains(station)) {
 					//サイズが-1の場合 or すでに描画されている場合は描画しない。
 					continue;
 				}
-				int style = station.getNameStyle()==Station.STYLE_UNSET ? l.getNameStyle() : station.getNameStyle();
-				boolean tate = station.getTextLocation()==Station.TEXT_UNSET ? l.isTategaki() : station.isTategaki();
-				int location;
-				if(station.getTextLocation()==Station.TEXT_UNSET ) {
-					location = l.getNameLocation();
+				int style = station.getNameStyle() == Station.STYLE_UNSET ? l.getNameStyle() : station.getNameStyle();
+				boolean tate = station.getTextLocation() == Station.TEXT_UNSET ? l.isTategaki() : station.isTategaki();
+				TextLocation location;
+				if (station.getTextLocation() == Station.TEXT_UNSET) {
+					location = TextLocation.fromLineLocation(l.getNameLocation());
 				} else {
-					//stationのlocation変数とLineのlocation変数は並びが異なるので，変換が必要
-					Integer[] sl = {Station.TEXT_RIGHT, Station.TEXT_LEFT, Station.TEXT_TOP, Station.TEXT_BOTTOM, Station.TEXT_CENTER};
-					location = Arrays.asList(sl).indexOf(station.getTextLocation());
+					location = TextLocation.fromStationLocation(station.getTextLocation());
 				}
 				//駅名シフト
 				int[] shift = new int[2];
-				if(mode){//路線編集モードならshiftしない。
+				if (mode) {//路線編集モードならshiftしない。
 					shift[0] = 0;
 					shift[1] = 0;
 				} else if (station.shiftBasedOnStation()){//駅の設定準拠
