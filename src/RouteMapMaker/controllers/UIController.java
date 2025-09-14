@@ -140,6 +140,7 @@ import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.ErrorReporter;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
+import RouteMapMaker.services.MapDrawer;
 
 public class UIController implements Initializable{
 	
@@ -185,6 +186,7 @@ public class UIController implements Initializable{
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
+	private MapDrawer drawer;
 	
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
@@ -300,6 +302,10 @@ public class UIController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
+		gc = canvas.getGraphicsContext2D();
+		drawer = new MapDrawer(config, gc);
+		gc.save();
+
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
 		RouteTable.setCellFactory(TextFieldListCell.forListView());
@@ -307,8 +313,6 @@ public class UIController implements Initializable{
 		setCanvasOriginal(lineList.getMaxPoint());
 		rnList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
-		gc = canvas.getGraphicsContext2D();
-		gc.save();
 		(new Thread(){
 			@Override
 			public void run(){
@@ -1074,6 +1078,7 @@ public class UIController implements Initializable{
 						}
 						canvasOriginal[0] = x_largest + canvasMargin/zoom;
 						canvasOriginal[1] = y_largest + canvasMargin/zoom;
+						drawer.setCanvasSize(canvasOriginal);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
@@ -2168,6 +2173,7 @@ public class UIController implements Initializable{
 	private void setCanvasOriginal(Point2D point) {
 		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
 		canvasOriginal[1] = point.getY() + canvasMargin * 2;
+		drawer.setCanvasSize(canvasOriginal);
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
@@ -2280,7 +2286,7 @@ public class UIController implements Initializable{
 		canvas.setHeight(canvasOriginal[1]*zoom);
 		gc.clearRect(0, 0, canvasOriginal[0], canvasOriginal[1]);//はじめに全領域消去
 		if(showBackInLE.isSelected()) {
-			drawBack(); //背景を描画
+			drawer.drawBackground(background); //背景を描画
 		}
 		drawGrid(); //グリッドを描画する。
 		//各路線ごとに描画。
@@ -2385,21 +2391,6 @@ public class UIController implements Initializable{
 				gc.strokeLine(i, 0, i, canvasOriginal[1]);
 				i = i + interval;
 			}
-		}
-	}
-	
-	void drawBack() {
-		// 画像あるナシに関わらず背景色を設定
-		gc.setFill(background.getColor());
-		gc.fillRect(0, 0, canvasOriginal[0], canvasOriginal[1]);
-		if(background.getImage()!=null) {
-			// 背景画像
-			double r = zoom*background.getZoomRatio()/100;
-			gc.setTransform(r, 0, 0, r, background.getX()*zoom, background.getY()*zoom);
-			gc.setGlobalAlpha(1-background.getOpacity()/100.0);
-			gc.drawImage(background.getImage(), 0, 0);
-			gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-			gc.setGlobalAlpha(1.0);
 		}
 	}
 	
@@ -2540,7 +2531,7 @@ public class UIController implements Initializable{
 		gc.setTransform(zoom, 0, 0, zoom, 0, 0);
 		canvas.setWidth(canvasOriginal[0] * zoom);
 		canvas.setHeight(canvasOriginal[1] * zoom);
-		drawBack();
+		drawer.drawBackground(background);
 		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理
 			for(int i = lineList.get(k).getTrains().size() - 1; 0 <= i; i--){//系統ごとに処理。降順に処理していく。
 				Train train = lineList.get(k).getTrains().get(i);
@@ -3071,6 +3062,7 @@ public class UIController implements Initializable{
 		}
 		canvasOriginal[0] = x_largest + canvasMargin;
 		canvasOriginal[1] = y_largest + canvasMargin;
+		drawer.setCanvasSize(canvasOriginal);
 		canvas.setWidth(x_largest + canvasMargin);
 		canvas.setHeight(y_largest + canvasMargin);
 		resetParams();//適切にGUIパラメータを再セット。
