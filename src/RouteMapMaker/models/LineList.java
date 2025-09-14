@@ -4,17 +4,25 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.OptionalDouble;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import RouteMapMaker.factories.LineFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 
 /**
  * 路線のリストを表すクラスです。
  */
 public class LineList implements List<Line> {
+    /** 新規追加時のX方向オフセット */
+    public static final double INITIAL_LINE_OFFSET_X = 50;
+    /** 新規追加時のY方向オフセット */
+    public static final double INITIAL_LINE_OFFSET_Y = 50;
     private final ObservableList<Line> lines;
 
     /**
@@ -40,6 +48,42 @@ public class LineList implements List<Line> {
      */
     public ObservableList<Line> asObservableList() {
         return FXCollections.unmodifiableObservableList(this.lines);
+    }
+
+    /**
+     * 新たに路線を作成し、リストに追加します。
+     *
+     * @param name 路線名
+     * @return 新たに作成した路線
+     */
+    public Line createAndAddLine(String name) {
+        Point2D maxPoint = getMaxPoint();
+        // 基準位置はX座標は固定、Y座標はすべての位置の最大値からオフセット分ずらす
+        Point2D base = new Point2D(INITIAL_LINE_OFFSET_X, maxPoint.getY() + INITIAL_LINE_OFFSET_Y);
+        Line line = LineFactory.create(name, base.getX(), base.getY());
+        this.add(line);
+
+        return line;
+    }
+
+    /**
+     * 全路線に含まれる駅の最大の座標を取得します。
+     *
+     * @return 最大の座標。一つも存在しない場合は (0, 0) を返します。
+     */
+    public Point2D getMaxPoint() {
+        Point2D point;
+        List<Station> stations = this.lines.stream().flatMap(l -> l.getStations().stream()).filter(Station::isSet).collect(Collectors.toList());
+        OptionalDouble maxX = stations.stream().mapToDouble(s -> s.getPoint()[0]).max();
+        OptionalDouble maxY = stations.stream().mapToDouble(s -> s.getPoint()[1]).max();
+
+        if (maxX.isPresent() && maxY.isPresent()) {
+            point = new Point2D(maxX.getAsDouble(), maxY.getAsDouble());
+        } else {
+            point = new Point2D(0, 0);
+        }
+
+        return point;
     }
 
     @Override

@@ -60,8 +60,6 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         errorMessages.clear();
 
         Line line = new Line(properties.getProperty(prefix + "lineName"));
-        //コンストラクタで生成された奴らを削除する必要がある。
-        line.getConnections().clear();
 
         double r = Double.parseDouble(properties.getProperty(prefix + "nameColorR"));
         double g = Double.parseDouble(properties.getProperty(prefix + "nameColorG"));

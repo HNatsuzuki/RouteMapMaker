@@ -39,6 +39,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -103,6 +104,7 @@ import RouteMapMaker.converters.LineDashListPropertiesConverter;
 import RouteMapMaker.converters.LineListPropertiesConverter;
 import RouteMapMaker.converters.StopMarkListPropertiesConverter;
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.LineFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
@@ -301,9 +303,9 @@ public class UIController implements Initializable{
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
 		RouteTable.setCellFactory(TextFieldListCell.forListView());
-		lineList.add(new Line("路線1"));
-		newLinePointSet(lineList.get(0));
-		rnList.add(lineList.get(0).getName());
+		Line newLine = lineList.createAndAddLine("路線1");
+		setCanvasOriginal(lineList.getMaxPoint());
+		rnList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
 		gc = canvas.getGraphicsContext2D();
 		gc.save();
@@ -1121,9 +1123,9 @@ public class UIController implements Initializable{
 			customMarks.clear();
 			freeItems.clear();
 			rnList.clear();
-			lineList.add(new Line("路線1"));
-			newLinePointSet(lineList.get(0));
-			rnList.add(lineList.get(0).getName());
+			Line newLine1 = lineList.createAndAddLine("路線1");
+			setCanvasOriginal(lineList.getMaxPoint());
+			rnList.add(newLine1.getName());
 			RouteTable.getSelectionModel().select(0);
 			urManager.clear();
 			lineDraw();
@@ -2079,7 +2081,9 @@ public class UIController implements Initializable{
 
 	// 路線を作成し，作成されたLineを返す
 	Line createNewLine(ArrayList<String> staNames) {
-		Line newLine = new Line("路線" + (lineList.size()+1));
+		Point2D point = lineList.getMaxPoint();
+		Line newLine = LineFactory.create("路線" + (lineList.size() + 1), LineList.INITIAL_LINE_OFFSET_X, point.getY() + LineList.INITIAL_LINE_OFFSET_Y);
+
 		if(lineList.size() > 0){//既に路線があった場合は入力補助として駅名色、駅名大きさ、駅名スタイルを引き継ぐ
 			final Line lastLine = lineList.get(lineList.size()-1);
 			newLine.setTategaki(lastLine.isTategaki());
@@ -2124,7 +2128,7 @@ public class UIController implements Initializable{
 		Command command = new AddListItemCommand<>(lineList, newLine);
 		command.execute();
 		urManager.push(command);
-		newLinePointSet(newLine);
+		setCanvasOriginal(lineList.getMaxPoint());
 		rnList.add(newLine.getName());
 		RouteTable.getSelectionModel().select(rnList.size() - 1);
 		return newLine;
@@ -2171,16 +2175,10 @@ public class UIController implements Initializable{
 		}
 		return pos;
 	}
-	
-	void newLinePointSet(Line l){//新しく追加された路線のとりあえずの描画位置を決める。
-		final double start = 50;
-		final double x_interval = 200;
-		final double y_interval = 50;
-		l.getStations().get(0).setPoint(start, y_largest + y_interval);//スタート地点
-		l.getStations().get(l.getStations().size() - 1).setPoint(start + x_interval, y_largest + y_interval);
-		y_largest = y_largest + y_interval;
-		canvasOriginal[0] = x_largest + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
-		canvasOriginal[1] = y_largest + canvasMargin * 2;
+
+	private void setCanvasOriginal(Point2D point) {
+		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
+		canvasOriginal[1] = point.getY() + canvasMargin * 2;
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード

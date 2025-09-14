@@ -69,9 +69,6 @@ public class Line {//路線の情報を保持するクラス。
 		connections = FXCollections.observableArrayList();
 		trains = FXCollections.observableArrayList();
 		setName(name);
-		//始点と終点は確保しておく
-		addStation(new Station(name + "始点"));
-		addStation(new Station(name + "終点"));
 	}
 	
 	public String getName(){
