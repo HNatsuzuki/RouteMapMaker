@@ -135,8 +135,6 @@ import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
-import RouteMapMaker.models.TextLocation;
-import RouteMapMaker.models.TextStyle;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.ErrorReporter;
@@ -305,7 +303,7 @@ public class UIController implements Initializable{
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
 		gc = canvas.getGraphicsContext2D();
-		drawer = new MapDrawer(config, gc);
+		drawer = new MapDrawer(config, gc, stationFontFamily);
 		gc.save();
 
 		RouteTable.setItems(rnList);
@@ -2355,52 +2353,7 @@ public class UIController implements Initializable{
 			}
 		}
 
-		textDraw(true);
-	}
-	
-	void textDraw(boolean mode){//駅名描画メソッド。modeがtrueなら路線編集モード。falseなら運転経路編集モード。
-		List<Station> drawnStations = new ArrayList<>();
-		//駅名描画
-		for (Line l : lineList) {
-			for (Station station : l.getStations()) {
-				int size = station.getNameSize()==0 ? l.getNameSize() : station.getNameSize();
-				if (size == -1 || drawnStations.contains(station)) {
-					//サイズが-1の場合 or すでに描画されている場合は描画しない。
-					continue;
-				}
-				int style = station.getNameStyle() == Station.STYLE_UNSET ? l.getNameStyle() : station.getNameStyle();
-				boolean tate = station.getTextLocation() == Station.TEXT_UNSET ? l.isTategaki() : station.isTategaki();
-				TextLocation location;
-				if (station.getTextLocation() == Station.TEXT_UNSET) {
-					location = TextLocation.fromLineLocation(l.getNameLocation());
-				} else {
-					location = TextLocation.fromStationLocation(station.getTextLocation());
-				}
-				//駅名シフト
-				int[] shift = new int[2];
-				if (mode) {//路線編集モードならshiftしない。
-					shift[0] = 0;
-					shift[1] = 0;
-				} else if (station.shiftBasedOnStation()){//駅の設定準拠
-					shift = station.getNameZure();
-				} else {//路線の設定準拠
-					shift = l.getNameZure();
-				}
-				//System.out.println(station.getName() + ": " + tate + ", " + location);
-				String text;
-				if (tate) {
-					text = station.getName().chars().mapToObj(c -> String.valueOf((char)c)).collect(Collectors.joining("\n"));
-				} else {
-					text = station.getName();
-				}
-
-				TextStyle textStyle = new TextStyle(size, stationFontFamily.get(), style, location, tate, l.getNameColor());
-				double[] stationPoint = station.getPointUS();
-				Point2D position = new Point2D(stationPoint[0] + shift[0], stationPoint[1] + shift[1]);
-				drawer.drawText(text, position, textStyle);
-				drawnStations.add(station);
-			}
-		}
+		drawer.drawStationNames(lineList, true);
 	}
 	
 	// 線分aと線分bの（延長）交点を求める．aとbが平行で交点がない場合はa[1]を用いる．
@@ -2621,7 +2574,7 @@ public class UIController implements Initializable{
 				}
 			}
 		}
-		textDraw(false);//駅名はlineにもとづいて描画することになりました。
+		drawer.drawStationNames(lineList, false);//駅名はlineにもとづいて描画することになりました。
 		//以下、自由挿入アイテムを描画する
 		gc.setTextAlign(TextAlignment.LEFT);//駅名描画でいじったので直す
 		gc.setTextBaseline(VPos.BASELINE);

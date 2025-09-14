@@ -1,8 +1,16 @@
 package RouteMapMaker.services;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import RouteMapMaker.factories.StationLabelFactory;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.Line;
+import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextStyle;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -15,12 +23,14 @@ public class MapDrawer {
     private static final double GRID_STROKE_WIDTH = 1;
     private final Configuration config;
     private final GraphicsContext gc;
+    private final StationLabelFactory stationLabelFactory;
     private double zoomRatio = 1.0;
     private Point2D canvasSize = new Point2D(200, 200);
 
-    public MapDrawer(Configuration config, GraphicsContext gc) {
+    public MapDrawer(Configuration config, GraphicsContext gc, StringProperty fontFamily) {
         this.config = config;
         this.gc = gc;
+        this.stationLabelFactory = new StationLabelFactory(fontFamily);
     }
 
     public Point2D getCanvasSize() {
@@ -83,6 +93,31 @@ public class MapDrawer {
         } else {
             // 四角形グリッド
             drawRectangleGrid(interval);
+        }
+    }
+
+    /**
+     * 路線に含まれるすべての駅名を描画します。
+     *
+     * @param lineList 路線リスト
+     * @param isEditMode 編集モードかどうか
+     */
+    public void drawStationNames(LineList lineList, boolean isEditMode) {
+        Set<Station> drawnStations = new HashSet<>();
+        //駅名描画
+        for (Line l : lineList) {
+            for (Station station : l.getStations()) {
+                if (drawnStations.contains(station)) {
+                    // すでに描画されている場合は描画しない。
+                    continue;
+                }
+
+                stationLabelFactory.createLabel(station, l, isEditMode)
+                    .ifPresent(label -> {
+                        drawText(label.getText(), label.getPosition(), label.getStyle());
+                        drawnStations.add(station);
+                    });
+            }
         }
     }
 
