@@ -2288,7 +2288,7 @@ public class UIController implements Initializable{
 		if(showBackInLE.isSelected()) {
 			drawer.drawBackground(background); //背景を描画
 		}
-		drawGrid(); //グリッドを描画する。
+		drawer.drawGrid(); //グリッドを描画する。
 		//各路線ごとに描画。
 		double[] startP = new double[2];//スタート座標
 		double[] endP = new double[2];//エンド座標
@@ -2354,44 +2354,6 @@ public class UIController implements Initializable{
 		}
 		gc.setFill(Color.BLACK);
 		textDraw(true);
-	}
-	
-	void drawGrid() {
-		// グリッド表示OFF→return
-		if(!config.getR_grid()) {
-			return;
-		}
-		final int interval = config.getR_gridInterval();
-		gc.setStroke(Color.LAVENDER);
-		gc.setLineWidth(1);
-		if(config.isGridTriangle()) {
-			// 三角形グリッド
-			// 水平線
-			double y_interval = interval * Math.sqrt(3) / 2;
-			double h = canvasOriginal[1];
-			for(int i = 0; i * y_interval < h; i++){//横線
-				gc.strokeLine(0, i * y_interval, canvasOriginal[0], i * y_interval);
-			}
-			int start_idx = (int) (Math.ceil(h/interval/Math.sqrt(3)));
-			// 斜め 傾き負線
-			for(double x = -1 * start_idx * interval; x < canvasOriginal[0]; x += interval) {
-				gc.strokeLine(x, 0, x + h/Math.sqrt(3), h);
-			}
-			// 斜め 傾き正線
-			for(double x = 0; x < canvasOriginal[0] + h/Math.sqrt(3); x += interval) {
-				gc.strokeLine(x - h/Math.sqrt(3), h, x , 0);
-			}
-		} else {
-			// 四角形グリッド
-			for(int i = 0; i < canvasOriginal[1];){//横線
-				gc.strokeLine(0, i, canvasOriginal[0], i);
-				i = i + interval;
-			}
-			for(int i = 0; i < canvasOriginal[0];){//縦線
-				gc.strokeLine(i, 0, i, canvasOriginal[1]);
-				i = i + interval;
-			}
-		}
 	}
 	
 	void textDraw(boolean mode){//駅名描画メソッド。modeがtrueなら路線編集モード。falseなら運転経路編集モード。
