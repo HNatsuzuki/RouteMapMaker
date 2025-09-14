@@ -1,6 +1,7 @@
 package RouteMapMaker.services;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import RouteMapMaker.factories.StationLabelFactory;
@@ -8,6 +9,7 @@ import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextStyle;
 import javafx.beans.property.StringProperty;
@@ -21,6 +23,8 @@ import javafx.scene.paint.Color;
 public class MapDrawer {
     private static final Color GRID_COLOR = Color.LAVENDER;
     private static final double GRID_STROKE_WIDTH = 1;
+    private static final Color SELECTED_STATION_POINT_COLOR = Color.RED;
+    private static final double STATION_POINT_RADIUS = 3;
     private final Configuration config;
     private final GraphicsContext gc;
     private final StationLabelFactory stationLabelFactory;
@@ -117,6 +121,34 @@ public class MapDrawer {
                         drawText(label.getText(), label.getPosition(), label.getStyle());
                         drawnStations.add(station);
                     });
+            }
+        }
+    }
+
+    /**
+     * 路線に含まれるすべての駅の点を描画します。
+     *
+     * @param lineList 路線リスト
+     * @param movingStations 移動中の駅
+     */
+    public void drawStationPoints(LineList lineList, List<MvSta> movingStations) {
+        for (Line line : lineList) {
+            for (Station station : line.getStations()) {
+                boolean isSelected = movingStations.stream().map(MvSta::getStation).anyMatch(s -> s == station);
+
+                if(isSelected) {
+                    // 選択中
+                    gc.setFill(SELECTED_STATION_POINT_COLOR);
+                } else if(station.isSet()) {
+                    //座標固定されている
+                    gc.setFill(config.getFixedColor());
+                } else {
+                    //座標固定されていない
+                    gc.setFill(config.getNonFixedColor());
+                }
+
+                double[] point = station.getPointUS();
+                gc.fillOval(point[0] - STATION_POINT_RADIUS, point[1] - STATION_POINT_RADIUS, STATION_POINT_RADIUS * 2, STATION_POINT_RADIUS * 2);
             }
         }
     }

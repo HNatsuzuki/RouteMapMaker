@@ -2292,7 +2292,6 @@ public class UIController implements Initializable{
 		//各路線ごとに描画。
 		double[] startP = new double[2];//スタート座標
 		double[] endP = new double[2];//エンド座標
-		double radius = pointRadius;//点の半径
 		gc.setLineWidth(2);
 		for(Line line: lineList){
 			//選択中の路線だけ色を変える
@@ -2335,23 +2334,7 @@ public class UIController implements Initializable{
 			gc.stroke();
 		}
 		//駅の点の描画
-		for(Line l: lineList){
-			for(Station sta: l.getStations()){
-				boolean contain = false;
-				for(MvSta ms: movingStList){
-					if(ms.getStation() == sta) contain = true;
-				}
-				if(contain) { // 選択中
-					gc.setFill(Color.RED);
-				} else if(sta.isSet()) { //座標固定されている
-					gc.setFill(config.getFixedColor());
-				} else { //座標固定されていない
-					gc.setFill(config.getNonFixedColor());
-				}
-				double[] p = sta.getPointUS();
-				gc.fillOval(p[0] - radius, p[1] - radius, radius * 2, radius * 2);
-			}
-		}
+		drawer.drawStationPoints(lineList, movingStList);
 
 		drawer.drawStationNames(lineList, true);
 	}
