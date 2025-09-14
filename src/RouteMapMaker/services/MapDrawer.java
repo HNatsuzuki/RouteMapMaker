@@ -2,8 +2,10 @@ package RouteMapMaker.services;
 
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.TextStyle;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 
 /**
  * 描画系処理をまとめたクラスです。
@@ -82,6 +84,21 @@ public class MapDrawer {
             // 四角形グリッド
             drawRectangleGrid(interval);
         }
+    }
+
+    /**
+     * 文字列を描画します。
+     *
+     * @param text 文字列
+     * @param position 位置
+     * @param style スタイル
+     */
+    public void drawText(String text, Point2D position, TextStyle style) {
+        gc.setFont(style.getFont());
+        gc.setFill(style.getColor());
+        gc.setTextAlign(style.getTextAlignment());
+        gc.setTextBaseline(style.getVPos());
+        gc.fillText(text, position.getX() + style.getHorizontalOffset(), position.getY());
     }
 
     /**

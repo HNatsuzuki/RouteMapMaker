@@ -135,6 +135,7 @@ import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TextStyle;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.ErrorReporter;
@@ -2352,24 +2353,17 @@ public class UIController implements Initializable{
 				gc.fillOval(p[0] - radius, p[1] - radius, radius * 2, radius * 2);
 			}
 		}
-		gc.setFill(Color.BLACK);
+
 		textDraw(true);
 	}
 	
 	void textDraw(boolean mode){//駅名描画メソッド。modeがtrueなら路線編集モード。falseなら運転経路編集モード。
-		gc.setFill(Color.BLACK);
-		gc.setFont(Font.getDefault());
-		//先にdrawnフラグを全てfalseにする
-		for(Line l : lineList) {
-			for(Station station : l.getStations()) {
-				station.setDrawn(false);
-			}
-		}
+		List<Station> drawnStations = new ArrayList<>();
 		//駅名描画
 		for(Line l : lineList) {
 			for(Station station : l.getStations()) {
 				int size = station.getNameSize()==0 ? l.getNameSize() : station.getNameSize();
-				if(size == -1 || station.isDrawn()) {
+				if(size == -1 || drawnStations.contains(station)) {
 					//サイズが-1の場合 or すでに描画されている場合は描画しない。
 					continue;
 				}
@@ -2394,59 +2388,20 @@ public class UIController implements Initializable{
 					shift = l.getNameZure();
 				}
 				//System.out.println(station.getName() + ": " + tate + ", " + location);
-				if(tate) {
-					drawTate(station, size, style, location, shift, l.getNameColor());
+				String text;
+				if (tate) {
+					text = station.getName().chars().mapToObj(c -> String.valueOf((char)c)).collect(Collectors.joining("\n"));
 				} else {
-					drawYoko(station, size, style, location, shift, l.getNameColor());
+					text = station.getName();
 				}
-				station.setDrawn(true);
+
+				TextStyle textStyle = new TextStyle(size, stationFontFamily.get(), style, location, tate, l.getNameColor());
+				double[] stationPoint = station.getPointUS();
+				Point2D position = new Point2D(stationPoint[0] + shift[0], stationPoint[1] + shift[1]);
+				drawer.drawText(text, position, textStyle);
+				drawnStations.add(station);
 			}
 		}
-	}
-	
-	void drawYoko(Station station, int size, int style, int location, int[] shift, Color color){
-		double sideIntv;
-		double[] p = station.getPointUS();
-		//文字スタイルの設定
-		FontWeight fw = (style == Line.BOLD || style == Line.ITALIC_BOLD) ? FontWeight.BOLD : FontWeight.NORMAL;
-		FontPosture fp = (style == Line.ITALIC || style == Line.ITALIC_BOLD) ? FontPosture.ITALIC : FontPosture.REGULAR;
-		gc.setFont(Font.font(stationFontFamily.get(), fw, fp, size));
-		gc.setFill(color);//色の設定
-		gc.setTextBaseline(VPos.BASELINE);
-		if(location == Line.LEFT){//右付き、左付きの設定
-			gc.setTextAlign(TextAlignment.RIGHT);
-			sideIntv = -5;
-		} else if (location == Line.RIGHT){
-			gc.setTextAlign(TextAlignment.LEFT);
-			sideIntv = 5;
-		} else {
-			gc.setTextAlign(TextAlignment.CENTER);
-			sideIntv = 0;
-		}
-		gc.setTextBaseline(
-				location==Line.TOP ? VPos.BOTTOM : location==Line.BOTTOM ? VPos.TOP : VPos.CENTER);
-		gc.fillText(station.getName(), 
-				p[0] + sideIntv + shift[0], p[1] + shift[1]);//X座標は要検証
-	}
-	void drawTate(Station station, int size, int style, int location, int[] shift, Color color){
-		double[] p = station.getPointUS();
-		StringBuilder tate = new StringBuilder();
-		for(int i = 0; i < station.getName().length(); i++){
-			tate.append(station.getName().charAt(i));
-			if(i != station.getName().length() - 1){
-				tate.append("\n");//最終文字以外は改行文字を追加する。
-			}
-		}
-		//文字スタイルの設定
-		FontWeight fw = (style == Line.BOLD || style == Line.ITALIC_BOLD) ? FontWeight.BOLD : FontWeight.NORMAL;
-		FontPosture fp = (style == Line.ITALIC || style == Line.ITALIC_BOLD) ? FontPosture.ITALIC : FontPosture.REGULAR;
-		gc.setFont(Font.font(stationFontFamily.get(), fw, fp, size));
-		gc.setFill(color);//色の設定
-		gc.setTextAlign(TextAlignment.CENTER);
-		gc.setTextBaseline(
-			location==Line.TOP ? VPos.BOTTOM : location==Line.BOTTOM ? VPos.TOP : VPos.CENTER);
-		int posOffset = location==Line.LEFT ? -1*size/2 : location==Line.RIGHT ? size/2 : 0;
-		gc.fillText(tate.toString(), p[0] + posOffset + shift[0], p[1] + shift[1]);//Y座標の設定は要検証
 	}
 	
 	// 線分aと線分bの（延長）交点を求める．aとbが平行で交点がない場合はa[1]を用いる．
