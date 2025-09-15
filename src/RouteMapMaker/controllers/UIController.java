@@ -39,6 +39,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
@@ -2282,9 +2283,9 @@ public class UIController implements Initializable{
 
 		// 描画開始時処理
 		drawer.beginDraw();
-		Point2D canvasSize = drawer.getZoomedCanvasSize();
-		canvas.setWidth(canvasSize.getX());
-		canvas.setHeight(canvasSize.getY());
+		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getWidth());
+		canvas.setHeight(canvasSize.getHeight());
 
 		if(showBackInLE.isSelected()) {
 			drawer.drawBackground(background); //背景を描画
@@ -2338,9 +2339,9 @@ public class UIController implements Initializable{
 		}
 
 		drawer.beginDraw();
-		Point2D canvasSize = drawer.getZoomedCanvasSize();
-		canvas.setWidth(canvasSize.getX());
-		canvas.setHeight(canvasSize.getY());
+		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getWidth());
+		canvas.setHeight(canvasSize.getHeight());
 		gc.setLineCap(StrokeLineCap.ROUND);//先っちょは丸くする。
 		drawer.drawBackground(background);
 		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理

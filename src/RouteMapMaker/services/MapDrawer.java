@@ -15,6 +15,7 @@ import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextStyle;
 import javafx.beans.property.StringProperty;
+import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -34,7 +35,7 @@ public class MapDrawer {
     private final GraphicsContext gc;
     private final StationLabelFactory stationLabelFactory;
     private double zoomRatio = 1.0;
-    private Point2D canvasSize = new Point2D(200, 200);
+    private Dimension2D canvasSize = new Dimension2D(200, 200);
 
     public MapDrawer(Configuration config, GraphicsContext gc, StringProperty fontFamily) {
         this.config = config;
@@ -42,20 +43,20 @@ public class MapDrawer {
         this.stationLabelFactory = new StationLabelFactory(fontFamily);
     }
 
-    public Point2D getCanvasSize() {
+    public Dimension2D getCanvasSize() {
         return this.canvasSize;
     }
 
-    public Point2D getZoomedCanvasSize() {
-        return this.canvasSize.multiply(zoomRatio);
+    public Dimension2D getZoomedCanvasSize() {
+        return new Dimension2D(this.canvasSize.getWidth() * this.zoomRatio, this.canvasSize.getHeight() * this.zoomRatio);
     }
 
-    public void setCanvasSize(Point2D size) {
+    public void setCanvasSize(Dimension2D size) {
         this.canvasSize = size;
     }
 
     public void setCanvasSize(double[] size) {
-        this.canvasSize = new Point2D(size[0], size[1]);
+        this.canvasSize = new Dimension2D(size[0], size[1]);
     }
 
     public double getZoomRatio() {
@@ -72,8 +73,8 @@ public class MapDrawer {
     public void beginDraw() {
         gc.restore();
         gc.setTransform(this.zoomRatio, 0, 0, this.zoomRatio, 0, 0);
-        Point2D canvasSize = this.getZoomedCanvasSize();
-        gc.clearRect(0, 0, canvasSize.getX(), canvasSize.getY());//はじめに全領域消去
+        Dimension2D canvasSize = this.getZoomedCanvasSize();
+        gc.clearRect(0, 0, canvasSize.getWidth(), canvasSize.getHeight());//はじめに全領域消去
     }
 
     /**
@@ -91,7 +92,7 @@ public class MapDrawer {
     public void drawBackground(Background background) {
         // 画像あるナシに関わらず背景色を設定
         gc.setFill(background.getColor());
-        gc.fillRect(0, 0, canvasSize.getX(), canvasSize.getY());
+        gc.fillRect(0, 0, canvasSize.getWidth(), canvasSize.getHeight());
 
         if (background.getImage() != null) {
             // 背景画像
@@ -252,20 +253,20 @@ public class MapDrawer {
     private void drawTriangleGrid(int interval) {
         double sqrt3 = Math.sqrt(3);
         double intervalY = interval * sqrt3 / 2;
-        double height = canvasSize.getY();
+        double height = canvasSize.getHeight();
 
         for (int y = 0; y * intervalY < height; ++y) {
             //横線
-            gc.strokeLine(0, y * intervalY, canvasSize.getX(), y * intervalY);
+            gc.strokeLine(0, y * intervalY, canvasSize.getWidth(), y * intervalY);
         }
 
         int start_idx = (int)(Math.ceil(height / interval / sqrt3));
         // 斜め 傾き負線
-        for (double x = -1 * start_idx * interval; x < canvasSize.getX(); x += interval) {
+        for (double x = -1 * start_idx * interval; x < canvasSize.getWidth(); x += interval) {
             gc.strokeLine(x, 0, x + height / sqrt3, height);
         }
         // 斜め 傾き正線
-        for (double x = 0; x < canvasSize.getX() + height / sqrt3; x += interval) {
+        for (double x = 0; x < canvasSize.getWidth() + height / sqrt3; x += interval) {
             gc.strokeLine(x - height / sqrt3, height, x , 0);
         }
     }
@@ -276,14 +277,14 @@ public class MapDrawer {
      * @param interval グリッド間隔
      */
     private void drawRectangleGrid(int interval) {
-        for (int y = 0; y < canvasSize.getY(); y += interval) {
+        for (int y = 0; y < canvasSize.getHeight(); y += interval) {
             //横線
-            gc.strokeLine(0, y, canvasSize.getX(), y);
+            gc.strokeLine(0, y, canvasSize.getWidth(), y);
         }
 
-        for (int x = 0; x < canvasSize.getX(); x += interval) {
+        for (int x = 0; x < canvasSize.getWidth(); x += interval) {
             //縦線
-            gc.strokeLine(x, 0, x, canvasSize.getY());
+            gc.strokeLine(x, 0, x, canvasSize.getHeight());
         }
     }
 }
