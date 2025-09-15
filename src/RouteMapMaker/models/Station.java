@@ -197,6 +197,12 @@ public class Station {//駅に関する情報を保持するクラス
 	public double[] getShiftCoor(){
 		return this.shiftCoor;
 	}
+
+	/** 系統駅描画時に使用する、シフト位置計算済みの座標 */
+	public Point2D getShiftedPoint() {
+		return new Point2D(this.shiftCoor[0], this.shiftCoor[1]);
+	}
+
 	public void setShiftCoor(double[] ia){
 		this.shiftCoor = ia;
 	}

@@ -2362,7 +2362,6 @@ public class UIController implements Initializable{
 				gc.setFill(train.getMarkColor());
 
 				int offset = train.getLineDistance();
-				int mark_Size = train.getMarkSize();
 				List<String> lineStationNames = line.getStations().stream()
 						.map(sta -> sta.getName()).collect(Collectors.toList()); // 路線の駅名リスト
 				int lastIndex = stops.size() - 1;
@@ -2442,7 +2441,7 @@ public class UIController implements Initializable{
 				double edgeBLength = train.getEdgeB();
 				end = lineEnd.add(ll.getUnitVector().multiply(edgeBLength));
 				line.getStations().get(endPoint).setShiftCoor(new double[] { lineEnd.getX(), lineEnd.getY() });
-				stationPoints.add(new Pair<>(end, line.isCurvable(endPoint) && line.getCurveConnection(endPoint)));
+				stationPoints.add(new Pair<>(end, line.isConnectedByCurve(endPoint)));
 
 				//staPointsにストアされた座標をもとに描画
 				for(int h=0; h<stationPoints.size(); h++) {
@@ -2486,36 +2485,7 @@ public class UIController implements Initializable{
 				gc.stroke();
 				gc.setLineDashes(null);//破線設定の後処理
 				//上書きの問題があってやはりmarkは線を書き終わってからにしよう。
-				for (int h = 0; h < stops.size(); h++) {
-					TrainStop stop = stops.get(h);
-					//どのmarkを使うのか決める。
-					StopMark mark;
-					if (stop.getMark() == StopMark.OBEY_LINE){
-						mark = train.getMark();
-					} else {
-						mark = stop.getMark();
-					}
-					//以下、それぞれのマークの処理
-					if (mark == StopMark.CIRCLE) {
-						gc.setFill(train.getMarkColor());
-						gc.fillOval(stop.getSta().getShiftCoor()[0] - mark_Size / 2,
-								stop.getSta().getShiftCoor()[1] - mark_Size / 2, 
-								mark_Size, mark_Size);
-					} else if (mark == StopMark.NO_DRAW) {
-						//NO_DRAWなのでなにもしない。
-					} else {//カスタムマーク
-						//回転するか？
-						double theta = 0;
-						if (mark.isRotated()) {
-							//回転角度を計算する
-							int s_idx = h == 0 ? h + 1 : h;
-							Point2D d = stationPoints.get(s_idx).getKey().subtract(stationPoints.get(s_idx-1).getKey());
-							theta = Math.atan2(d.getY(), d.getX());
-						}
-						CustomMarkController.markDraw(gc, mark, mark_Size,
-								stop.getSta().getShiftCoor(), theta);
-					}
-				}
+				drawer.drawStopMarks(train, stationPoints.stream().map(p -> p.getKey()).collect(Collectors.toList()));
 			}
 		}
 		drawer.drawStationNames(lineList, false);//駅名はlineにもとづいて描画することになりました。

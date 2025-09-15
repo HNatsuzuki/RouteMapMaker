@@ -551,9 +551,6 @@ public class CustomMarkController implements Initializable{
 		this.stage = stage;
 	}
 	
-	public static void markDraw(GraphicsContext gc, StopMark mark, double size, double[] coordinate, double theta){//主に実際の路線図上での描画用
-		actMarkDraw(gc, mark, size, coordinate, theta);
-	}
 	public static void markDraw(GraphicsContext gc, StopMark mark, double prevSize){//主にプレビュー画面での描画用
 		gc.clearRect(0, 0, prevSize, prevSize);//はじめに全領域消去
 		double[] coordinate = {prevSize/2,prevSize/2};

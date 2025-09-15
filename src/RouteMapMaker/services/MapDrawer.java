@@ -11,14 +11,23 @@ import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.LineSegment;
+import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
+import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.TextStyle;
+import RouteMapMaker.models.Train;
+import RouteMapMaker.models.TrainStop;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.ArcType;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 
 /**
  * 描画系処理をまとめたクラスです。
@@ -103,6 +112,298 @@ public class MapDrawer {
             gc.setTransform(zoomRatio, 0, 0, zoomRatio, 0, 0);
             gc.setGlobalAlpha(1.0);
         }
+    }
+
+    /**
+     * 運転系統のすべての停車駅を描画します。
+     *
+     * @param train 運転系統
+     * @param points 計算済駅座標
+     */
+    public void drawStopMarks(Train train, List<Point2D> points) {
+        int markSize = train.getMarkSize();
+        List<TrainStop> stops = train.getStops();
+
+        for (int i = 0; i < stops.size(); i++) {
+            TrainStop stop = stops.get(i);
+            //どのmarkを使うのか決める。
+            StopMark mark;
+
+            if (stop.getMark() == StopMark.OBEY_LINE) {
+                mark = train.getMark();
+            } else {
+                mark = stop.getMark();
+            }
+
+            //以下、それぞれのマークの処理
+            if (mark == StopMark.CIRCLE) {
+                this.drawCircleMark(train.getMarkColor(), markSize, stop.getSta().getShiftedPoint());
+            } else if (mark == StopMark.NO_DRAW) {
+                //NO_DRAWなのでなにもしない。
+            } else {
+                //カスタムマーク
+                //回転するか？
+                double theta = 0;
+
+                if (mark.isRotated()) {
+                    //回転角度を計算する
+                    int idx = i == 0 ? i + 1 : i;
+                    Point2D d = points.get(idx).subtract(points.get(idx - 1));
+                    theta = Math.atan2(d.getY(), d.getX());
+                }
+
+                this.drawCustomMark(mark, markSize, stop.getSta().getShiftedPoint(), theta);
+            }
+        }
+    }
+
+    /**
+     * 円形の停車マークを描画します
+     *
+     * @param color マーク色
+     * @param size 描画サイズ (正方形の一辺の長さ = 円の直径)
+     * @param position 描画位置
+     */
+    public void drawCircleMark(Color color, double size, Point2D position) {
+        gc.setFill(color);
+        // 引数の position は円の中心で、fillOval に渡す位置は左上の座標のため、半径分だけシフトする
+        Point2D drawPosition = position.subtract(size / 2, size / 2);
+        gc.fillOval(drawPosition.getX(), drawPosition.getY(), size, size);
+    }
+
+    /**
+     * カスタム停車マークを描画します。
+     *
+     * @param mark 描画するマーク
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     * @param position 描画位置
+     * @param angle 描画角度 (rad)
+     */
+    public void drawCustomMark(StopMark mark, double size, Point2D position, double angle) {
+        gc.save();
+        gc.translate(position.getX(), position.getY());
+        gc.rotate(angle * 180 / Math.PI);
+        gc.translate(size * -0.5, size * -0.5);
+
+        for (int i = mark.getLayers().size() - 1; 0 <= i; i--) {
+            MarkLayer layer = mark.getLayers().get(i);
+
+            switch (layer.getType()) {
+                case MarkLayer.OVAL:
+                    this.drawOvalLayer(layer, size);
+                    break;
+                case MarkLayer.RECT:
+                    this.drawRectangleLayer(layer, size);
+                    break;
+                case MarkLayer.LINE:
+                    this.drawLineLayer(layer, size);
+                    break;
+                case MarkLayer.ARC:
+                    this.drawArcLayer(layer, size);
+                    break;
+                case MarkLayer.TEXT:
+                    this.drawTextLayer(layer, size);
+                    break;
+                case MarkLayer.IMAGE:
+                    this.drawImageLayer(layer, size);
+                    break;
+                default:
+                    throw new IllegalArgumentException("不正なレイヤーです。");
+            }
+        }
+
+        gc.restore();
+    }
+
+    /**
+     * 楕円レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawOvalLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.OVAL) {
+            throw new IllegalArgumentException("楕円レイヤーではありません。");
+        }
+
+        double[] params = layer.getParamProperty().stream().limit(5).mapToDouble(p -> p.get() * size).toArray();
+
+        switch (layer.getPaint()) {
+            case MarkLayer.FILL:
+                gc.setFill(layer.getColor());
+                gc.fillOval(params[0], params[1], params[2], params[3]);
+                break;
+            case MarkLayer.STROKE:
+                gc.setStroke(layer.getColor());
+                gc.setLineWidth(params[4]);
+                gc.fillOval(params[0], params[1], params[2], params[3]);
+                break;
+            default:
+                throw new IllegalArgumentException("不正なレイヤーです。");
+        }
+    }
+
+    /**
+     * 矩形レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawRectangleLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.RECT) {
+            throw new IllegalArgumentException("矩形レイヤーではありません。");
+        }
+
+        double[] params = layer.getParamProperty().stream().limit(7).mapToDouble(p -> p.get() * size).toArray();
+
+        switch (layer.getPaint()) {
+            case MarkLayer.FILL:
+                gc.setFill(layer.getColor());
+                gc.fillRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
+                break;
+            case MarkLayer.STROKE:
+                gc.setStroke(layer.getColor());
+                gc.setLineWidth(params[6]);
+                gc.fillRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
+                break;
+            default:
+                throw new IllegalArgumentException("不正なレイヤーです。");
+        }
+    }
+
+    /**
+     * 線分レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawLineLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.LINE) {
+            throw new IllegalArgumentException("線分レイヤーではありません。");
+        }
+
+        double[] params = layer.getParamProperty().stream().limit(5).mapToDouble(p -> p.get() * size).toArray();
+        gc.setStroke(layer.getColor());
+        gc.setLineWidth(params[4]);
+        gc.setLineCap((int)layer.getParam(5) == 1 ? StrokeLineCap.ROUND : StrokeLineCap.SQUARE);
+        gc.strokeLine(params[0], params[1], params[2], params[3]);
+    }
+
+    /**
+     * 円弧レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawArcLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.ARC) {
+            throw new IllegalArgumentException("円弧レイヤーではありません。");
+        }
+
+        double x = layer.getParam(0) * size;
+        double y = layer.getParam(1) * size;
+        double width = layer.getParam(2) * size;
+        double height = layer.getParam(3) * size;
+        double startAngle = layer.getParam(4);
+        double extent = layer.getParam(5);
+        double lineWidth = layer.getParam(6) * size;
+
+        ArcType arcType;
+
+        switch ((int)layer.getParam(7)) {
+            case 1:
+                arcType = ArcType.OPEN;
+                break;
+            case 2:
+                arcType = ArcType.ROUND;
+                break;
+            default:
+                arcType = ArcType.CHORD;
+                break;
+        }
+
+        switch (layer.getPaint()) {
+            case MarkLayer.FILL:
+                gc.setFill(layer.getColor());
+                gc.fillArc(x, y, width, height, startAngle, extent, arcType);
+                break;
+            case MarkLayer.STROKE:
+                gc.setStroke(layer.getColor());
+                gc.setLineWidth(lineWidth);
+                gc.strokeArc(x, y, width, lineWidth, startAngle, extent, arcType);
+                break;
+            default:
+                throw new IllegalArgumentException("不正なレイヤーです。");
+        }
+    }
+
+    /**
+     * 文字列レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawTextLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.TEXT) {
+            throw new IllegalArgumentException("文字列レイヤーではありません。");
+        }
+
+        double[] params = layer.getParamProperty().stream().limit(4).mapToDouble(p -> p.get() * size).toArray();
+
+        Font font;
+
+        switch ((int)layer.getParam(4)) {
+            case 0:
+                //NORMAL
+                font = Font.font(layer.getFontName(), FontWeight.NORMAL, FontPosture.REGULAR, params[2]);
+                break;
+            case 1:
+                //BOLD
+                font = Font.font(layer.getFontName(), FontWeight.BOLD, FontPosture.REGULAR, params[2]);
+                break;
+            case 2: 
+                //ITALIC
+                font = Font.font(layer.getFontName(), FontWeight.NORMAL, FontPosture.ITALIC, params[2]);
+                break;
+            case 3:
+                //BOLD_ITALIC
+                font = Font.font(layer.getFontName(), FontWeight.BOLD, FontPosture.ITALIC, params[2]);
+                break;
+            default:
+                font = Font.getDefault();
+                break;
+        }
+
+        switch (layer.getPaint()) {
+            case MarkLayer.FILL:
+                gc.setFill(layer.getColor());
+                gc.setFont(font);
+                gc.fillText(layer.getText(), params[0], params[1]);
+                break;
+            case MarkLayer.STROKE:
+                gc.setStroke(layer.getColor());
+                gc.setLineWidth(params[3]);
+                gc.setFont(font);
+                gc.strokeText(layer.getText(), params[0], params[1]);
+                break;
+            default:
+                throw new IllegalArgumentException("不正なレイヤーです。");
+        }
+    }
+
+    /**
+     * 画像レイヤーを描画します。
+     *
+     * @param layer レイヤー
+     * @param size 描画サイズ (正方形の一辺の長さ)
+     */
+    private void drawImageLayer(MarkLayer layer, double size) {
+        if (layer.getType() != MarkLayer.IMAGE) {
+            throw new IllegalArgumentException("画像レイヤーではありません。");
+        }
+
+        double[] params = layer.getParamProperty().stream().limit(4).mapToDouble(p -> p.get() * size).toArray();
+        gc.drawImage(layer.getImage(), params[0], params[1], params[2], params[3]);
     }
 
     /**
