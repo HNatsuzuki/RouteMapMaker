@@ -1,7 +1,7 @@
 package RouteMapMaker.listcells;
 
-import RouteMapMaker.controllers.CustomMarkController;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.services.CustomMarkDrawer;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListCell;
@@ -49,7 +49,8 @@ public class StopMarkCell extends ListCell<StopMark> implements Callback<ListVie
 							//ここから、実際の描画処理
 							Canvas canvas = new Canvas(prevSize,prevSize);
 							GraphicsContext gc = canvas.getGraphicsContext2D();
-							CustomMarkController.markDraw(gc, item, prevSize);
+							CustomMarkDrawer drawer = new CustomMarkDrawer(gc);
+							drawer.drawCustomMarkPreview(item, prevSize);
 							p.getChildren().add(canvas);
 							setText(null);
 							setGraphic(p);
