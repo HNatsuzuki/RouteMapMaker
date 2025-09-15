@@ -12,6 +12,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 
 public class Line {//路線の情報を保持するクラス。
@@ -115,6 +116,42 @@ public class Line {//路線の情報を保持するクラス。
 	public Connection removeStation(int idx) {
 		return connections.remove(idx);
 	}
+
+	/**
+	 * 座標非固定駅の座標を計算します。
+	 */
+	public void interpolateIntermediatePoints() {
+		List<Station> stations = getStations();
+
+		// 座標固定開始駅
+		Point2D start = stations.get(0).getPoint2D();
+		// 開始駅からの駅数 (開始駅は含まない)
+		int count = 0;
+
+		for (int i = 1; i < stations.size(); ++i) {
+			++count;
+
+			if (!stations.get(i).isSet()) {
+				// まず非固定駅はなにもせず、次の固定駅を探す
+				continue;
+			}
+
+			// 座標固定終了駅
+			Point2D end = stations.get(i).getPoint2D();
+
+			// j = 0 は開始駅のため計算不要、j = count は終了駅のため計算不要
+			for (int j = 1; j < count; ++j) {
+				// 開始位置を基準に、開始位置から終了位置を等分する
+				Point2D point = start.add(end.subtract(start).multiply((double)j / count));
+				stations.get(i - count + j).setInterPoint(point.getX(), point.getY());
+			}
+
+			// 終了駅を開始駅に設定し直して次の終了駅を探す
+			start = end;
+			count = 0;
+		}
+	}
+
 	public ObservableList<Connection> getConnections() {
 		return connections;
 	}

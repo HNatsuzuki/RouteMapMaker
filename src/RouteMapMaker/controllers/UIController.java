@@ -2296,13 +2296,13 @@ public class UIController implements Initializable{
 		for(Line line: lineList){
 			//選択中の路線だけ色を変える
 			gc.setStroke(line == this.line ? Color.PERU : Color.BLACK);
+			line.interpolateIntermediatePoints();
 			//まずは始点での処理。
 			List<Line.Connection> pointSetStations = line.getConnections().stream().
 					filter(c -> c.getStation().isSet()).collect(Collectors.toList());
 			startP = line.getStations().get(0).getPoint();
 			gc.beginPath();
 			gc.moveTo(startP[0], startP[1]);
-			int stopIndex = 0;
 			for(int i2 = 1; i2 < line.getStations().size(); i2++){
 				// 座標非固定点はスキップ
 				if(!line.getStations().get(i2).isSet()) {
@@ -2319,16 +2319,8 @@ public class UIController implements Initializable{
 				} else {
 					// 直線での接続
 					gc.lineTo(endP[0], endP[1]);
-					for(int i3 = stopIndex + 1; i3 <= i2; i3++){
-						double[] p = new double[2];
-						p[0] = startP[0] + (endP[0] - startP[0]) * (i3 - stopIndex) / (i2 - stopIndex);
-						p[1] = startP[1] + (endP[1] - startP[1]) * (i3 - stopIndex) / (i2 - stopIndex);
-						if(i3 != i2){
-							line.getStations().get(i3).setInterPoint(p[0], p[1]);//中間座標の登録
-						}
-					}
 				}
-				stopIndex = i2;
+
 				startP = endP;
 			}
 			gc.stroke();

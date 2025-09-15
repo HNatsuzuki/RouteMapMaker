@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.geometry.Point2D;
 
 public class Station {//駅に関する情報を保持するクラス
 	
@@ -82,6 +83,20 @@ public class Station {//駅に関する情報を保持するクラス
 			throw new IllegalArgumentException();
 		}
 	}
+
+	/**
+	 * Point2D 型で駅の固定座標を取得します。
+	 *
+	 * @return 駅の固定座標
+	 */
+	public Point2D getPoint2D() {
+		if (!pointSet.get()) {
+			throw new IllegalArgumentException("座標非固定駅の座標は取得できません。");
+		}
+
+		return new Point2D(x.get(), y.get());
+	}
+
 	public void plusConnection(){
 		stationConnection ++;
 	}
