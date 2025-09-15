@@ -3,12 +3,14 @@ package RouteMapMaker.services;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import RouteMapMaker.factories.StationLabelFactory;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextStyle;
@@ -25,6 +27,9 @@ public class MapDrawer {
     private static final double GRID_STROKE_WIDTH = 1;
     private static final Color SELECTED_STATION_POINT_COLOR = Color.RED;
     private static final double STATION_POINT_RADIUS = 3;
+    private static final double LINE_WIDTH = 2;
+    private static final Color LINE_COLOR = Color.BLACK;
+    private static final Color SELECTED_LINE_COLOR = Color.PERU;
     private final Configuration config;
     private final GraphicsContext gc;
     private final StationLabelFactory stationLabelFactory;
@@ -55,6 +60,13 @@ public class MapDrawer {
 
     public void setZoomRatio(double ratio) {
         this.zoomRatio = ratio;
+    }
+
+    /**
+     * 初期化処理を実行します。
+     */
+    public void initialize() {
+        gc.save();
     }
 
     /**
@@ -97,6 +109,56 @@ public class MapDrawer {
         } else {
             // 四角形グリッド
             drawRectangleGrid(interval);
+        }
+    }
+
+    /**
+     * 編集モードでの路線を結ぶ線を描画します。
+     *
+     * @param lineList 路線のリスト
+     * @param selectedLine 選択中の路線
+     */
+    public void drawLinesInEditMode(LineList lineList, Line selectedLine) {
+        gc.setLineWidth(LINE_WIDTH);
+
+        for (Line line : lineList) {
+            Point2D startP;
+            Point2D endP;
+            //選択中の路線だけ色を変える
+            gc.setStroke(line == selectedLine ? SELECTED_LINE_COLOR : LINE_COLOR);
+            line.interpolateIntermediatePoints();
+            List<Station> stations = line.getStations();
+            //まずは始点での処理。
+            List<Line.Connection> fixedStations = line.getConnections().stream().
+                    filter(c -> c.getStation().isSet()).collect(Collectors.toList());
+            startP = stations.get(0).getPoint2D();
+            gc.beginPath();
+            gc.moveTo(startP.getX(), startP.getY());
+
+            for (int i = 1; i < stations.size(); i++) {
+                if (!stations.get(i).isSet()) {
+                    // 座標非固定点はスキップ
+                    continue;
+                }
+
+                endP = stations.get(i).getPoint2D();
+
+                if (line.getCurveConnection(i) && line.isCurvable(i)) {
+                    // ベジエ曲線での接続
+                    int idx = fixedStations.indexOf(line.getConnections().get(i));
+                    LineSegment l1 = new LineSegment(fixedStations.get(idx - 2).getStation().getPoint2D(), startP);
+                    LineSegment l2 = new LineSegment(endP, fixedStations.get(idx + 1).getStation().getPoint2D());
+                    Point2D cp = l1.getIntersection(l2); //control point
+                    gc.quadraticCurveTo(cp.getX(), cp.getY(), endP.getX(), endP.getY());
+                } else {
+                    // 直線での接続
+                    gc.lineTo(endP.getX(), endP.getY());
+                }
+
+                startP = endP;
+            }
+
+            gc.stroke();
         }
     }
 

@@ -304,7 +304,7 @@ public class UIController implements Initializable{
 		// TODO Auto-generated method stub
 		gc = canvas.getGraphicsContext2D();
 		drawer = new MapDrawer(config, gc, stationFontFamily);
-		gc.save();
+		drawer.initialize();
 
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
@@ -2290,41 +2290,7 @@ public class UIController implements Initializable{
 		}
 		drawer.drawGrid(); //グリッドを描画する。
 		//各路線ごとに描画。
-		double[] startP = new double[2];//スタート座標
-		double[] endP = new double[2];//エンド座標
-		gc.setLineWidth(2);
-		for(Line line: lineList){
-			//選択中の路線だけ色を変える
-			gc.setStroke(line == this.line ? Color.PERU : Color.BLACK);
-			line.interpolateIntermediatePoints();
-			//まずは始点での処理。
-			List<Line.Connection> pointSetStations = line.getConnections().stream().
-					filter(c -> c.getStation().isSet()).collect(Collectors.toList());
-			startP = line.getStations().get(0).getPoint();
-			gc.beginPath();
-			gc.moveTo(startP[0], startP[1]);
-			for(int i2 = 1; i2 < line.getStations().size(); i2++){
-				// 座標非固定点はスキップ
-				if(!line.getStations().get(i2).isSet()) {
-					continue;
-				}
-				endP = line.getStations().get(i2).getPoint();
-				if(line.getCurveConnection(i2) && line.isCurvable(i2)) {
-					// ベジエ曲線での接続
-					int idx = pointSetStations.indexOf(line.getConnections().get(i2));
-					double[][] l1 = {pointSetStations.get(idx-2).getStation().getPoint(), startP};
-					double[][] l2 = {endP, pointSetStations.get(idx+1).getStation().getPoint()};
-					double[] cp = calcIntersection(l1, l2); //control point
-					gc.quadraticCurveTo(cp[0], cp[1], endP[0], endP[1]);
-				} else {
-					// 直線での接続
-					gc.lineTo(endP[0], endP[1]);
-				}
-
-				startP = endP;
-			}
-			gc.stroke();
-		}
+		drawer.drawLinesInEditMode(lineList, line);
 		//駅の点の描画
 		drawer.drawStationPoints(lineList, movingStList);
 
