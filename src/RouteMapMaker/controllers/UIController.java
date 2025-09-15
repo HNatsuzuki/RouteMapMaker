@@ -2279,11 +2279,13 @@ public class UIController implements Initializable{
 			//データ読み込み中はリスナが反応してdrawを呼ぶので，応答しない．
 			return;
 		}
-		gc.restore();
-		gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
-		canvas.setWidth(canvasOriginal[0]*drawer.getZoomRatio());
-		canvas.setHeight(canvasOriginal[1]*drawer.getZoomRatio());
-		gc.clearRect(0, 0, canvasOriginal[0], canvasOriginal[1]);//はじめに全領域消去
+
+		// 描画開始時処理
+		drawer.beginDraw();
+		Point2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getX());
+		canvas.setHeight(canvasSize.getY());
+
 		if(showBackInLE.isSelected()) {
 			drawer.drawBackground(background); //背景を描画
 		}
@@ -2334,12 +2336,12 @@ public class UIController implements Initializable{
 			//データ読み込み中はリスナが反応してdrawを呼ぶので，応答しない．
 			return;
 		}
-		gc.restore();
-		gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());//はじめに全領域消去
+
+		drawer.beginDraw();
+		Point2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getX());
+		canvas.setHeight(canvasSize.getY());
 		gc.setLineCap(StrokeLineCap.ROUND);//先っちょは丸くする。
-		gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
-		canvas.setWidth(canvasOriginal[0] * drawer.getZoomRatio());
-		canvas.setHeight(canvasOriginal[1] * drawer.getZoomRatio());
 		drawer.drawBackground(background);
 		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理
 			for(int i = lineList.get(k).getTrains().size() - 1; 0 <= i; i--){//系統ごとに処理。降順に処理していく。

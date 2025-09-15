@@ -46,6 +46,10 @@ public class MapDrawer {
         return this.canvasSize;
     }
 
+    public Point2D getZoomedCanvasSize() {
+        return this.canvasSize.multiply(zoomRatio);
+    }
+
     public void setCanvasSize(Point2D size) {
         this.canvasSize = size;
     }
@@ -60,6 +64,16 @@ public class MapDrawer {
 
     public void setZoomRatio(double ratio) {
         this.zoomRatio = ratio;
+    }
+
+    /**
+     * 描画開始時処理を実行します。
+     */
+    public void beginDraw() {
+        gc.restore();
+        gc.setTransform(this.zoomRatio, 0, 0, this.zoomRatio, 0, 0);
+        Point2D canvasSize = this.getZoomedCanvasSize();
+        gc.clearRect(0, 0, canvasSize.getX(), canvasSize.getY());//はじめに全領域消去
     }
 
     /**
