@@ -148,6 +148,9 @@ public class Station {//駅に関する情報を保持するクラス
 		p[1] = y.get();
 		return p;
 	}
+	public Point2D getPointUSAsPoint2D() {
+		return new Point2D(this.x.get(), this.y.get());
+	}
 	public int getNameSize(){
 		return size.get();
 	}

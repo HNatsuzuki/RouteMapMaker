@@ -30,6 +30,27 @@ public class LineSegment {
     }
 
     /**
+     * 線分の長さを取得します。
+     *
+     * @return 線分の長さ
+     */
+    public double length() {
+        return this.start.distance(end);
+    }
+
+    /**
+     * オフセット分シフトした線分を作成します。
+     *
+     * @param start 線分の開始座標
+     * @param end 線分の終了座標
+     * @param offset オフセット
+     * @return オフセット分シフトした線分
+     */
+    public static LineSegment createShifted(Point2D start, Point2D end, double offset) {
+        return new LineSegment(start, end).getShiftedSegment(offset);
+    }
+
+    /**
      * 線分の交点を取得します。見つからない場合は自身の終点を返します。
      *
      * @param other もう1つの線分
@@ -74,6 +95,33 @@ public class LineSegment {
             }
         }
         return new Point2D(x, y);
+    }
+
+    /**
+     * オフセット分だけシフトした線分を取得します。
+     *
+     * @param offset オフセット
+     * @return シフト後の線分
+     */
+    public LineSegment getShiftedSegment(double offset) {
+        double dx = this.end.getX() - this.start.getX();
+        double dy = this.end.getY() - this.start.getY();
+        double length = length();
+        double offsetX = offset * dy / length;
+        double offsetY = -offset * dx / length;
+        Point2D shiftedStart = this.start.add(offsetX, offsetY);
+        Point2D shiftedEnd = this.end.add(offsetX, offsetY);
+
+        return new LineSegment(shiftedStart, shiftedEnd);
+    }
+
+    /**
+     * この線分の方向の単位ベクトルを取得します。
+     *
+     * @return 単位ベクトル
+     */
+    public Point2D getUnitVector() {
+        return this.end.subtract(start).normalize();
     }
 
     /**

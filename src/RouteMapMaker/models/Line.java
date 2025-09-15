@@ -231,4 +231,8 @@ public class Line {//路線の情報を保持するクラス。
 	public boolean getCurveConnection(int idx) {
 		return connections.get(idx).curve.get();
 	}
+
+	public boolean isConnectedByCurve(int index) {
+		return this.getCurveConnection(index) && this.isCurvable(index);
+	}
 }
