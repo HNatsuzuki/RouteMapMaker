@@ -167,7 +167,6 @@ public class UIController implements Initializable{
 	private File dataFile;
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
-	private double zoom = 1.0;//canvas上での表示倍率。mapDrawのみに適用する。
 	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
 	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
@@ -960,8 +959,8 @@ public class UIController implements Initializable{
 		canvas.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>(){//canvas上でマウスが押された時
 			@Override
 			public void handle(MouseEvent e){
-				startCoor[0] = e.getX()/zoom;
-				startCoor[1] = e.getY()/zoom;
+				startCoor[0] = e.getX()/drawer.getZoomRatio();
+				startCoor[1] = e.getY()/drawer.getZoomRatio();
 				if(esGroup.getSelectedToggle() == rightEditButton){
 					movingSt = searchStation(startCoor[0], startCoor[1]);
 					if(movingSt == null){
@@ -1005,7 +1004,7 @@ public class UIController implements Initializable{
 					if(e.getButton()!=MouseButton.PRIMARY) {
 						return;
 					}
-					final double[] cc = {e.getX()/zoom, e.getY()/zoom}; //zoomを考慮した現在のマウス座標
+					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
 					if(movingSt != null){//特定の駅が選択されている時
 						//movingSt.setPoint(e.getX(), e.getY());
 						for(MvSta ms: movingStList){
@@ -1016,17 +1015,17 @@ public class UIController implements Initializable{
 						if(canvas.getHeight() - e.getY() < canvasMargin) canvas.setHeight(e.getY() + canvasMargin);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
-						if(e.getX() - startCoor[0]*zoom <= 0){//符号の反転が必要
+						if(e.getX() - startCoor[0]*drawer.getZoomRatio() <= 0){//符号の反転が必要
 							draggedRect.setX(e.getX());
-							draggedRect.setWidth(startCoor[0]*zoom - e.getX());
+							draggedRect.setWidth(startCoor[0]*drawer.getZoomRatio() - e.getX());
 						}else{//反転必要なし
-							draggedRect.setWidth(e.getX() - startCoor[0]*zoom);
+							draggedRect.setWidth(e.getX() - startCoor[0]*drawer.getZoomRatio());
 						}
-						if(e.getY() - startCoor[1]*zoom <= 0){
+						if(e.getY() - startCoor[1]*drawer.getZoomRatio() <= 0){
 							draggedRect.setY(e.getY());
-							draggedRect.setHeight(startCoor[1]*zoom - e.getY());
+							draggedRect.setHeight(startCoor[1]*drawer.getZoomRatio() - e.getY());
 						}else{
-							draggedRect.setHeight(e.getY() - startCoor[1]*zoom);
+							draggedRect.setHeight(e.getY() - startCoor[1]*drawer.getZoomRatio());
 						}
 					}
 				}else{//leftEditbuttonが選択されている状態
@@ -1038,7 +1037,7 @@ public class UIController implements Initializable{
 			@Override
 			public void handle(MouseEvent e){
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					final double[] cc = {e.getX()/zoom, e.getY()/zoom}; //zoomを考慮した現在のマウス座標
+					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
 					if(movingSt != null){//特定の駅が選択されている時
 						if(e.getButton()!=MouseButton.PRIMARY) {
 							return;
@@ -1076,14 +1075,14 @@ public class UIController implements Initializable{
 								}
 							}
 						}
-						canvasOriginal[0] = x_largest + canvasMargin/zoom;
-						canvasOriginal[1] = y_largest + canvasMargin/zoom;
+						canvasOriginal[0] = x_largest + canvasMargin/drawer.getZoomRatio();
+						canvasOriginal[1] = y_largest + canvasMargin/drawer.getZoomRatio();
 						drawer.setCanvasSize(canvasOriginal);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
-						movingStList = searchStation(draggedRect.getX()/zoom, draggedRect.getY()/zoom,
-								draggedRect.getWidth()/zoom, draggedRect.getHeight()/zoom);
+						movingStList = searchStation(draggedRect.getX()/drawer.getZoomRatio(), draggedRect.getY()/drawer.getZoomRatio(),
+								draggedRect.getWidth()/drawer.getZoomRatio(), draggedRect.getHeight()/drawer.getZoomRatio());
 						lineDraw();
 					}
 				}else{
@@ -2024,7 +2023,7 @@ public class UIController implements Initializable{
 		ZoomSlider.setSnapToTicks(true);
 		ZoomSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double d = ZoomSlider.getValue();
-			zoom = Math.pow(2, d);
+			drawer.setZoomRatio(Math.pow(2, d));
 			ReDraw();
 		});
 
@@ -2281,9 +2280,9 @@ public class UIController implements Initializable{
 			return;
 		}
 		gc.restore();
-		gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-		canvas.setWidth(canvasOriginal[0]*zoom);
-		canvas.setHeight(canvasOriginal[1]*zoom);
+		gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
+		canvas.setWidth(canvasOriginal[0]*drawer.getZoomRatio());
+		canvas.setHeight(canvasOriginal[1]*drawer.getZoomRatio());
 		gc.clearRect(0, 0, canvasOriginal[0], canvasOriginal[1]);//はじめに全領域消去
 		if(showBackInLE.isSelected()) {
 			drawer.drawBackground(background); //背景を描画
@@ -2338,9 +2337,9 @@ public class UIController implements Initializable{
 		gc.restore();
 		gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());//はじめに全領域消去
 		gc.setLineCap(StrokeLineCap.ROUND);//先っちょは丸くする。
-		gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-		canvas.setWidth(canvasOriginal[0] * zoom);
-		canvas.setHeight(canvasOriginal[1] * zoom);
+		gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
+		canvas.setWidth(canvasOriginal[0] * drawer.getZoomRatio());
+		canvas.setHeight(canvasOriginal[1] * drawer.getZoomRatio());
 		drawer.drawBackground(background);
 		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理
 			for(int i = lineList.get(k).getTrains().size() - 1; 0 <= i; i--){//系統ごとに処理。降順に処理していく。
@@ -2528,7 +2527,7 @@ public class UIController implements Initializable{
 			//アフィン変換で回転。そのまま回転だと原点中心になっちゃうので行列計算。
 			//freeItemでは回転をリストアしないと前の回転がどんどん溜まっていく。zoomの再設定も必要。
 			gc.restore();
-			gc.setTransform(zoom, 0, 0, zoom, 0, 0);
+			gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
 			gc.transform(Math.cos(Math.toRadians(params[4])),Math.sin(Math.toRadians(params[4])),
 					-1 * Math.sin(Math.toRadians(params[4])),Math.cos(Math.toRadians(params[4])),
 					params[0] - params[0] * Math.cos(Math.toRadians(params[4])) + params[1] * Math.sin(Math.toRadians(params[4])),
@@ -2879,7 +2878,7 @@ public class UIController implements Initializable{
 		rightEditButton.setSelected(true);//読み込み時は路線編集モードにする。
 		isLoading = false;
 		// zoomをリセット
-		zoom = 1;
+		drawer.setZoomRatio(1);
 		ZoomSlider.setValue(0);
 		lineDraw();
 	}
@@ -3019,10 +3018,10 @@ public class UIController implements Initializable{
 		b1.setOnAction((ActionEvent) ->{
 			try{
 				SnapshotParameters ssp = new SnapshotParameters();
-				zoom = slider.getValue()/100;
+				drawer.setZoomRatio(slider.getValue()/100);
 				mapDraw();
 				WritableImage wi = canvas.snapshot(ssp, null);
-				zoom = 1;
+				drawer.setZoomRatio(1);;
 				mapDraw();
 				FileChooser fc = new FileChooser();
 				fc.setTitle("画像の書き出し");
