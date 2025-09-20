@@ -13,12 +13,12 @@ import javafx.scene.text.TextAlignment;
 public class TextStyle {
     private final int size;
     private final String fontFamily;
-    private final int style;
+    private final FontStyle style;
     private final TextLocation location;
     private final boolean isVertical;
     private final Color color;
 
-    public TextStyle(int size, String fontFamily, int style, TextLocation location, boolean isVertical, Color color) {
+    public TextStyle(int size, String fontFamily, FontStyle style, TextLocation location, boolean isVertical, Color color) {
         this.size = size;
         this.fontFamily = fontFamily;
         this.style = style;
@@ -51,7 +51,7 @@ public class TextStyle {
      * @return フォントの太さ
      */
     public FontWeight getFontWeight() {
-        return (style == Line.BOLD || style == Line.ITALIC_BOLD) ? FontWeight.BOLD : FontWeight.NORMAL;
+        return style.isBold() ? FontWeight.BOLD : FontWeight.NORMAL;
     }
 
     /**
@@ -60,7 +60,7 @@ public class TextStyle {
      * @return フォントがイタリックかどうか
      */
     public FontPosture getFontPosture() {
-        return (style == Line.ITALIC || style == Line.ITALIC_BOLD) ? FontPosture.ITALIC : FontPosture.REGULAR;
+        return style.isItalic() ? FontPosture.ITALIC : FontPosture.REGULAR;
     }
 
     /**

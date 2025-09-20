@@ -3,6 +3,7 @@ package RouteMapMaker.factories;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextLabel;
@@ -69,7 +70,7 @@ public class StationLabelFactory {
         }
 
         int style = station.getNameStyle() == Station.STYLE_UNSET ? line.getNameStyle() : station.getNameStyle();
-        TextStyle textStyle = new TextStyle(size, fontFamily.get(), style, location, isVertical, line.getNameColor());
+        TextStyle textStyle = new TextStyle(size, fontFamily.get(), FontStyle.fromLineTextStyle(style), location, isVertical, line.getNameColor());
         double[] stationPoint = station.getPointUS();
         Point2D position = new Point2D(stationPoint[0] + offset[0], stationPoint[1] + offset[1]);
 
