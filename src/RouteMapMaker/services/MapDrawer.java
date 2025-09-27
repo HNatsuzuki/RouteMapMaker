@@ -8,10 +8,12 @@ import java.util.stream.Collectors;
 import RouteMapMaker.factories.StationLabelFactory;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.PaintMode;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.TextStyle;
@@ -22,6 +24,9 @@ import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 
 /**
  * 描画系処理をまとめたクラスです。
@@ -165,6 +170,88 @@ public class MapDrawer {
         // 引数の position は円の中心で、fillOval に渡す位置は左上の座標のため、半径分だけシフトする
         Point2D drawPosition = position.subtract(size / 2, size / 2);
         gc.fillOval(drawPosition.getX(), drawPosition.getY(), size, size);
+    }
+
+    /**
+     * すべての FreeItem を描画します。
+     *
+     * @param freeItems 描画する FreeItem のリスト
+     */
+    public void drawFreeItems(List<FreeItem> freeItems) {
+        //下から順番に。
+        for (int i = freeItems.size() - 1; i >= 0; --i){
+            FreeItem item = freeItems.get(i);
+
+            //freeItemでは回転をリストアしないと前の回転がどんどん溜まっていく。zoomの再設定も必要。
+            gc.restore();
+            gc.setTransform(getZoomRatio(), 0, 0, getZoomRatio(), 0, 0);
+            rotate(item.getRotation(), item.getX(), item.getY());
+
+            switch (item.getType()) {
+                case FreeItem.IMAGE:
+                    drawFreeImageItem(item);
+                    break;
+                case FreeItem.TEXT:
+                    drawFreeTextItem(item);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("タイプ " + item.getType() + " の描画処理が実装されていません。");
+            }
+        }
+    }
+
+    /**
+     * 画像の FreeItem を描画します。
+     *
+     * @param item 描画するアイテム
+     */
+    private void drawFreeImageItem(FreeItem item) {
+        if (item.getType() != FreeItem.IMAGE) {
+            throw new IllegalArgumentException("画像の FreeItem ではありません。");
+        }
+
+        gc.drawImage(item.getImage(), item.getX(), item.getY(), item.getWidth(), item.getHeight());
+    }
+
+    /**
+     * テキストの FreeItem を描画します。
+     *
+     * @param item 描画するアイテム
+     */
+    private void drawFreeTextItem(FreeItem item) {
+        if (item.getType() != FreeItem.TEXT) {
+            throw new IllegalArgumentException("テキストの FreeItem ではありません。");
+        }
+
+        //文字スタイルの設定
+        switch (item.getFontStyle()) {
+            case NORMAL:
+                gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, FontPosture.REGULAR, item.getSize()));
+                break;
+            case BOLD:
+                gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, FontPosture.REGULAR, item.getSize()));
+                break;
+            case ITALIC:
+                gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, FontPosture.ITALIC, item.getSize()));
+                break;
+            case BOLD_ITALIC:
+                gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, FontPosture.ITALIC, item.getSize()));
+                break;
+        }
+
+        String text = item.isVertical()
+            ? item.getText().chars().mapToObj(c -> String.valueOf((char)c)).collect(Collectors.joining("\n"))
+            : item.getText();
+
+        if (item.getPaintMode() == PaintMode.FILL) {
+            gc.setFill(item.getColor());
+            gc.fillText(text, item.getX(), item.getY());
+        } else if (item.getPaintMode() == PaintMode.STROKE){
+            gc.setStroke(item.getColor());
+            gc.setLineWidth(item.getLineWidth());
+            gc.strokeText(text, item.getX(), item.getY());
+        }
+
     }
 
     /**
@@ -348,5 +435,22 @@ public class MapDrawer {
             //縦線
             gc.strokeLine(x, 0, x, canvasSize.getHeight());
         }
+    }
+
+    /**
+     * 回転します。
+     *
+     * @param angle 回転角度 (degree)
+     * @param x 回転中心のx座標
+     * @param y 回転中心のy座標
+     */
+    private void rotate(double angle, double x, double y) {
+        //アフィン変換で回転。そのまま回転だと原点中心になっちゃうので行列計算。
+        double r = Math.toRadians(angle);
+        double st = Math.sin(r);
+        double ct = Math.cos(r);
+        gc.transform(ct, st, -st, ct,
+                x - x * ct + y * st,
+                y - x * st - y * ct);
     }
 }

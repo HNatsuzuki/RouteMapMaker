@@ -79,7 +79,98 @@ public class FreeItem implements Cloneable{//路線図上に自由挿入でき�
 	public DoubleBinding[] getDragArea(){
 		return this.dragArea;
 	}
-	
+
+	public double getX() {
+		return this.params[0].doubleValue();
+	}
+
+	public double getY() {
+		return this.params[1].doubleValue();
+	}
+
+	public double getWidth() {
+		if (getType() != IMAGE) {
+			throw new UnsupportedOperationException("画像以外では幅の取得はできません。");
+		}
+
+		return this.params[2].doubleValue();
+	}
+
+	public double getSize() {
+		if (getType() != TEXT) {
+			throw new UnsupportedOperationException("テキスト以外ではサイズの取得はできません。");
+		}
+
+		return this.params[2].doubleValue();
+	}
+
+	public double getHeight() {
+		if (getType() != IMAGE) {
+			throw new UnsupportedOperationException("画像以外では高さの取得はできません。");
+		}
+
+		return this.params[3].doubleValue();
+	}
+
+	public double getLineWidth() {
+		if (getType() != TEXT) {
+			throw new UnsupportedOperationException("テキスト以外では線幅の取得はできません。");
+		}
+
+		return this.params[3].doubleValue();
+	}
+
+	public double getRotation() {
+		return this.params[4].doubleValue();
+	}
+
+	public FontStyle getFontStyle() {
+		if (getType() != TEXT) {
+			throw new UnsupportedOperationException("テキスト以外ではフォントスタイルの取得はできません。");
+		}
+
+		if (this.params[5].get() == 0) {
+			return FontStyle.NORMAL;
+		} else if (this.params[5].get() == 1) {
+			return FontStyle.BOLD;
+		} else if (this.params[5].get() == 2) {
+			return FontStyle.ITALIC;
+		} else if (this.params[5].get() == 3) {
+			return FontStyle.BOLD_ITALIC;
+		} else {
+			throw new IllegalStateException("フォントスタイル設定が異常です: " + this.params[5].get());
+		}
+	}
+
+	public PaintMode getPaintMode() {
+		if (getType() != TEXT) {
+			throw new UnsupportedOperationException("テキスト以外では描画方法の取得はできません。");
+		}
+
+		if (this.params[6].get() == 0) {
+			return PaintMode.FILL;
+		} else if (this.params[6].get() == 1) {
+			return PaintMode.STROKE;
+		} else {
+			throw new IllegalStateException("描画モード設定が異常です: " + this.params[6].get());
+		}
+	}
+
+	public boolean isVertical() {
+		if (getType() != TEXT) {
+			throw new UnsupportedOperationException("テキスト以外では縦書きかどうかの取得はできません。");
+		}
+
+		if (this.params[7].getValue() == 0) {
+			return false;
+		}
+		if (this.params[7].getValue() == 1) {
+			return true;
+		} else {
+			throw new IllegalStateException("縦書き設定が異常です: " + this.params[7].get());
+		}
+	}
+
 	@Override
 	public FreeItem clone(){
 		FreeItem f = null;

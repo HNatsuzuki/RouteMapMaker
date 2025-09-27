@@ -2492,55 +2492,7 @@ public class UIController implements Initializable{
 		//以下、自由挿入アイテムを描画する
 		gc.setTextAlign(TextAlignment.LEFT);//駅名描画でいじったので直す
 		gc.setTextBaseline(VPos.BASELINE);
-		for(int c = freeItems.size() - 1; 0 <= c; c--){//下から順番に。
-			FreeItem item = freeItems.get(c);
-			double[] params = new double[5];
-			for(int k = 0; k < 5; k++){
-				params[k] = item.getParams()[k].getValue();
-			}
-			//アフィン変換で回転。そのまま回転だと原点中心になっちゃうので行列計算。
-			//freeItemでは回転をリストアしないと前の回転がどんどん溜まっていく。zoomの再設定も必要。
-			gc.restore();
-			gc.setTransform(drawer.getZoomRatio(), 0, 0, drawer.getZoomRatio(), 0, 0);
-			gc.transform(Math.cos(Math.toRadians(params[4])),Math.sin(Math.toRadians(params[4])),
-					-1 * Math.sin(Math.toRadians(params[4])),Math.cos(Math.toRadians(params[4])),
-					params[0] - params[0] * Math.cos(Math.toRadians(params[4])) + params[1] * Math.sin(Math.toRadians(params[4])),
-					params[1] - params[0] * Math.sin(Math.toRadians(params[4])) - params[1] * Math.cos(Math.toRadians(params[4])));
-			if(item.getType() == FreeItem.IMAGE) gc.drawImage(item.getImage(), params[0], params[1], params[2], params[3]);
-			if(item.getType() == FreeItem.TEXT){
-				//テキストの描画処理はここに実装
-				//文字スタイルの設定
-				if(item.getParams()[5].getValue() == 0) gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, 
-						FontPosture.REGULAR, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 2) gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, 
-						FontPosture.ITALIC, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 1) gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, 
-						FontPosture.REGULAR, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 3) gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, 
-						FontPosture.ITALIC, item.getParams()[2].getValue()));
-				String writes = null;//実際に出力するString
-				if(item.getParams()[7].getValue() == 0) writes = item.getText();
-				if(item.getParams()[7].getValue() == 1){//縦書きの場合
-					StringBuilder tate = new StringBuilder();
-					for(int i = 0; i < item.getText().length(); i++){
-						tate.append(item.getText().charAt(i));
-						if(i != item.getText().length() - 1){
-							tate.append("\n");//最終文字以外は改行文字を追加する。
-						}
-					}
-					writes = tate.toString();
-				}
-				if(item.getParams()[6].getValue() == 0){//fill
-					gc.setFill(item.getColor());
-					gc.fillText(writes, item.getParams()[0].getValue(), item.getParams()[1].getValue());
-				}
-				if(item.getParams()[6].getValue() == 1){//stroke
-					gc.setStroke(item.getColor());
-					gc.setLineWidth(item.getParams()[3].getValue());
-					gc.strokeText(writes, item.getParams()[0].getValue(), item.getParams()[1].getValue());
-				}
-			}
-		}
+		drawer.drawFreeItems(freeItems);
 	}
 	protected void ReDraw(){//画面を描画し直す。主に外部インスタンスから呼び出す用。
 		if(esGroup.getSelectedToggle() == rightEditButton){
@@ -2696,17 +2648,6 @@ public class UIController implements Initializable{
 		try (RmmFileReader rmmFileReader = new RmmFileReader(file)) {
 			SaveData saveData = rmmFileReader.read();
 			readProp(saveData);
-		}
-	}
-	
-	//png画像を読みこんでimageMapに格納する
-	void readImage(File imageFile, HashMap<Integer,Image> imageMap) throws IOException {
-		try {
-			int idx = Integer.valueOf(imageFile.getName().substring(0, imageFile.getName().indexOf(".")));
-			Image im = SwingFXUtils.toFXImage(ImageIO.read(imageFile), null);
-			imageMap.put(idx, im);
-		}catch(NumberFormatException e) {
-			// ファイル名が数字でない場合は読み込み処理を行わない．
 		}
 	}
 	
@@ -2888,15 +2829,6 @@ public class UIController implements Initializable{
 	}
 	public void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
 		this.mainStage = s;//結局使ってません
-	}
-	double[][] shiftPoint(double[] ini, double[] last, int zure){//線分の両端の座標を与えてzureの分だけずらした線分の両端の点を与える
-		double[][] p = new double[2][2];
-			//x:+sinθ、y:-cosθ
-			p[0][0] = ini[0] + zure * (last[1] - ini[1]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[0][1] = ini[1] - zure * (last[0] - ini[0]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[1][0] = last[0] + zure * (last[1] - ini[1]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[1][1] = last[1] - zure * (last[0] - ini[0]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-		return p;
 	}
 	List<Line> detectConnectedLine(Station sta){//与えられたstationが所属するlineを全て返す
 		List<Line> lines = lineList.stream().filter(l -> l.getStations().contains(sta)).collect(Collectors.toList());
