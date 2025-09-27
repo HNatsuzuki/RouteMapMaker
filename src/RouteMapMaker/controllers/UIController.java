@@ -2384,7 +2384,7 @@ public class UIController implements Initializable{
 					LineSegment currentSegment = null;
 
 					final boolean nc = h < line.getStations().size() - 1 ? line.isConnectedByCurve(h + 1) : false;
-					
+
 					if (curve) {
 						end = nextSegment.getStart();
 						currentSegment = nextSegment;
@@ -2412,11 +2412,20 @@ public class UIController implements Initializable{
 
 					//駅毎位置補正を加える。
 					if (currentStation == stops.get(stopCount).getSta()) {
-						Point2D stationOffset = stops.get(stopCount).getOffset();
+						TrainStop trainStop = stops.get(stopCount);
+						Point2D stationOffset = trainStop.getOffset();
 						end = end.add(stationOffset);
+						trainStop.setPosition(end);
+
+						// 駅の角度計算
+						if (previousSegment != null) {
+							trainStop.setAngle(previousSegment.getAngle());
+						} else {
+							trainStop.setAngle(nextSegment.getAngle());
+						}
+
 						stopCount ++;//最後にstopcountを一つ上げる。
 					}
-					currentStation.setShiftCoor(new double[] { end.getX(), end.getY() });
 
 					if (h == startPoint) {
 						// 開始駅の場合の補正
@@ -2500,7 +2509,7 @@ public class UIController implements Initializable{
 				gc.stroke();
 				gc.setLineDashes(null);//破線設定の後処理
 				//上書きの問題があってやはりmarkは線を書き終わってからにしよう。
-				drawer.drawStopMarks(train, stationPoints.stream().map(p -> p.getKey()).collect(Collectors.toList()));
+				drawer.drawStopMarks(train);
 			}
 		}
 		drawer.drawStationNames(lineList, false);//駅名はlineにもとづいて描画することになりました。

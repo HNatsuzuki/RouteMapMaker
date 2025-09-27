@@ -119,9 +119,8 @@ public class MapDrawer {
      * 運転系統のすべての停車駅を描画します。
      *
      * @param train 運転系統
-     * @param points 計算済駅座標
      */
-    public void drawStopMarks(Train train, List<Point2D> points) {
+    public void drawStopMarks(Train train) {
         int markSize = train.getMarkSize();
         List<TrainStop> stops = train.getStops();
 
@@ -138,22 +137,14 @@ public class MapDrawer {
 
             //以下、それぞれのマークの処理
             if (mark == StopMark.CIRCLE) {
-                this.drawCircleMark(train.getMarkColor(), markSize, stop.getSta().getShiftedPoint());
+                this.drawCircleMark(train.getMarkColor(), markSize, stop.getPosition());
             } else if (mark == StopMark.NO_DRAW) {
                 //NO_DRAWなのでなにもしない。
             } else {
                 //カスタムマーク
                 //回転するか？
-                double theta = 0;
-
-                if (mark.isRotated()) {
-                    //回転角度を計算する
-                    int idx = i == 0 ? i + 1 : i;
-                    Point2D d = points.get(idx).subtract(points.get(idx - 1));
-                    theta = Math.atan2(d.getY(), d.getX());
-                }
-
-                this.customMarkDrawer.drawCustomMark(mark, markSize, stop.getSta().getShiftedPoint(), theta);
+                double theta = mark.isRotated() ? stop.getAngle() : 0;
+                this.customMarkDrawer.drawCustomMark(mark, markSize, stop.getPosition(), theta);
             }
         }
     }

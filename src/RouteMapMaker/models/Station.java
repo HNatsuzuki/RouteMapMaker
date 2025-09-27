@@ -37,7 +37,6 @@ public class Station {//駅に関する情報を保持するクラス
 	private IntegerProperty nameX = new SimpleIntegerProperty(0);//駅名の描画位置のズレ
 	private IntegerProperty nameY = new SimpleIntegerProperty(0);
 	private BooleanProperty shiftOnStation = new SimpleBooleanProperty(false);//描画位置修正を駅ごとの設定に従うか否か
-	private double[] shiftCoor = new double[2];//mapDrawで使う一時保管用の変数。他の場所で使うなかれ。保存しない。
 	private boolean isdrawn = false;//その駅名がすでに描画されたか。駅名多重描画の防止に使う。駅座標変換フラグにも使う。
 	
 	public Station(String name){
@@ -194,18 +193,7 @@ public class Station {//駅に関する情報を保持するクラス
 	public void setShiftBase(boolean b){
 		this.shiftOnStation.set(b);
 	}
-	public double[] getShiftCoor(){
-		return this.shiftCoor;
-	}
 
-	/** 系統駅描画時に使用する、シフト位置計算済みの座標 */
-	public Point2D getShiftedPoint() {
-		return new Point2D(this.shiftCoor[0], this.shiftCoor[1]);
-	}
-
-	public void setShiftCoor(double[] ia){
-		this.shiftCoor = ia;
-	}
 	public boolean isDrawn(){
 		return this.isdrawn;
 	}

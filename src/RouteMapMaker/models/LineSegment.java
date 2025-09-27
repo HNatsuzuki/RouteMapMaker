@@ -39,6 +39,17 @@ public class LineSegment {
     }
 
     /**
+     * 線分の角度を取得します。
+     *
+     * @return 線分の角度 (rad)
+     */
+    public double getAngle() {
+        Point2D d = this.end.subtract(this.start);
+
+        return Math.atan2(d.getY(), d.getX());
+    }
+
+    /**
      * オフセット分シフトした線分を作成します。
      *
      * @param start 線分の開始座標
