@@ -135,6 +135,7 @@ import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.PathSegment;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
@@ -2367,7 +2368,7 @@ public class UIController implements Initializable{
 				//路線における系統の終点の番号
 				int endPoint = lineStationNames.lastIndexOf(stops.get(lastIndex).getSta().getName());
 				int stopCount = 0;//駅ごとのライン補正は情報がTrainStopにあるので何番目のTrainStopなのかカウント
-				List<Pair<Point2D, Boolean>> stationPoints = new ArrayList<>(); //<座標, curve>
+				List<PathSegment> stationPoints = new ArrayList<>();
 				
 				//ライン位置補正，駅位置補正，edgeを考慮して各駅の座標を決定していく
 				for (int h = startPoint; h <= endPoint; h++) {
@@ -2382,12 +2383,19 @@ public class UIController implements Initializable{
 						currentStation.getPointUSAsPoint2D(), nextStation.getPointUSAsPoint2D(), offset) : null;
 					// ライン端補正用
 					LineSegment currentSegment = null;
+					Point2D controlPoint = null;
 
 					final boolean nc = h < line.getStations().size() - 1 ? line.isConnectedByCurve(h + 1) : false;
 
 					if (curve) {
 						end = nextSegment.getStart();
 						currentSegment = nextSegment;
+
+						if (h != startPoint) {
+							LineSegment prevPrevSegment = LineSegment.createShifted(
+								line.getStation(h - 2).getPointUSAsPoint2D(), previousStation.getPointUSAsPoint2D(), offset);
+							controlPoint = prevPrevSegment.getIntersection(nextSegment);
+						}
 					} else if (nc) {
 						end = previousSegment.getEnd();
 						currentSegment = previousSegment;
@@ -2433,12 +2441,12 @@ public class UIController implements Initializable{
 						if (edgeALength != 0) {
 							//edgeAを考慮する。
 							Point2D startPosition = end.subtract(currentSegment.getUnitVector().multiply(edgeALength));
-							stationPoints.add(new Pair<>(startPosition, false));
+							stationPoints.add(new PathSegment(startPosition, null));
 						}
 
 						if (edgeALength >= 0) {
 							//最初の点もstaPointsに保存する．曲線描画で必要になることがあるため．
-							stationPoints.add(new Pair<>(end, false)); //最初の駅は必ず直線接続
+							stationPoints.add(new PathSegment(end, null)); //最初の駅は必ず直線接続
 						}
 					} else if (h == endPoint) {
 						// 終結点の場合の補正
@@ -2446,7 +2454,7 @@ public class UIController implements Initializable{
 
 						if (edgeBLength >= 0) {
 							// 補正値が正あるいはゼロの場合は描画点に加える
-							stationPoints.add(new Pair<>(end, line.isConnectedByCurve(endPoint)));
+							stationPoints.add(new PathSegment(end, controlPoint));
 						}
 
 						if (edgeBLength != 0) {
@@ -2454,60 +2462,15 @@ public class UIController implements Initializable{
 							Point2D endPosition = end.add(currentSegment.getUnitVector().multiply(edgeBLength));
 							// 補正値が正の場合は終着駅と補正点間は直線接続
 							// 負の場合は補正点が実質終着駅となるため曲線接続の可能性あり
-							stationPoints.add(new Pair<>(endPosition, edgeBLength < 0 && line.isConnectedByCurve(endPoint)));
+							stationPoints.add(new PathSegment(endPosition, edgeBLength < 0 ? controlPoint : null));
 						}
 					} else {
-						stationPoints.add(new Pair<>(end, curve));
+						stationPoints.add(new PathSegment(end, controlPoint));
 					}
 				}
 
 				//線の描画処理
-				gc.setStroke(train.getLineColor());
-				gc.setLineWidth(train.getLineWidth());
-				gc.setLineDashes(train.getLineDash().get());
-				gc.setFill(train.getMarkColor());
-
-				//staPointsにストアされた座標をもとに描画
-				for(int h=0; h<stationPoints.size(); h++) {
-					Point2D p = stationPoints.get(h).getKey();
-					boolean curve = stationPoints.get(h).getValue();
-					if(h==0) { //始点
-						gc.beginPath();
-						gc.moveTo(p.getX(), p.getY());
-					}else if(curve) {
-						Point2D[] l1 = new Point2D[2]; //前前駅-前駅の線の始点&終点
-						Point2D[] l2 = new Point2D[2]; //次の駅との線の始点&終点
-						//ベジエ曲線での接続
-						//運転系統が曲線区間から始まる場合，始点側の傾きを推測する必要がある．
-						if(h==1) {
-							l1[0] = LineSegment.createShifted(line.getStation(startPoint-1).getPointUSAsPoint2D(),
-									line.getStation(startPoint).getPointUSAsPoint2D(), offset).getStart();
-							Point2D shift = stops.get(0).getOffset();
-							l1[0] = l1[0].add(shift);
-						} else {
-							l1[0] = stationPoints.get(h-2).getKey();
-						}
-						l1[1] = stationPoints.get(h-1).getKey();
-						l2[0] = p;
-						if(h==stationPoints.size()-1) {
-							//運転系統が曲線区間で終わる場合，終点側の傾きを推測する必要がある．
-							l2[1] = LineSegment.createShifted(line.getStation(endPoint).getPointUSAsPoint2D(),
-									line.getStation(endPoint+1).getPointUSAsPoint2D(), offset).getEnd();
-							Point2D shift = stops.get(stops.size()-1).getOffset();
-							l2[1].add(shift);
-						} else {
-							l2[1] = stationPoints.get(h+1).getKey();
-						}
-						//double[] cp = calcIntersection(l1, l2); //control point
-						Point2D cp = new LineSegment(l1[0], l1[1]).getIntersection(new LineSegment(l2[0], l2[1]));
-						gc.quadraticCurveTo(cp.getX(), cp.getY(), p.getX(), p.getY());
-					} else {
-						// 直線での接続
-						gc.lineTo(p.getX(), p.getY());
-					}
-				}
-				gc.stroke();
-				gc.setLineDashes(null);//破線設定の後処理
+				drawer.drawTrainPath(train, stationPoints);
 				//上書きの問題があってやはりmarkは線を書き終わってからにしよう。
 				drawer.drawStopMarks(train);
 			}

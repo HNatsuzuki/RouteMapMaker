@@ -14,6 +14,7 @@ import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.PaintMode;
+import RouteMapMaker.models.PathSegment;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.TextStyle;
@@ -383,6 +384,41 @@ public class MapDrawer {
         gc.setTextAlign(style.getTextAlignment());
         gc.setTextBaseline(style.getVPos());
         gc.fillText(text, position.getX() + style.getHorizontalOffset(), position.getY());
+    }
+
+    /**
+     * 運転系統の線を描画します。
+     *
+     * @param train 運転系統
+     * @param segments 描画するセグメントのリスト
+     */
+    public void drawTrainPath(Train train, List<PathSegment> segments) {
+        //線の描画処理
+        gc.setStroke(train.getLineColor());
+        gc.setLineWidth(train.getLineWidth());
+        gc.setLineDashes(train.getLineDash().get());
+        gc.setFill(train.getMarkColor());
+        gc.beginPath();
+
+        for (int i = 0; i < segments.size(); ++i) {
+            Point2D p = segments.get(i).getPoint();
+            Point2D cp = segments.get(i).getControlPoint();
+
+            if (i == 0) {
+                //始点
+                gc.moveTo(p.getX(), p.getY());
+            } else if(cp != null) {
+                // 曲線
+                gc.quadraticCurveTo(cp.getX(), cp.getY(), p.getX(), p.getY());
+            } else {
+                // 直線での接続
+                gc.lineTo(p.getX(), p.getY());
+            }
+        }
+
+        gc.stroke();
+        //破線設定の後処理
+        gc.setLineDashes(null);
     }
 
     /**
