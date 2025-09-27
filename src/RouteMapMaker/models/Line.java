@@ -83,6 +83,11 @@ public class Line {//路線の情報を保持するクラス。
 	public void setName(String name){
 		this.lineName.set(name);
 	}
+
+	public Station getStation(int index) {
+		return this.connections.get(index).getStation();
+	}
+
 	// ここで得られるListは編集可能ではないので注意
 	public ObservableList<Station> getStations(){
 		ObservableList<Station> staList = FXCollections.observableArrayList();
