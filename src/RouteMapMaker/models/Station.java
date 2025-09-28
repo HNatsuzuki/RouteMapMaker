@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.geometry.Point2D;
 
 public class Station {//駅に関する情報を保持するクラス
 	
@@ -36,7 +37,6 @@ public class Station {//駅に関する情報を保持するクラス
 	private IntegerProperty nameX = new SimpleIntegerProperty(0);//駅名の描画位置のズレ
 	private IntegerProperty nameY = new SimpleIntegerProperty(0);
 	private BooleanProperty shiftOnStation = new SimpleBooleanProperty(false);//描画位置修正を駅ごとの設定に従うか否か
-	private double[] shiftCoor = new double[2];//mapDrawで使う一時保管用の変数。他の場所で使うなかれ。保存しない。
 	private boolean isdrawn = false;//その駅名がすでに描画されたか。駅名多重描画の防止に使う。駅座標変換フラグにも使う。
 	
 	public Station(String name){
@@ -82,6 +82,20 @@ public class Station {//駅に関する情報を保持するクラス
 			throw new IllegalArgumentException();
 		}
 	}
+
+	/**
+	 * Point2D 型で駅の固定座標を取得します。
+	 *
+	 * @return 駅の固定座標
+	 */
+	public Point2D getPoint2D() {
+		if (!pointSet.get()) {
+			throw new IllegalArgumentException("座標非固定駅の座標は取得できません。");
+		}
+
+		return new Point2D(x.get(), y.get());
+	}
+
 	public void plusConnection(){
 		stationConnection ++;
 	}
@@ -133,6 +147,9 @@ public class Station {//駅に関する情報を保持するクラス
 		p[1] = y.get();
 		return p;
 	}
+	public Point2D getPointUSAsPoint2D() {
+		return new Point2D(this.x.get(), this.y.get());
+	}
 	public int getNameSize(){
 		return size.get();
 	}
@@ -176,12 +193,7 @@ public class Station {//駅に関する情報を保持するクラス
 	public void setShiftBase(boolean b){
 		this.shiftOnStation.set(b);
 	}
-	public double[] getShiftCoor(){
-		return this.shiftCoor;
-	}
-	public void setShiftCoor(double[] ia){
-		this.shiftCoor = ia;
-	}
+
 	public boolean isDrawn(){
 		return this.isdrawn;
 	}

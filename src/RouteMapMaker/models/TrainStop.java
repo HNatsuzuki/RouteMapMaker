@@ -4,12 +4,15 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Point2D;
 
 public class TrainStop {//系統毎に保持する必要がある駅に関する情報を駅オブジェクトと関連付けて保存。
 	private Station station;//駅
 	private IntegerProperty shiftX = new SimpleIntegerProperty();//停車駅印のシフト
 	private IntegerProperty shiftY = new SimpleIntegerProperty();
 	private ObjectProperty<StopMark> mark = new SimpleObjectProperty<>(StopMark.OBEY_LINE);//駅ごとの停車駅印。
+	private double angle;
+	private Point2D position;
 	
 	public TrainStop(Station s){//オブジェクトの生成時はstationを要求。
 		this.station = s;
@@ -33,6 +36,9 @@ public class TrainStop {//系統毎に保持する必要がある駅に関する
 		int s[] = {shiftX.get(), shiftY.get()};
 		return s;
 	}
+	public Point2D getOffset() {
+		return new Point2D(shiftX.get(), shiftY.get());
+	}
 	public Station getSta(){
 		return this.station;
 	}
@@ -47,5 +53,21 @@ public class TrainStop {//系統毎に保持する必要がある駅に関する
 	}
 	public StopMark getMark(){
 		return this.mark.get();
+	}
+
+	public double getAngle() {
+		return this.angle;
+	}
+
+	public void setAngle(double angle) {
+		this.angle = angle;
+	}
+
+	public Point2D getPosition() {
+		return this.position;
+	}
+
+	public void setPosition(Point2D position) {
+		this.position = position;
 	}
 }

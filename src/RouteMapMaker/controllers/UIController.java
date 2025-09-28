@@ -39,8 +39,8 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
-import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -72,20 +72,14 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.util.Pair;
 
 import javax.imageio.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -140,6 +134,7 @@ import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.ErrorReporter;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
+import RouteMapMaker.services.MapDrawer;
 
 public class UIController implements Initializable{
 	
@@ -159,14 +154,12 @@ public class UIController implements Initializable{
 	private double y_largest = 0;
 	private double x_largest = 0;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
-	private final double pointRadius = 3;//駅の点の半径
 	final double canvasMargin = 200;
 	private final double version = 9;//セーブファイルのバージョン。セーブファイルに完全な互換性がなくなった時に変更する。
 	private final double ReleaseVersion = 16;//リリースバージョン。ユーザーへの案内用
 	private File dataFile;
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
-	private double zoom = 1.0;//canvas上での表示倍率。mapDrawのみに適用する。
 	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
 	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
@@ -185,7 +178,8 @@ public class UIController implements Initializable{
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
-	
+	private MapDrawer drawer;
+
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
 	@FXML Button RouteDelete;
@@ -300,6 +294,10 @@ public class UIController implements Initializable{
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		// TODO Auto-generated method stub
+		gc = canvas.getGraphicsContext2D();
+		drawer = new MapDrawer(config, gc, stationFontFamily);
+		drawer.initialize();
+
 		RouteTable.setItems(rnList);
 		RouteTable.setEditable(true);
 		RouteTable.setCellFactory(TextFieldListCell.forListView());
@@ -307,8 +305,6 @@ public class UIController implements Initializable{
 		setCanvasOriginal(lineList.getMaxPoint());
 		rnList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
-		gc = canvas.getGraphicsContext2D();
-		gc.save();
 		(new Thread(){
 			@Override
 			public void run(){
@@ -956,8 +952,8 @@ public class UIController implements Initializable{
 		canvas.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>(){//canvas上でマウスが押された時
 			@Override
 			public void handle(MouseEvent e){
-				startCoor[0] = e.getX()/zoom;
-				startCoor[1] = e.getY()/zoom;
+				startCoor[0] = e.getX()/drawer.getZoomRatio();
+				startCoor[1] = e.getY()/drawer.getZoomRatio();
 				if(esGroup.getSelectedToggle() == rightEditButton){
 					movingSt = searchStation(startCoor[0], startCoor[1]);
 					if(movingSt == null){
@@ -1001,7 +997,7 @@ public class UIController implements Initializable{
 					if(e.getButton()!=MouseButton.PRIMARY) {
 						return;
 					}
-					final double[] cc = {e.getX()/zoom, e.getY()/zoom}; //zoomを考慮した現在のマウス座標
+					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
 					if(movingSt != null){//特定の駅が選択されている時
 						//movingSt.setPoint(e.getX(), e.getY());
 						for(MvSta ms: movingStList){
@@ -1012,17 +1008,17 @@ public class UIController implements Initializable{
 						if(canvas.getHeight() - e.getY() < canvasMargin) canvas.setHeight(e.getY() + canvasMargin);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
-						if(e.getX() - startCoor[0]*zoom <= 0){//符号の反転が必要
+						if(e.getX() - startCoor[0]*drawer.getZoomRatio() <= 0){//符号の反転が必要
 							draggedRect.setX(e.getX());
-							draggedRect.setWidth(startCoor[0]*zoom - e.getX());
+							draggedRect.setWidth(startCoor[0]*drawer.getZoomRatio() - e.getX());
 						}else{//反転必要なし
-							draggedRect.setWidth(e.getX() - startCoor[0]*zoom);
+							draggedRect.setWidth(e.getX() - startCoor[0]*drawer.getZoomRatio());
 						}
-						if(e.getY() - startCoor[1]*zoom <= 0){
+						if(e.getY() - startCoor[1]*drawer.getZoomRatio() <= 0){
 							draggedRect.setY(e.getY());
-							draggedRect.setHeight(startCoor[1]*zoom - e.getY());
+							draggedRect.setHeight(startCoor[1]*drawer.getZoomRatio() - e.getY());
 						}else{
-							draggedRect.setHeight(e.getY() - startCoor[1]*zoom);
+							draggedRect.setHeight(e.getY() - startCoor[1]*drawer.getZoomRatio());
 						}
 					}
 				}else{//leftEditbuttonが選択されている状態
@@ -1034,7 +1030,7 @@ public class UIController implements Initializable{
 			@Override
 			public void handle(MouseEvent e){
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					final double[] cc = {e.getX()/zoom, e.getY()/zoom}; //zoomを考慮した現在のマウス座標
+					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
 					if(movingSt != null){//特定の駅が選択されている時
 						if(e.getButton()!=MouseButton.PRIMARY) {
 							return;
@@ -1072,13 +1068,14 @@ public class UIController implements Initializable{
 								}
 							}
 						}
-						canvasOriginal[0] = x_largest + canvasMargin/zoom;
-						canvasOriginal[1] = y_largest + canvasMargin/zoom;
+						canvasOriginal[0] = x_largest + canvasMargin/drawer.getZoomRatio();
+						canvasOriginal[1] = y_largest + canvasMargin/drawer.getZoomRatio();
+						drawer.setCanvasSize(canvasOriginal);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
-						movingStList = searchStation(draggedRect.getX()/zoom, draggedRect.getY()/zoom,
-								draggedRect.getWidth()/zoom, draggedRect.getHeight()/zoom);
+						movingStList = searchStation(draggedRect.getX()/drawer.getZoomRatio(), draggedRect.getY()/drawer.getZoomRatio(),
+								draggedRect.getWidth()/drawer.getZoomRatio(), draggedRect.getHeight()/drawer.getZoomRatio());
 						lineDraw();
 					}
 				}else{
@@ -2019,7 +2016,7 @@ public class UIController implements Initializable{
 		ZoomSlider.setSnapToTicks(true);
 		ZoomSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double d = ZoomSlider.getValue();
-			zoom = Math.pow(2, d);
+			drawer.setZoomRatio(Math.pow(2, d));
 			ReDraw();
 		});
 
@@ -2168,6 +2165,7 @@ public class UIController implements Initializable{
 	private void setCanvasOriginal(Point2D point) {
 		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
 		canvasOriginal[1] = point.getY() + canvasMargin * 2;
+		drawer.setCanvasSize(canvasOriginal);
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
@@ -2274,259 +2272,12 @@ public class UIController implements Initializable{
 			//データ読み込み中はリスナが反応してdrawを呼ぶので，応答しない．
 			return;
 		}
-		gc.restore();
-		gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-		canvas.setWidth(canvasOriginal[0]*zoom);
-		canvas.setHeight(canvasOriginal[1]*zoom);
-		gc.clearRect(0, 0, canvasOriginal[0], canvasOriginal[1]);//はじめに全領域消去
-		if(showBackInLE.isSelected()) {
-			drawBack(); //背景を描画
-		}
-		drawGrid(); //グリッドを描画する。
-		//各路線ごとに描画。
-		double[] startP = new double[2];//スタート座標
-		double[] endP = new double[2];//エンド座標
-		double radius = pointRadius;//点の半径
-		gc.setLineWidth(2);
-		for(Line line: lineList){
-			//選択中の路線だけ色を変える
-			gc.setStroke(line == this.line ? Color.PERU : Color.BLACK);
-			//まずは始点での処理。
-			List<Line.Connection> pointSetStations = line.getConnections().stream().
-					filter(c -> c.getStation().isSet()).collect(Collectors.toList());
-			startP = line.getStations().get(0).getPoint();
-			gc.beginPath();
-			gc.moveTo(startP[0], startP[1]);
-			int stopIndex = 0;
-			for(int i2 = 1; i2 < line.getStations().size(); i2++){
-				// 座標非固定点はスキップ
-				if(!line.getStations().get(i2).isSet()) {
-					continue;
-				}
-				endP = line.getStations().get(i2).getPoint();
-				if(line.getCurveConnection(i2) && line.isCurvable(i2)) {
-					// ベジエ曲線での接続
-					int idx = pointSetStations.indexOf(line.getConnections().get(i2));
-					double[][] l1 = {pointSetStations.get(idx-2).getStation().getPoint(), startP};
-					double[][] l2 = {endP, pointSetStations.get(idx+1).getStation().getPoint()};
-					double[] cp = calcIntersection(l1, l2); //control point
-					gc.quadraticCurveTo(cp[0], cp[1], endP[0], endP[1]);
-				} else {
-					// 直線での接続
-					gc.lineTo(endP[0], endP[1]);
-					for(int i3 = stopIndex + 1; i3 <= i2; i3++){
-						double[] p = new double[2];
-						p[0] = startP[0] + (endP[0] - startP[0]) * (i3 - stopIndex) / (i2 - stopIndex);
-						p[1] = startP[1] + (endP[1] - startP[1]) * (i3 - stopIndex) / (i2 - stopIndex);
-						if(i3 != i2){
-							line.getStations().get(i3).setInterPoint(p[0], p[1]);//中間座標の登録
-						}
-					}
-				}
-				stopIndex = i2;
-				startP = endP;
-			}
-			gc.stroke();
-		}
-		//駅の点の描画
-		for(Line l: lineList){
-			for(Station sta: l.getStations()){
-				boolean contain = false;
-				for(MvSta ms: movingStList){
-					if(ms.getStation() == sta) contain = true;
-				}
-				if(contain) { // 選択中
-					gc.setFill(Color.RED);
-				} else if(sta.isSet()) { //座標固定されている
-					gc.setFill(config.getFixedColor());
-				} else { //座標固定されていない
-					gc.setFill(config.getNonFixedColor());
-				}
-				double[] p = sta.getPointUS();
-				gc.fillOval(p[0] - radius, p[1] - radius, radius * 2, radius * 2);
-			}
-		}
-		gc.setFill(Color.BLACK);
-		textDraw(true);
-	}
-	
-	void drawGrid() {
-		// グリッド表示OFF→return
-		if(!config.getR_grid()) {
-			return;
-		}
-		final int interval = config.getR_gridInterval();
-		gc.setStroke(Color.LAVENDER);
-		gc.setLineWidth(1);
-		if(config.isGridTriangle()) {
-			// 三角形グリッド
-			// 水平線
-			double y_interval = interval * Math.sqrt(3) / 2;
-			double h = canvasOriginal[1];
-			for(int i = 0; i * y_interval < h; i++){//横線
-				gc.strokeLine(0, i * y_interval, canvasOriginal[0], i * y_interval);
-			}
-			int start_idx = (int) (Math.ceil(h/interval/Math.sqrt(3)));
-			// 斜め 傾き負線
-			for(double x = -1 * start_idx * interval; x < canvasOriginal[0]; x += interval) {
-				gc.strokeLine(x, 0, x + h/Math.sqrt(3), h);
-			}
-			// 斜め 傾き正線
-			for(double x = 0; x < canvasOriginal[0] + h/Math.sqrt(3); x += interval) {
-				gc.strokeLine(x - h/Math.sqrt(3), h, x , 0);
-			}
-		} else {
-			// 四角形グリッド
-			for(int i = 0; i < canvasOriginal[1];){//横線
-				gc.strokeLine(0, i, canvasOriginal[0], i);
-				i = i + interval;
-			}
-			for(int i = 0; i < canvasOriginal[0];){//縦線
-				gc.strokeLine(i, 0, i, canvasOriginal[1]);
-				i = i + interval;
-			}
-		}
-	}
-	
-	void drawBack() {
-		// 画像あるナシに関わらず背景色を設定
-		gc.setFill(background.getColor());
-		gc.fillRect(0, 0, canvasOriginal[0], canvasOriginal[1]);
-		if(background.getImage()!=null) {
-			// 背景画像
-			double r = zoom*background.getZoomRatio()/100;
-			gc.setTransform(r, 0, 0, r, background.getX()*zoom, background.getY()*zoom);
-			gc.setGlobalAlpha(1-background.getOpacity()/100.0);
-			gc.drawImage(background.getImage(), 0, 0);
-			gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-			gc.setGlobalAlpha(1.0);
-		}
-	}
-	
-	void textDraw(boolean mode){//駅名描画メソッド。modeがtrueなら路線編集モード。falseなら運転経路編集モード。
-		gc.setFill(Color.BLACK);
-		gc.setFont(Font.getDefault());
-		//先にdrawnフラグを全てfalseにする
-		for(Line l : lineList) {
-			for(Station station : l.getStations()) {
-				station.setDrawn(false);
-			}
-		}
-		//駅名描画
-		for(Line l : lineList) {
-			for(Station station : l.getStations()) {
-				int size = station.getNameSize()==0 ? l.getNameSize() : station.getNameSize();
-				if(size == -1 || station.isDrawn()) {
-					//サイズが-1の場合 or すでに描画されている場合は描画しない。
-					continue;
-				}
-				int style = station.getNameStyle()==Station.STYLE_UNSET ? l.getNameStyle() : station.getNameStyle();
-				boolean tate = station.getTextLocation()==Station.TEXT_UNSET ? l.isTategaki() : station.isTategaki();
-				int location;
-				if(station.getTextLocation()==Station.TEXT_UNSET ) {
-					location = l.getNameLocation();
-				} else {
-					//stationのlocation変数とLineのlocation変数は並びが異なるので，変換が必要
-					Integer[] sl = {Station.TEXT_RIGHT, Station.TEXT_LEFT, Station.TEXT_TOP, Station.TEXT_BOTTOM, Station.TEXT_CENTER};
-					location = Arrays.asList(sl).indexOf(station.getTextLocation());
-				}
-				//駅名シフト
-				int[] shift = new int[2];
-				if(mode){//路線編集モードならshiftしない。
-					shift[0] = 0;
-					shift[1] = 0;
-				} else if (station.shiftBasedOnStation()){//駅の設定準拠
-					shift = station.getNameZure();
-				} else {//路線の設定準拠
-					shift = l.getNameZure();
-				}
-				//System.out.println(station.getName() + ": " + tate + ", " + location);
-				if(tate) {
-					drawTate(station, size, style, location, shift, l.getNameColor());
-				} else {
-					drawYoko(station, size, style, location, shift, l.getNameColor());
-				}
-				station.setDrawn(true);
-			}
-		}
-	}
-	
-	void drawYoko(Station station, int size, int style, int location, int[] shift, Color color){
-		double sideIntv;
-		double[] p = station.getPointUS();
-		//文字スタイルの設定
-		FontWeight fw = (style == Line.BOLD || style == Line.ITALIC_BOLD) ? FontWeight.BOLD : FontWeight.NORMAL;
-		FontPosture fp = (style == Line.ITALIC || style == Line.ITALIC_BOLD) ? FontPosture.ITALIC : FontPosture.REGULAR;
-		gc.setFont(Font.font(stationFontFamily.get(), fw, fp, size));
-		gc.setFill(color);//色の設定
-		gc.setTextBaseline(VPos.BASELINE);
-		if(location == Line.LEFT){//右付き、左付きの設定
-			gc.setTextAlign(TextAlignment.RIGHT);
-			sideIntv = -5;
-		} else if (location == Line.RIGHT){
-			gc.setTextAlign(TextAlignment.LEFT);
-			sideIntv = 5;
-		} else {
-			gc.setTextAlign(TextAlignment.CENTER);
-			sideIntv = 0;
-		}
-		gc.setTextBaseline(
-				location==Line.TOP ? VPos.BOTTOM : location==Line.BOTTOM ? VPos.TOP : VPos.CENTER);
-		gc.fillText(station.getName(), 
-				p[0] + sideIntv + shift[0], p[1] + shift[1]);//X座標は要検証
-	}
-	void drawTate(Station station, int size, int style, int location, int[] shift, Color color){
-		double[] p = station.getPointUS();
-		StringBuilder tate = new StringBuilder();
-		for(int i = 0; i < station.getName().length(); i++){
-			tate.append(station.getName().charAt(i));
-			if(i != station.getName().length() - 1){
-				tate.append("\n");//最終文字以外は改行文字を追加する。
-			}
-		}
-		//文字スタイルの設定
-		FontWeight fw = (style == Line.BOLD || style == Line.ITALIC_BOLD) ? FontWeight.BOLD : FontWeight.NORMAL;
-		FontPosture fp = (style == Line.ITALIC || style == Line.ITALIC_BOLD) ? FontPosture.ITALIC : FontPosture.REGULAR;
-		gc.setFont(Font.font(stationFontFamily.get(), fw, fp, size));
-		gc.setFill(color);//色の設定
-		gc.setTextAlign(TextAlignment.CENTER);
-		gc.setTextBaseline(
-			location==Line.TOP ? VPos.BOTTOM : location==Line.BOTTOM ? VPos.TOP : VPos.CENTER);
-		int posOffset = location==Line.LEFT ? -1*size/2 : location==Line.RIGHT ? size/2 : 0;
-		gc.fillText(tate.toString(), p[0] + posOffset + shift[0], p[1] + shift[1]);//Y座標の設定は要検証
-	}
-	
-	// 線分aと線分bの（延長）交点を求める．aとbが平行で交点がない場合はa[1]を用いる．
-	// a, bはそれぞれ線分の両端座標
-	double[] calcIntersection(double[][] a, double[][]b) {
-		double[] intr = new double[2];
-		if(Math.abs(a[1][0] - a[0][0]) < EPSILON){//aが縦線。y=Constの形
-			intr[0] = a[1][0];//x座標は決まりました。
-			if(Math.abs(b[1][0] - b[0][0]) < EPSILON){//zhBも縦線
-				intr[1] = a[1][1];
-			}else{
-				double tangent = (b[1][1] - b[0][1]) / (b[1][0] - b[0][0]);
-				double intercept = b[0][1] - b[0][0] * tangent;
-				intr[1] = tangent * intr[0] + intercept;
-			}
-		}else if(Math.abs(b[1][0] - b[0][0]) < EPSILON){//bが縦線。
-			intr[0] = b[0][0];//x座標は決まりました。
-			double tangent = (a[1][1] - a[0][1]) / (a[1][0] - a[0][0]);
-			double intercept = a[0][1] - a[0][0] * tangent;
-			intr[1] = tangent * intr[0] + intercept;
-		}else{//両方共縦線じゃない
-			double tangentA = (a[1][1] - a[0][1]) / (a[1][0] - a[0][0]);
-			double tangentB = (b[1][1] - b[0][1]) / (b[1][0] - b[0][0]);
-			double interceptA = a[1][1] - a[1][0] * tangentA;
-			double interceptB = b[0][1] - b[0][0] * tangentB;
-			if(Math.abs(tangentA - tangentB) < EPSILON){//２つの直線が一直線上にある。解が無数に存在してしまう場合
-				intr = a[1].clone();//計算する意味がないのでそのまんまshiftされた値を使うだけ
-			}else{
-				intr[0] = (interceptB - interceptA) / (tangentB - tangentA) * -1;
-				intr[1] = tangentA * intr[0] + interceptA;
-			}
-		}
-		return intr;
+
+		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getWidth());
+		canvas.setHeight(canvasSize.getHeight());
+
+		drawer.drawMapInEditMode(lineList, line, movingStList, background, showBackInLE.isSelected());
 	}
 	
 	void mapDraw(){//leftEdit状態の時はこちらが描画される。
@@ -2534,239 +2285,12 @@ public class UIController implements Initializable{
 			//データ読み込み中はリスナが反応してdrawを呼ぶので，応答しない．
 			return;
 		}
-		gc.restore();
-		gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());//はじめに全領域消去
-		gc.setLineCap(StrokeLineCap.ROUND);//先っちょは丸くする。
-		gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-		canvas.setWidth(canvasOriginal[0] * zoom);
-		canvas.setHeight(canvasOriginal[1] * zoom);
-		drawBack();
-		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理
-			for(int i = lineList.get(k).getTrains().size() - 1; 0 <= i; i--){//系統ごとに処理。降順に処理していく。
-				Train train = lineList.get(k).getTrains().get(i);
-				if(train.getStops().size() < 2) {
-					//0駅もしくは1駅しか登録されてない系統は無視
-					continue;
-				}
-				//線の描画処理
-				gc.setStroke(train.getLineColor());
-				gc.setLineWidth(train.getLineWidth());
-				gc.setLineDashes(train.getLineDash().get());
-				gc.setFill(train.getMarkColor());
-				int zure = train.getLineDistance();
-				int mark_Size = train.getMarkSize();
-				List<String> lineStationNames = lineList.get(k).getStations().stream()
-						.map(sta -> sta.getName()).collect(Collectors.toList()); // 路線の駅名リスト
-				int lastIndex = train.getStops().size() - 1;
-				//路線における系統の始点の番号
-				int startPoint = lineStationNames.indexOf(train.getStops().get(0).getSta().getName());
-				//路線における系統の終点の番号
-				int endPoint = lineStationNames.lastIndexOf(train.getStops().get(lastIndex).getSta().getName());
-				int stopCount = 1;//駅ごとのライン補正は情報がTrainStopにあるので何番目のTrainStopなのかカウント
-				double[] end = new double[2];
-				//まずはedgeAを考えましょう。
-				//最初の区間からカーブすることがある
-				final boolean next_curve = lineList.get(k).isCurvable(startPoint+1) 
-						&& lineList.get(k).getCurveConnection(startPoint+1);
-				double[][] so;
-				if(next_curve) {
-					//この場合，路線自体はstartPointより前から始まっている
-					so = shiftPoint(lineList.get(k).getStations().get(startPoint-1).getPointUS(),
-							lineList.get(k).getStations().get(startPoint).getPointUS(), zure);
-				} else {
-					so = shiftPoint(lineList.get(k).getStations().get(startPoint).getPointUS(),
-							lineList.get(k).getStations().get(startPoint + 1).getPointUS(), zure);
-				}
-				end[0] = so[next_curve ? 1 : 0][0];
-				end[1] = so[next_curve ? 1 : 0][1];
-				double edgeALength = lineList.get(k).getTrains().get(i).getEdgeA();
-				int[] staShift = lineList.get(k).getTrains().get(i).getStops().get(0).getShift();//スタートなのでindex0
-				//endにstartPointでの駅毎位置補正を加える。こうすることでShiftCoorに反映される。
-				end[0] = end[0] + staShift[0];
-				end[1] = end[1] + staShift[1];
-				lineList.get(k).getStations().get(startPoint).setShiftCoor(end.clone());
-				//edgeAを考慮する。
-				end[0] = end[0] - (so[1][0] - so[0][0]) * edgeALength /
-						Math.sqrt(Math.pow(so[1][0] - so[0][0], 2) + Math.pow(so[1][1] - so[0][1], 2));
-				end[1] = end[1] - (so[1][1] - so[0][1]) * edgeALength /
-						Math.sqrt(Math.pow(so[1][0] - so[0][0], 2) + Math.pow(so[1][1] - so[0][1], 2));
-				ArrayList<Pair<double[], Boolean>> staPoints = 
-						new ArrayList<Pair<double[], Boolean>>(); //<座標, curve>
-				//最初の点もstaPointsに保存する．曲線描画で必要になることがあるため．
-				staPoints.add(new Pair<double[], Boolean>(end.clone(), false)); //最初の駅は必ず直線接続
-				//ライン位置補正，駅位置補正，edgeを考慮して各駅の座標を決定していく
-				for(int h = startPoint+1; h <= endPoint; h++){
-					boolean curve = lineList.get(k).isCurvable(h) && lineList.get(k).getCurveConnection(h);
-					if(h == endPoint){//最後のひと区間の時の処理。
-						double[][] ll = shiftPoint(lineList.get(k).getStations().get(h-1).getPointUS(),
-								lineList.get(k).getStations().get(h).getPointUS(), zure);
-						//駅毎位置補正を加える。
-						//ll[1]に補正を加える事でShiftCoorに反映される。
-						staShift = train.getStops().get(stopCount).getShift();
-						ll[1][0] = ll[1][0] + staShift[0];
-						ll[1][1] = ll[1][1] + staShift[1];
-						double edgeBLength = train.getEdgeB();
-						end[0] = ll[1][0] + (ll[1][0] - ll[0][0]) * edgeBLength /
-								Math.sqrt(Math.pow(ll[1][0] - ll[0][0], 2) + Math.pow(ll[1][1] - ll[0][1], 2));
-						end[1] = ll[1][1] + (ll[1][1] - ll[0][1]) * edgeBLength /
-								Math.sqrt(Math.pow(ll[1][0] - ll[0][0], 2) + Math.pow(ll[1][1] - ll[0][1], 2));
-						lineList.get(k).getStations().get(endPoint).setShiftCoor(ll[1]);
-					} else {
-						final boolean nc = lineList.get(k).isCurvable(h+1) 
-								&& lineList.get(k).getCurveConnection(h+1);
-						if(lineList.get(k).getStations().get(h).isSet() && !curve && !nc) {
-							//この場合は歪みを防ぐため特殊な処理が必要。連立方程式を用意してその解を採用する。
-							double[][] zhA = shiftPoint(lineList.get(k).getStations().get(h-1).getPointUS(),
-									lineList.get(k).getStations().get(h).getPoint(), zure);
-							double[][] zhB = shiftPoint(lineList.get(k).getStations().get(h).getPoint(),
-									lineList.get(k).getStations().get(h+1).getPointUS(), zure);
-							end = calcIntersection(zhA, zhB);
-						} else if(curve) {
-							end = shiftPoint(lineList.get(k).getStations().get(h).getPointUS(),
-									lineList.get(k).getStations().get(h+1).getPointUS(), zure)[0];
-						} else {
-							end = shiftPoint(lineList.get(k).getStations().get(h-1).getPointUS(),
-									lineList.get(k).getStations().get(h).getPointUS(), zure)[1];
-						}
-						//駅毎位置補正を加える。
-						if(lineList.get(k).getStations().get(h) == train.getStops().get(stopCount).getSta()){
-							staShift = train.getStops().get(stopCount).getShift();
-							end[0] = end[0] + staShift[0];
-							end[1] = end[1] + staShift[1];
-							stopCount ++;//最後にstopcountを一つ上げる。
-						}
-						lineList.get(k).getStations().get(h).setShiftCoor(end.clone());
-					}
-					staPoints.add(new Pair<double[], Boolean>(end.clone(), curve));
-				}
-				//staPointsにストアされた座標をもとに描画
-				for(int h=0; h<staPoints.size(); h++) {
-					double[] p = staPoints.get(h).getKey();
-					boolean curve = staPoints.get(h).getValue();
-					if(h==0) { //始点
-						gc.beginPath();
-						gc.moveTo(p[0], p[1]);
-					}else if(curve) {
-						double[][] l1 = new double[2][]; //前前駅-前駅の線の始点&終点
-						double[][] l2 = new double[2][]; //次の駅との線の始点&終点
-						//ベジエ曲線での接続
-						//運転系統が曲線区間から始まる場合，始点側の傾きを推測する必要がある．
-						if(h==1) {
-							l1[0] = shiftPoint(lineList.get(k).getStations().get(startPoint-1).getPointUS(),
-									lineList.get(k).getStations().get(startPoint).getPointUS(), zure)[0];
-							staShift = train.getStops().get(0).getShift();
-							l1[0][0] += staShift[0];
-							l1[0][1] += staShift[1];
-						} else {
-							l1[0] = staPoints.get(h-2).getKey();
-						}
-						l1[1] = staPoints.get(h-1).getKey();
-						l2[0] = p;
-						if(h==staPoints.size()-1) {
-							//運転系統が曲線区間で終わる場合，終点側の傾きを推測する必要がある．
-							l2[1] = shiftPoint(lineList.get(k).getStations().get(endPoint).getPointUS(),
-									lineList.get(k).getStations().get(endPoint+1).getPointUS(), zure)[1];
-							staShift = train.getStops().get(train.getStops().size()-1).getShift();
-							l2[1][0] += staShift[0];
-							l2[1][1] += staShift[1];
-						} else {
-							l2[1] = staPoints.get(h+1).getKey();
-						}
-						double[] cp = calcIntersection(l1, l2); //control point
-						gc.quadraticCurveTo(cp[0], cp[1], p[0], p[1]);
-					} else {
-						// 直線での接続
-						gc.lineTo(p[0], p[1]);
-					}
-				}
-				gc.stroke();
-				gc.setLineDashes(null);//破線設定の後処理
-				//上書きの問題があってやはりmarkは線を書き終わってからにしよう。
-				for(int h = 0; h < lineList.get(k).getTrains().get(i).getStops().size(); h++){
-					//どのmarkを使うのか決める。
-					StopMark mm = null;
-					if(lineList.get(k).getTrains().get(i).getStops().get(h).getMark() == StopMark.OBEY_LINE){
-						mm = lineList.get(k).getTrains().get(i).getMark();
-					}else{
-						mm = lineList.get(k).getTrains().get(i).getStops().get(h).getMark();
-					}
-					//以下、それぞれのマークの処理
-					if(mm == StopMark.CIRCLE){
-						gc.setFill(lineList.get(k).getTrains().get(i).getMarkColor());
-						gc.fillOval(lineList.get(k).getTrains().get(i).getStops().get(h).getSta().getShiftCoor()[0] - mark_Size / 2,
-								lineList.get(k).getTrains().get(i).getStops().get(h).getSta().getShiftCoor()[1] - mark_Size / 2, 
-								mark_Size, mark_Size);
-					}else if(mm == StopMark.NO_DRAW){
-						//NO_DRAWなのでなにもしない。
-					}else{//カスタムマーク
-						//回転するか？
-						double theta = 0;
-						if(mm.isRotated()){
-							//回転角度を計算する
-							int s_idx = h==0 ? h+1 : h;
-							double dx = staPoints.get(s_idx).getKey()[0] - staPoints.get(s_idx-1).getKey()[0];
-							double dy = staPoints.get(s_idx).getKey()[1] - staPoints.get(s_idx-1).getKey()[1];
-							theta = Math.atan2(dy, dx);
-						}
-						CustomMarkController.markDraw(gc, mm, mark_Size,
-								lineList.get(k).getTrains().get(i).getStops().get(h).getSta().getShiftCoor(), theta);
-					}
-				}
-			}
-		}
-		textDraw(false);//駅名はlineにもとづいて描画することになりました。
-		//以下、自由挿入アイテムを描画する
-		gc.setTextAlign(TextAlignment.LEFT);//駅名描画でいじったので直す
-		gc.setTextBaseline(VPos.BASELINE);
-		for(int c = freeItems.size() - 1; 0 <= c; c--){//下から順番に。
-			FreeItem item = freeItems.get(c);
-			double[] params = new double[5];
-			for(int k = 0; k < 5; k++){
-				params[k] = item.getParams()[k].getValue();
-			}
-			//アフィン変換で回転。そのまま回転だと原点中心になっちゃうので行列計算。
-			//freeItemでは回転をリストアしないと前の回転がどんどん溜まっていく。zoomの再設定も必要。
-			gc.restore();
-			gc.setTransform(zoom, 0, 0, zoom, 0, 0);
-			gc.transform(Math.cos(Math.toRadians(params[4])),Math.sin(Math.toRadians(params[4])),
-					-1 * Math.sin(Math.toRadians(params[4])),Math.cos(Math.toRadians(params[4])),
-					params[0] - params[0] * Math.cos(Math.toRadians(params[4])) + params[1] * Math.sin(Math.toRadians(params[4])),
-					params[1] - params[0] * Math.sin(Math.toRadians(params[4])) - params[1] * Math.cos(Math.toRadians(params[4])));
-			if(item.getType() == FreeItem.IMAGE) gc.drawImage(item.getImage(), params[0], params[1], params[2], params[3]);
-			if(item.getType() == FreeItem.TEXT){
-				//テキストの描画処理はここに実装
-				//文字スタイルの設定
-				if(item.getParams()[5].getValue() == 0) gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, 
-						FontPosture.REGULAR, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 2) gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, 
-						FontPosture.ITALIC, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 1) gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, 
-						FontPosture.REGULAR, item.getParams()[2].getValue()));
-				if(item.getParams()[5].getValue() == 3) gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, 
-						FontPosture.ITALIC, item.getParams()[2].getValue()));
-				String writes = null;//実際に出力するString
-				if(item.getParams()[7].getValue() == 0) writes = item.getText();
-				if(item.getParams()[7].getValue() == 1){//縦書きの場合
-					StringBuilder tate = new StringBuilder();
-					for(int i = 0; i < item.getText().length(); i++){
-						tate.append(item.getText().charAt(i));
-						if(i != item.getText().length() - 1){
-							tate.append("\n");//最終文字以外は改行文字を追加する。
-						}
-					}
-					writes = tate.toString();
-				}
-				if(item.getParams()[6].getValue() == 0){//fill
-					gc.setFill(item.getColor());
-					gc.fillText(writes, item.getParams()[0].getValue(), item.getParams()[1].getValue());
-				}
-				if(item.getParams()[6].getValue() == 1){//stroke
-					gc.setStroke(item.getColor());
-					gc.setLineWidth(item.getParams()[3].getValue());
-					gc.strokeText(writes, item.getParams()[0].getValue(), item.getParams()[1].getValue());
-				}
-			}
-		}
+
+		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
+		canvas.setWidth(canvasSize.getWidth());
+		canvas.setHeight(canvasSize.getHeight());
+
+		drawer.drawMapInMapMode(lineList, background, freeItems);
 	}
 	protected void ReDraw(){//画面を描画し直す。主に外部インスタンスから呼び出す用。
 		if(esGroup.getSelectedToggle() == rightEditButton){
@@ -2925,17 +2449,6 @@ public class UIController implements Initializable{
 		}
 	}
 	
-	//png画像を読みこんでimageMapに格納する
-	void readImage(File imageFile, HashMap<Integer,Image> imageMap) throws IOException {
-		try {
-			int idx = Integer.valueOf(imageFile.getName().substring(0, imageFile.getName().indexOf(".")));
-			Image im = SwingFXUtils.toFXImage(ImageIO.read(imageFile), null);
-			imageMap.put(idx, im);
-		}catch(NumberFormatException e) {
-			// ファイル名が数字でない場合は読み込み処理を行わない．
-		}
-	}
-	
 	void saveRMMFile(File saveFile) throws IOException{
 		final String fN = saveFile.getName();
 		final boolean rmm = (fN.substring(fN.lastIndexOf(".")).equals(".rmm"));
@@ -3071,13 +2584,14 @@ public class UIController implements Initializable{
 		}
 		canvasOriginal[0] = x_largest + canvasMargin;
 		canvasOriginal[1] = y_largest + canvasMargin;
+		drawer.setCanvasSize(canvasOriginal);
 		canvas.setWidth(x_largest + canvasMargin);
 		canvas.setHeight(y_largest + canvasMargin);
 		resetParams();//適切にGUIパラメータを再セット。
 		rightEditButton.setSelected(true);//読み込み時は路線編集モードにする。
 		isLoading = false;
 		// zoomをリセット
-		zoom = 1;
+		drawer.setZoomRatio(1);
 		ZoomSlider.setValue(0);
 		lineDraw();
 	}
@@ -3113,15 +2627,6 @@ public class UIController implements Initializable{
 	}
 	public void setObject(Stage s){//このコントローラーに渡したいデータがあればここで。
 		this.mainStage = s;//結局使ってません
-	}
-	double[][] shiftPoint(double[] ini, double[] last, int zure){//線分の両端の座標を与えてzureの分だけずらした線分の両端の点を与える
-		double[][] p = new double[2][2];
-			//x:+sinθ、y:-cosθ
-			p[0][0] = ini[0] + zure * (last[1] - ini[1]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[0][1] = ini[1] - zure * (last[0] - ini[0]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[1][0] = last[0] + zure * (last[1] - ini[1]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-			p[1][1] = last[1] - zure * (last[0] - ini[0]) / Math.sqrt(Math.pow(last[0] - ini[0], 2) + Math.pow(last[1] - ini[1], 2));
-		return p;
 	}
 	List<Line> detectConnectedLine(Station sta){//与えられたstationが所属するlineを全て返す
 		List<Line> lines = lineList.stream().filter(l -> l.getStations().contains(sta)).collect(Collectors.toList());
@@ -3217,10 +2722,10 @@ public class UIController implements Initializable{
 		b1.setOnAction((ActionEvent) ->{
 			try{
 				SnapshotParameters ssp = new SnapshotParameters();
-				zoom = slider.getValue()/100;
+				drawer.setZoomRatio(slider.getValue()/100);
 				mapDraw();
 				WritableImage wi = canvas.snapshot(ssp, null);
-				zoom = 1;
+				drawer.setZoomRatio(1);;
 				mapDraw();
 				FileChooser fc = new FileChooser();
 				fc.setTitle("画像の書き出し");
