@@ -23,11 +23,13 @@ import RouteMapMaker.models.TrainStop;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 
 /**
  * 描画系処理をまとめたクラスです。
@@ -372,6 +374,10 @@ public class MapDrawer {
                     });
             }
         }
+
+        //駅名描画でいじったので直す
+        gc.setTextAlign(TextAlignment.LEFT);
+        gc.setTextBaseline(VPos.BASELINE);
     }
 
     /**

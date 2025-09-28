@@ -2352,9 +2352,6 @@ public class UIController implements Initializable{
 		//駅名はlineにもとづいて描画することになりました。
 		drawer.drawStationNames(lineList, false);
 		//以下、自由挿入アイテムを描画する
-		//駅名描画でいじったので直す
-		gc.setTextAlign(TextAlignment.LEFT);
-		gc.setTextBaseline(VPos.BASELINE);
 		drawer.drawFreeItems(freeItems);
 	}
 	protected void ReDraw(){//画面を描画し直す。主に外部インスタンスから呼び出す用。
