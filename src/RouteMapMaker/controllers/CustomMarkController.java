@@ -7,9 +7,11 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.factories.View;
+import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.commands.AddListItemCommand;
@@ -22,6 +24,8 @@ import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.services.CustomMarkDrawer;
 import RouteMapMaker.services.URElements;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -47,7 +51,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.stage.FileChooser.ExtensionFilter;
 
 public class CustomMarkController implements Initializable{
 	final int prevSize = 40;
@@ -60,6 +63,8 @@ public class CustomMarkController implements Initializable{
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private CustomMarkDrawer drawer;
+	private final FileChooserFactory fileChooserFactory;
+	private final Configuration config;
 	
 	@FXML Canvas markCanvas;
 	@FXML Pane prevPane;
@@ -105,9 +110,11 @@ public class CustomMarkController implements Initializable{
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
 
-	public CustomMarkController(SceneFactory sceneFactory, AlertFactory alertFactory) {
+	public CustomMarkController(SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
+		this.fileChooserFactory = fileChooserFactory;
+		this.config = config;
 	}
 
 	@Override
@@ -383,13 +390,11 @@ public class CustomMarkController implements Initializable{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				MarkLayer newImage = new MarkLayer(MarkLayer.IMAGE);
-				FileChooser fileChooser = new FileChooser();
-				fileChooser.setTitle("画像ファイルを選択してください。");
-				fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files(jpg,png,gif,bmp)", 
-						"*.png", "*.jpg", "*.jpeg", "*.gif","*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.GIF","*.BMP"));
+				FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
 				File imageFile = fileChooser.showOpenDialog(null);
 				if(imageFile != null){
 					try {
+						config.setImageFileDir(imageFile.getParent());
 						newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
 						newImage.setText(imageFile.getName());
 						if(newImage.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。

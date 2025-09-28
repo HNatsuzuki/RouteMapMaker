@@ -79,7 +79,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.stage.FileChooser.ExtensionFilter;
 
 import javax.imageio.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -91,6 +90,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import RouteMapMaker.factories.FileChooserFactory;
 
 import RouteMapMaker.converters.BackgroundPropertiesConverter;
 import RouteMapMaker.converters.FreeItemListPropertiesConverter;
@@ -164,7 +165,7 @@ public class UIController implements Initializable{
 	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
-	private Configuration config;
+	private final Configuration config;
 	private Stage configStage;
 	private boolean configWindowOpened = false;//環境設定ウィンドウが既に開かれているかどうか
 	private FreeItemsController fic;
@@ -176,6 +177,7 @@ public class UIController implements Initializable{
 	private boolean changeAllWindowOpened = false;
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
+	private final FileChooserFactory fileChooserFactory;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private MapDrawer drawer;
@@ -285,10 +287,11 @@ public class UIController implements Initializable{
 	@FXML Spinner<Integer> re_staLAY_SP;
 	@FXML Spinner<Integer> staSize;
 
-	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory) {
+	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory) {
 		this.config = config;
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
+		this.fileChooserFactory = fileChooserFactory;
 	}
 
 	@Override
@@ -349,14 +352,13 @@ public class UIController implements Initializable{
 		});
 		RouteLoad.setOnAction((ActionEvent) ->{
 			// 駅名が書かれたファイルを選択
-			FileChooser fc = new FileChooser();
-			FileChooser.ExtensionFilter txt = new FileChooser.ExtensionFilter("テキストファイル（*.txt）", "*.txt");
+			FileChooser fc = fileChooserFactory.createTextFileChooser();
 			fc.setTitle("ファイルを開く");
-			fc.getExtensionFilters().add(txt);
 			File selectedFile = fc.showOpenDialog(null);
 			ArrayList<String> staNames = new ArrayList<String>();
 			try{
-				if(fc.getSelectedExtensionFilter() == txt){
+				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getTxtFilter()){
+					config.setTextFileDir(selectedFile.getParent());
 					BufferedReader br = new BufferedReader(new FileReader(selectedFile));
 					String line = br.readLine();
 					while(line != null) {
@@ -897,13 +899,11 @@ public class UIController implements Initializable{
 		});
 		
 		setBgImage.setOnAction((ActionEvent) -> {
-			FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("画像ファイルを選択してください。");
-			fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files(jpg,png,gif,bmp)", 
-					"*.png", "*.jpg", "*.jpeg", "*.gif","*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.GIF","*.BMP"));
+			FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
 			File imageFile = fileChooser.showOpenDialog(null);
 			if(imageFile == null) { return; } //画像が選択されなかった
 			try {
+				config.setImageFileDir(imageFile.getParent());
 				Image im = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
 				if(im.isError()) { //イメージのロード中にエラーが検出されたことを示す。
 					Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
@@ -1128,20 +1128,21 @@ public class UIController implements Initializable{
 			lineDraw();
 		});
 		mb_open.setOnAction((ActionEvent) ->{
-			FileChooser fc = new FileChooser();
-			FileChooser.ExtensionFilter erm = new FileChooser.ExtensionFilter("路線図メーカーテキスト形式（*.erm）", "*.erm");
-			FileChooser.ExtensionFilter rmm = new FileChooser.ExtensionFilter("路線図メーカー形式（*.rmm）", "*.rmm");
+			FileChooser fc = fileChooserFactory.createSaveFileChooser();
 			fc.setTitle("ファイルを開く");
-			fc.getExtensionFilters().add(rmm);
-			fc.getExtensionFilters().add(erm);
 			File selectedFile = fc.showOpenDialog(null);
 			try{
-				if(fc.getSelectedExtensionFilter() == erm){
+				if (selectedFile == null) {
+					return;
+				}
+
+				config.setSaveFileDir(selectedFile.getParent());
+				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getErmFilter()){
 					urManager.clear();
 					dataFile = selectedFile;
 					readERMFile(dataFile);
 				}
-				if(fc.getSelectedExtensionFilter() == rmm){
+				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getRmmFilter()){
 					urManager.clear();
 					dataFile = selectedFile;
 					readRMMFile(dataFile);
@@ -1162,14 +1163,13 @@ public class UIController implements Initializable{
 		});
 		mb_save.setOnAction((ActionEvent) ->{
 			if(dataFile == null){
-				FileChooser fc = new FileChooser();
+				FileChooser fc = fileChooserFactory.createSaveFileChooser();
 				fc.setTitle("ファイルの保存");
-				fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("路線図メーカー形式（*.rmm）", "*.rmm"));
-				fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("路線図メーカーテキスト形式（*.erm）", "*.erm"));
 				dataFile = fc.showSaveDialog(null);
 			}
 			if(dataFile != null){
 				try{
+					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
 					alert.show();
@@ -1182,13 +1182,12 @@ public class UIController implements Initializable{
 			}
 		});
 		mb_saveAs.setOnAction((ActionEvent) ->{
-			FileChooser fc = new FileChooser();
+			FileChooser fc = fileChooserFactory.createSaveFileChooser();
 			fc.setTitle("ファイルの保存");
-			fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("路線図メーカー形式（*.rmm）", "*.rmm"));
-			fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("路線図メーカーテキスト形式（*.erm）", "*.erm"));
 			dataFile = fc.showSaveDialog(null);
 			if(dataFile != null){
 				try{
+					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
 					alert.show();
@@ -1306,7 +1305,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(sceneFactory, alertFactory);
+						return new CustomMarkController(sceneFactory, alertFactory, fileChooserFactory, config);
 					} else {
 						throw new RuntimeException();
 					}
@@ -1346,7 +1345,7 @@ public class UIController implements Initializable{
 			//運転経路編集モードなら再描画
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
-		fic = new FreeItemsController(freeItems, this, alertFactory);//コントローラーの初期化
+		fic = new FreeItemsController(freeItems, this, alertFactory, fileChooserFactory, config);//コントローラーの初期化
 		mb_freeItem.setOnAction((ActionEvent e) ->{
 			//ショートカットキーを使って起動するとウィンドウを閉じてももう一度開く問題がある。
 			if(fiWindowOpened){
@@ -2727,17 +2726,9 @@ public class UIController implements Initializable{
 				WritableImage wi = canvas.snapshot(ssp, null);
 				drawer.setZoomRatio(1);;
 				mapDraw();
-				FileChooser fc = new FileChooser();
+				FileChooser fc = fileChooserFactory.createExportImageFileChooser();
 				fc.setTitle("画像の書き出し");
-				FileChooser.ExtensionFilter[] fcef = new FileChooser.ExtensionFilter[4];
-				fcef[0] = new FileChooser.ExtensionFilter("PNG形式（*.png）", "*.png");
-				fcef[1] = new FileChooser.ExtensionFilter("JPEG形式（*.jpg）", "*.jpg");
-				fcef[2] = new FileChooser.ExtensionFilter("Bitmap形式（*.bmp）", "*.bmp");
-				fcef[3] = new FileChooser.ExtensionFilter("PDF形式（*.pdf）", "*.pdf");
-				fc.getExtensionFilters().add(fcef[0]);
-				//fc.getExtensionFilters().add(fcef[1]);
-				//fc.getExtensionFilters().add(fcef[2]);
-				//fc.getExtensionFilters().add(fcef[3]);
+				FileChooser.ExtensionFilter[] fcef = fileChooserFactory.getExportImageFilters();
 				File imageFile = fc.showSaveDialog(null);
 				int format = 0;//書き出し形式特定用
 				for(int k = 0; k < 4; k++){
@@ -2745,6 +2736,8 @@ public class UIController implements Initializable{
 				}
 				if(imageFile != null){
 					try{
+						config.setImageFileDir(imageFile.getParent());
+
 						switch(format){
 						case 0:
 							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "png", imageFile);

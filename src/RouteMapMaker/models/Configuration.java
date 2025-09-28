@@ -30,6 +30,9 @@ public class Configuration {
 	private final BooleanProperty triangleGrid = new SimpleBooleanProperty(false);
 	private final BooleanProperty menubarMode = new SimpleBooleanProperty(true);
 	private boolean no_alert = false;//起動時使用上の注意を表示しない
+	private String saveFileDir = "";
+	private String imageFileDir = "";
+	private String textFileDir = "";
 
 	private final StringProperty uiFont = new SimpleStringProperty("System");
 	
@@ -173,6 +176,13 @@ public class Configuration {
 	 */
 	public void setUiFont(String s) { this.uiFont.set(s); }
 
+	public String getSaveFileDir() { return this.saveFileDir; }
+	public void setSaveFileDir(String dir) { this.saveFileDir = dir; }
+	public String getImageFileDir() { return this.imageFileDir; }
+	public void setImageFileDir(String dir) { this.imageFileDir = dir; }
+	public String getTextFileDir() { return this.textFileDir; }
+	public void setTextFileDir(String dir) { this.textFileDir = dir; }
+
 	public BooleanProperty getR_gridProperty() { return this.R_grid; }
 	public IntegerProperty getR_gridIntervalProperty() { return this.R_gridInterval; }
 	public BooleanProperty getR_bindToGridXProperty() { return this.R_bindToGridX; }
@@ -206,6 +216,9 @@ public class Configuration {
 			no_alert = Boolean.valueOf(p.getProperty("no_alert", "false"));
 			triangleGrid.set(Boolean.valueOf(p.getProperty("triangleGrid", "false")));
 			uiFont.set(String.valueOf(p.getProperty("uiFont", "System")));
+			saveFileDir = p.getProperty("saveFileDir", "");
+			imageFileDir = p.getProperty("imageFileDir", "");
+			textFileDir = p.getProperty("textFileDir", "");
 		}
 	}
 	public void save(){
@@ -221,6 +234,9 @@ public class Configuration {
 			p.setProperty("no_alert", String.valueOf(no_alert));
 			p.setProperty("triangleGrid", String.valueOf(triangleGrid));
 			p.setProperty("uiFont", uiFont.get());
+			p.setProperty("saveFileDir", saveFileDir);
+			p.setProperty("imageFileDir", imageFileDir);
+			p.setProperty("textFileDir", textFileDir);
 			FileWriter fw = new FileWriter("config.properties");
 			p.store(fw, null);
 			fw.close();

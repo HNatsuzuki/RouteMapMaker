@@ -7,7 +7,9 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.listcells.FreeItemCell;
+import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.FreeItem;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,12 +28,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
-import javafx.stage.FileChooser.ExtensionFilter;
 
 public class FreeItemsController implements Initializable{
 	ObservableList<FreeItem> freeItems;
 	UIController uic;
 	private final AlertFactory alertFactory;
+	private final FileChooserFactory fileChooserFactory;
+	private final Configuration config;
 	
 	@FXML Button addImage;
 	@FXML Button addText;
@@ -52,10 +55,12 @@ public class FreeItemsController implements Initializable{
 	@FXML ChoiceBox<String> p_style;
 	@FXML Button selectFont;
 	
-	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertFactory alertFactory) {
+	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
 		this.freeItems = freeItems;
 		this.uic = uic;
 		this.alertFactory = alertFactory;
+		this.fileChooserFactory = fileChooserFactory;
+		this.config = config;
 	}
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -64,13 +69,11 @@ public class FreeItemsController implements Initializable{
 		itemList.setItems(this.freeItems);
 		addImage.setOnAction((ActionEvent) ->{
 			FreeItem fi = new FreeItem(FreeItem.IMAGE);
-			FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("画像ファイルを選択してください。");
-			fileChooser.getExtensionFilters().add(new ExtensionFilter("Image Files(jpg,png,gif,bmp)", 
-					"*.png", "*.jpg", "*.jpeg", "*.gif","*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.GIF","*.BMP"));
+			FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
 			File imageFile = fileChooser.showOpenDialog(null);
 			if(imageFile != null){
 				try {
+					config.setImageFileDir(imageFile.getParent());
 					fi.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
 					fi.setText(imageFile.getName());
 					if(fi.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
