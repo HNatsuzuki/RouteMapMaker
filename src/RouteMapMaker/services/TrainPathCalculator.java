@@ -163,6 +163,8 @@ public class TrainPathCalculator {
             segment = previousSegment;
         } else if (currentStation.isSet()) {
             // 前後非曲線固定点
+            // 従来処理では、始点の場合は nextSegment、終点の場合は prevSegment 固定
+            // 必要に応じてもとに戻すか選択できるようにする？
             if (previousSegment != null && nextSegment != null) {
                 //この場合は歪みを防ぐため特殊な処理が必要。連立方程式を用意してその解を採用する。
                 point = previousSegment.getIntersection(nextSegment);
