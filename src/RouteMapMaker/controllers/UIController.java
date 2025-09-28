@@ -41,7 +41,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Point2D;
-import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -73,20 +72,14 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.util.Pair;
 
 import javax.imageio.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -131,11 +124,9 @@ import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.LineList;
-import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
-import RouteMapMaker.models.PathSegment;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
@@ -163,7 +154,6 @@ public class UIController implements Initializable{
 	private double y_largest = 0;
 	private double x_largest = 0;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
-	private final double pointRadius = 3;//駅の点の半径
 	final double canvasMargin = 200;
 	private final double version = 9;//セーブファイルのバージョン。セーブファイルに完全な互換性がなくなった時に変更する。
 	private final double ReleaseVersion = 16;//リリースバージョン。ユーザーへの案内用
@@ -2288,39 +2278,6 @@ public class UIController implements Initializable{
 		canvas.setHeight(canvasSize.getHeight());
 
 		drawer.drawMapInEditMode(lineList, line, movingStList, background, showBackInLE.isSelected());
-	}
-	
-	// 線分aと線分bの（延長）交点を求める．aとbが平行で交点がない場合はa[1]を用いる．
-	// a, bはそれぞれ線分の両端座標
-	double[] calcIntersection(double[][] a, double[][]b) {
-		double[] intr = new double[2];
-		if(Math.abs(a[1][0] - a[0][0]) < EPSILON){//aが縦線。y=Constの形
-			intr[0] = a[1][0];//x座標は決まりました。
-			if(Math.abs(b[1][0] - b[0][0]) < EPSILON){//zhBも縦線
-				intr[1] = a[1][1];
-			}else{
-				double tangent = (b[1][1] - b[0][1]) / (b[1][0] - b[0][0]);
-				double intercept = b[0][1] - b[0][0] * tangent;
-				intr[1] = tangent * intr[0] + intercept;
-			}
-		}else if(Math.abs(b[1][0] - b[0][0]) < EPSILON){//bが縦線。
-			intr[0] = b[0][0];//x座標は決まりました。
-			double tangent = (a[1][1] - a[0][1]) / (a[1][0] - a[0][0]);
-			double intercept = a[0][1] - a[0][0] * tangent;
-			intr[1] = tangent * intr[0] + intercept;
-		}else{//両方共縦線じゃない
-			double tangentA = (a[1][1] - a[0][1]) / (a[1][0] - a[0][0]);
-			double tangentB = (b[1][1] - b[0][1]) / (b[1][0] - b[0][0]);
-			double interceptA = a[1][1] - a[1][0] * tangentA;
-			double interceptB = b[0][1] - b[0][0] * tangentB;
-			if(Math.abs(tangentA - tangentB) < EPSILON){//２つの直線が一直線上にある。解が無数に存在してしまう場合
-				intr = a[1].clone();//計算する意味がないのでそのまんまshiftされた値を使うだけ
-			}else{
-				intr[0] = (interceptB - interceptA) / (tangentB - tangentA) * -1;
-				intr[1] = tangentA * intr[0] + interceptA;
-			}
-		}
-		return intr;
 	}
 	
 	void mapDraw(){//leftEdit状態の時はこちらが描画される。
