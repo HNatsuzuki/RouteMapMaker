@@ -201,4 +201,14 @@ public class Station {//駅に関する情報を保持するクラス
 		this.isdrawn = b;
 	}
 
+	/**
+	 * 平行移動を行います。
+	 *
+	 * @param x x方向の移動量
+	 * @param y y方向の移動量
+	 */
+	public void translate(double x, double y) {
+		this.x.set(this.x.get() + x);
+		this.y.set(this.y.get() + y);
+	}
 }

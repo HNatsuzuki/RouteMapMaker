@@ -10,7 +10,10 @@ import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.commands.Command;
+import RouteMapMaker.commands.CompositeCommand;
 import RouteMapMaker.commands.TransformCommand;
+import RouteMapMaker.commands.TranslateFreeItemsCommand;
+import RouteMapMaker.commands.TranslateLineStationsCommand;
 import RouteMapMaker.services.MainURManager;
 import javafx.beans.property.DoubleProperty;
 import javafx.collections.FXCollections;
@@ -65,57 +68,22 @@ public class TransformController implements Initializable {
 		trans_AP.setOnAction((ActionEvent) ->{
 			int choice = confirm("平行移動");
 			if(choice != CANCEL){
-				//変更したパラメーターを格納してまとめてpush
-				ObservableList<DoubleProperty> props = FXCollections.observableArrayList();
-				ObservableList<Double> oldVals = FXCollections.observableArrayList();
-				ObservableList<Double> newVals = FXCollections.observableArrayList();
-				for(Line line: lineList){
-					for(Station sta: line.getStations()){
-						sta.setDrawn(false);
+				try {
+					int translateX = Integer.parseInt(trans_X.getEditor().getText());
+					int translateY = Integer.parseInt(trans_Y.getEditor().getText());
+
+					CompositeCommand commands = new CompositeCommand();
+					Command translateLineStationsCommand = new TranslateLineStationsCommand(lineList, translateX, translateY);
+					commands.addCommand(translateLineStationsCommand);
+					canvasSize[0] = canvasSize[0] + translateX;
+					canvasSize[1] = canvasSize[1] + translateY;
+					if (choice == WITH_FI) {
+						Command translateFreeItemsCommand = new TranslateFreeItemsCommand(freeItems, translateX, translateY);
+						commands.addCommand(translateFreeItemsCommand);
 					}
-				}
-				try{
-					for(Line line: lineList){
-						for(Station sta: line.getStations()){
-							double old;
-							if(! sta.isDrawn()){
-								//X
-								props.add(sta.getPointProperty()[0]);
-								old = sta.getPointProperty()[0].get();
-								oldVals.add(sta.getPointProperty()[0].get());
-								sta.getPointProperty()[0].set(old + Integer.parseInt(trans_X.getEditor().getText()));
-								newVals.add(sta.getPointProperty()[0].get());
-								//Y
-								props.add(sta.getPointProperty()[1]);
-								old = sta.getPointProperty()[1].get();
-								oldVals.add(sta.getPointProperty()[1].get());
-								sta.getPointProperty()[1].set(old + Integer.parseInt(trans_Y.getEditor().getText()));
-								newVals.add(sta.getPointProperty()[1].get());
-								sta.setDrawn(true);
-							}
-						}
-					}
-					canvasSize[0] = canvasSize[0] + Integer.parseInt(trans_X.getEditor().getText());
-					canvasSize[1] = canvasSize[1] + Integer.parseInt(trans_Y.getEditor().getText());
-					if(choice == WITH_FI){
-						for(FreeItem item: freeItems){
-							double old;
-							//X
-							props.add(item.getParams()[0]);
-							old = item.getParams()[0].get();
-							oldVals.add(item.getParams()[0].get());
-							item.getParams()[0].set(old + Integer.parseInt(trans_X.getEditor().getText()));
-							newVals.add(item.getParams()[0].get());
-							//Y
-							props.add(item.getParams()[1]);
-							old = item.getParams()[1].get();
-							oldVals.add(item.getParams()[1].get());
-							item.getParams()[1].set(old + Integer.parseInt(trans_Y.getEditor().getText()));
-							newVals.add(item.getParams()[1].get());
-						}
-					}
-					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
-					urManager.push(command);
+
+					commands.execute();
+					urManager.push(commands);
 					System.out.println("pushed.");
 					uic.ReDraw();
 					stage.close();
