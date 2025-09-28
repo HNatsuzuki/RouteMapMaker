@@ -2,7 +2,7 @@ package RouteMapMaker;
 	
 import java.util.Optional;
 
-import RouteMapMaker.Factories.FileChooserFactory;
+import RouteMapMaker.factories.FileChooserFactory;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;

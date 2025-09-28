@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.Factories.FileChooserFactory;
+import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.URElements.ArrayCommands;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
