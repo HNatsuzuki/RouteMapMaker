@@ -26,6 +26,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -96,6 +97,55 @@ public class MapDrawer {
      */
     public void initialize() {
         gc.save();
+    }
+
+    /**
+     * 編集モードでの描画処理を行います。
+     *
+     * @param lineList 路線のリスト
+     * @param selectedLine 選択中の路線
+     * @param selectedStations 選択中の駅
+     * @param background 背景
+     * @param isDrawBackground 背景を描画するかどうか
+     */
+    public void drawMapInEditMode(LineList lineList, Line selectedLine, List<MvSta> selectedStations, Background background, boolean isDrawBackground) {
+        // 描画開始時処理
+        beginDraw();
+        
+        if(isDrawBackground) {
+            // 背景を描画
+            drawBackground(background);
+        }
+
+        // グリッドを描画する。
+        drawGrid();
+        
+        // 各路線の描画
+        drawLinesInEditMode(lineList, selectedLine);
+        // 駅の点の描画
+        drawStationPoints(lineList, selectedStations);
+        // 駅名の描画
+        drawStationNames(lineList, true);
+    }
+
+    /**
+     * 路線図モード (運転系統編集モード) での描画処理を行います。
+     *
+     * @param lineList 路線のリスト
+     * @param background 背景設定
+     * @param freeItems 自由挿入アイテムのリスト
+     */
+    public void drawMapInMapMode(LineList lineList, Background background, List<FreeItem> freeItems) {
+        beginDraw();
+        //先っちょは丸くする。
+        gc.setLineCap(StrokeLineCap.ROUND);
+        drawBackground(background);
+        // すべての路線の線、駅マークの描画
+        drawLinesInMapMode(lineList);
+        //駅名はlineにもとづいて描画することになりました。
+        drawStationNames(lineList, false);
+        //以下、自由挿入アイテムを描画する
+        drawFreeItems(freeItems);
     }
 
     /**

@@ -189,7 +189,7 @@ public class UIController implements Initializable{
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private MapDrawer drawer;
-	
+
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
 	@FXML Button RouteDelete;
@@ -2283,22 +2283,11 @@ public class UIController implements Initializable{
 			return;
 		}
 
-		// 描画開始時処理
-		drawer.beginDraw();
 		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
 		canvas.setWidth(canvasSize.getWidth());
 		canvas.setHeight(canvasSize.getHeight());
 
-		if(showBackInLE.isSelected()) {
-			drawer.drawBackground(background); //背景を描画
-		}
-		drawer.drawGrid(); //グリッドを描画する。
-		//各路線ごとに描画。
-		drawer.drawLinesInEditMode(lineList, line);
-		//駅の点の描画
-		drawer.drawStationPoints(lineList, movingStList);
-
-		drawer.drawStationNames(lineList, true);
+		drawer.drawMapInEditMode(lineList, line, movingStList, background, showBackInLE.isSelected());
 	}
 	
 	// 線分aと線分bの（延長）交点を求める．aとbが平行で交点がない場合はa[1]を用いる．
@@ -2340,19 +2329,11 @@ public class UIController implements Initializable{
 			return;
 		}
 
-		drawer.beginDraw();
 		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
 		canvas.setWidth(canvasSize.getWidth());
 		canvas.setHeight(canvasSize.getHeight());
-		//先っちょは丸くする。
-		gc.setLineCap(StrokeLineCap.ROUND);
-		drawer.drawBackground(background);
-		// すべての路線の線、駅マークの描画
-		drawer.drawLinesInMapMode(lineList);
-		//駅名はlineにもとづいて描画することになりました。
-		drawer.drawStationNames(lineList, false);
-		//以下、自由挿入アイテムを描画する
-		drawer.drawFreeItems(freeItems);
+
+		drawer.drawMapInMapMode(lineList, background, freeItems);
 	}
 	protected void ReDraw(){//画面を描画し直す。主に外部インスタンスから呼び出す用。
 		if(esGroup.getSelectedToggle() == rightEditButton){
