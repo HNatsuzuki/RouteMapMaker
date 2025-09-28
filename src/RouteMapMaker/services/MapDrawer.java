@@ -46,6 +46,7 @@ public class MapDrawer {
     private final CustomMarkDrawer customMarkDrawer;
     private double zoomRatio = 1.0;
     private Dimension2D canvasSize = new Dimension2D(200, 200);
+    private final TrainPathCalculator trainPathCalculator = new TrainPathCalculator();
 
     public MapDrawer(Configuration config, GraphicsContext gc, StringProperty fontFamily) {
         this.config = config;
@@ -315,6 +316,36 @@ public class MapDrawer {
             }
 
             gc.stroke();
+        }
+    }
+
+    /**
+     * 路線図モード (運転系統編集モード) での路線を結ぶ線を描画します。
+     *
+     * @param lineList 路線のリスト
+     */
+    public void drawLinesInMapMode(LineList lineList) {
+        for (int i = lineList.size() - 1; i >= 0; --i) {
+            //路線ごとに処理
+            Line line = lineList.get(i);
+            List<Train> trains = line.getTrains();
+
+            for (int j = trains.size() - 1; j >= 0; --j) {
+                //系統ごとに処理。降順に処理していく。
+                Train train = trains.get(j);
+                List<TrainStop> stops = train.getStops();
+
+                if(stops.size() < 2) {
+                    // 0駅もしくは1駅しか登録されてない系統は無視 (2点以上ないと線にならない)
+                    continue;
+                }
+
+                List<PathSegment> stationPoints = trainPathCalculator.calculate(line, train);
+                //線の描画処理
+                drawTrainPath(train, stationPoints);
+                //上書きの問題があってやはりmarkは線を書き終わってからにしよう。
+                drawStopMarks(train);
+            }
         }
     }
 

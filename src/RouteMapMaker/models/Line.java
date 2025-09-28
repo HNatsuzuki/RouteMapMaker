@@ -228,6 +228,17 @@ public class Line {//路線の情報を保持するクラス。
 	public void setTrains(ObservableList<Train> t){
 		trains = t;
 	}
+
+	/**
+	 * 指定した運転系統が含まれているかを調べます。
+	 *
+	 * @param train 運転系統
+	 * @return 指定した運転系統が含まれている場合 true
+	 */
+	public boolean hasTrain(Train train) {
+		return this.trains.contains(train);
+	}
+
 	public boolean isCurvable(int idx) {
 		return idx>1 && connections.size()-idx>1 && //端条件
 				connections.get(idx-1).station.get().isSet() && connections.get(idx).station.get().isSet() && //固定条件

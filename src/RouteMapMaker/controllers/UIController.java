@@ -2344,140 +2344,16 @@ public class UIController implements Initializable{
 		Dimension2D canvasSize = drawer.getZoomedCanvasSize();
 		canvas.setWidth(canvasSize.getWidth());
 		canvas.setHeight(canvasSize.getHeight());
-		gc.setLineCap(StrokeLineCap.ROUND);//先っちょは丸くする。
+		//先っちょは丸くする。
+		gc.setLineCap(StrokeLineCap.ROUND);
 		drawer.drawBackground(background);
-		for(int k = lineList.size() - 1; 0 <= k; k--){//路線ごとに処理
-			Line line = lineList.get(k);
-			List<Train> trains = line.getTrains();
-			for (int i = trains.size() - 1; i >= 0; i--) {
-				//系統ごとに処理。降順に処理していく。
-				Train train = trains.get(i);
-				List<TrainStop> stops = train.getStops();
-
-				if(stops.size() < 2) {
-					//0駅もしくは1駅しか登録されてない系統は無視
-					continue;
-				}
-
-				int offset = train.getLineDistance();
-				List<String> lineStationNames = line.getStations().stream()
-						.map(sta -> sta.getName()).collect(Collectors.toList()); // 路線の駅名リスト
-				int lastIndex = stops.size() - 1;
-				//路線における系統の始点の番号
-				int startPoint = lineStationNames.indexOf(stops.get(0).getSta().getName());
-				//路線における系統の終点の番号
-				int endPoint = lineStationNames.lastIndexOf(stops.get(lastIndex).getSta().getName());
-				int stopCount = 0;//駅ごとのライン補正は情報がTrainStopにあるので何番目のTrainStopなのかカウント
-				List<PathSegment> stationPoints = new ArrayList<>();
-				
-				//ライン位置補正，駅位置補正，edgeを考慮して各駅の座標を決定していく
-				for (int h = startPoint; h <= endPoint; h++) {
-					Point2D end = null;
-					boolean curve = line.isConnectedByCurve(h);
-					Station previousStation = h > 0 ? line.getStation(h - 1) : null;
-					Station currentStation = line.getStation(h);
-					Station nextStation = h < line.getStations().size() - 1 ? line.getStation(h + 1) : null;
-					LineSegment previousSegment = previousStation != null ? LineSegment.createShifted(
-						previousStation.getPointUSAsPoint2D(), currentStation.getPointUSAsPoint2D(), offset) : null;
-					LineSegment nextSegment = nextStation != null ? LineSegment.createShifted(
-						currentStation.getPointUSAsPoint2D(), nextStation.getPointUSAsPoint2D(), offset) : null;
-					// ライン端補正用
-					LineSegment currentSegment = null;
-					Point2D controlPoint = null;
-
-					final boolean nc = h < line.getStations().size() - 1 ? line.isConnectedByCurve(h + 1) : false;
-
-					if (curve) {
-						end = nextSegment.getStart();
-						currentSegment = nextSegment;
-
-						if (h != startPoint) {
-							LineSegment prevPrevSegment = LineSegment.createShifted(
-								line.getStation(h - 2).getPointUSAsPoint2D(), previousStation.getPointUSAsPoint2D(), offset);
-							controlPoint = prevPrevSegment.getIntersection(nextSegment);
-						}
-					} else if (nc) {
-						end = previousSegment.getEnd();
-						currentSegment = previousSegment;
-					} else if (currentStation.isSet()) {
-						// 前後非曲線固定点
-						if (previousSegment != null && nextSegment != null) {
-							//この場合は歪みを防ぐため特殊な処理が必要。連立方程式を用意してその解を採用する。
-							end = previousSegment.getIntersection(nextSegment);
-							currentSegment = (h == endPoint) ? previousSegment : nextSegment;
-						} else if (previousSegment != null) {
-							end = previousSegment.getEnd();
-							currentSegment = previousSegment;
-						} else if (nextSegment != null) {
-							end = nextSegment.getStart();
-							currentSegment = nextSegment;
-						}
-					} else {
-						// 非固定点
-						end = previousSegment.getEnd();
-						currentSegment = previousSegment;
-					}
-
-					//駅毎位置補正を加える。
-					if (currentStation == stops.get(stopCount).getSta()) {
-						TrainStop trainStop = stops.get(stopCount);
-						Point2D stationOffset = trainStop.getOffset();
-						end = end.add(stationOffset);
-						trainStop.setPosition(end);
-
-						// 駅の角度計算
-						if (previousSegment != null) {
-							trainStop.setAngle(previousSegment.getAngle());
-						} else {
-							trainStop.setAngle(nextSegment.getAngle());
-						}
-
-						stopCount ++;//最後にstopcountを一つ上げる。
-					}
-
-					if (h == startPoint) {
-						// 開始駅の場合の補正
-						double edgeALength = train.getEdgeA();
-						if (edgeALength != 0) {
-							//edgeAを考慮する。
-							Point2D startPosition = end.subtract(currentSegment.getUnitVector().multiply(edgeALength));
-							stationPoints.add(new PathSegment(startPosition, null));
-						}
-
-						if (edgeALength >= 0) {
-							//最初の点もstaPointsに保存する．曲線描画で必要になることがあるため．
-							stationPoints.add(new PathSegment(end, null)); //最初の駅は必ず直線接続
-						}
-					} else if (h == endPoint) {
-						// 終結点の場合の補正
-						double edgeBLength = train.getEdgeB();
-
-						if (edgeBLength >= 0) {
-							// 補正値が正あるいはゼロの場合は描画点に加える
-							stationPoints.add(new PathSegment(end, controlPoint));
-						}
-
-						if (edgeBLength != 0) {
-							// 終結点補正
-							Point2D endPosition = end.add(currentSegment.getUnitVector().multiply(edgeBLength));
-							// 補正値が正の場合は終着駅と補正点間は直線接続
-							// 負の場合は補正点が実質終着駅となるため曲線接続の可能性あり
-							stationPoints.add(new PathSegment(endPosition, edgeBLength < 0 ? controlPoint : null));
-						}
-					} else {
-						stationPoints.add(new PathSegment(end, controlPoint));
-					}
-				}
-
-				//線の描画処理
-				drawer.drawTrainPath(train, stationPoints);
-				//上書きの問題があってやはりmarkは線を書き終わってからにしよう。
-				drawer.drawStopMarks(train);
-			}
-		}
-		drawer.drawStationNames(lineList, false);//駅名はlineにもとづいて描画することになりました。
+		// すべての路線の線、駅マークの描画
+		drawer.drawLinesInMapMode(lineList);
+		//駅名はlineにもとづいて描画することになりました。
+		drawer.drawStationNames(lineList, false);
 		//以下、自由挿入アイテムを描画する
-		gc.setTextAlign(TextAlignment.LEFT);//駅名描画でいじったので直す
+		//駅名描画でいじったので直す
+		gc.setTextAlign(TextAlignment.LEFT);
 		gc.setTextBaseline(VPos.BASELINE);
 		drawer.drawFreeItems(freeItems);
 	}
