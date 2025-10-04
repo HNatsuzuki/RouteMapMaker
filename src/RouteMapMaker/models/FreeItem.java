@@ -84,8 +84,16 @@ public class FreeItem implements Cloneable{//路線図上に自由挿入でき�
 		return this.params[0].doubleValue();
 	}
 
+	public void setX(double x) {
+		this.params[0].set(x);
+	}
+
 	public double getY() {
 		return this.params[1].doubleValue();
+	}
+
+	public void setY(double y) {
+		this.params[1].set(y);
 	}
 
 	public double getWidth() {

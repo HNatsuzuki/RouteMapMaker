@@ -6,17 +6,14 @@ import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.FreeItem;
-import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
-import RouteMapMaker.models.Station;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
-import RouteMapMaker.commands.TransformCommand;
+import RouteMapMaker.commands.ScaleFreeItemsCommand;
+import RouteMapMaker.commands.ScaleLineStationsCommand;
 import RouteMapMaker.commands.TranslateFreeItemsCommand;
 import RouteMapMaker.commands.TranslateLineStationsCommand;
 import RouteMapMaker.services.MainURManager;
-import javafx.beans.property.DoubleProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -116,61 +113,23 @@ public class TransformController implements Initializable {
 		scale_AP.setOnAction((ActionEvent) ->{
 			int choice = confirm("平行移動");
 			if(choice != CANCEL){
-				//変更したパラメーターを格納してまとめてpush
-				ObservableList<DoubleProperty> props = FXCollections.observableArrayList();
-				ObservableList<Double> oldVals = FXCollections.observableArrayList();
-				ObservableList<Double> newVals = FXCollections.observableArrayList();
-				for(Line line: lineList){
-					for(Station sta: line.getStations()){
-						sta.setDrawn(false);
-					}
-				}
 				try{
-					double scaleW = Double.parseDouble(scale_Width.getEditor().getText()) / 100;
-					double scaleH = Double.parseDouble(scale_Height.getEditor().getText()) / 100;
-					int scaleX = Integer.parseInt(scale_X.getEditor().getText());
-					int scaleY = Integer.parseInt(scale_Y.getEditor().getText());
-					for(Line l: lineList){
-						for(Station sta: l.getStations()){
-							if(! sta.isDrawn()){
-								double old;
-								//X
-								old = sta.getPointProperty()[0].get();
-								props.add(sta.getPointProperty()[0]);
-								oldVals.add(old);
-								sta.getPointProperty()[0].set((old - scaleX) * scaleW + scaleX);
-								newVals.add(sta.getPointProperty()[0].get());
-								//Y
-								old = sta.getPointProperty()[1].get();
-								props.add(sta.getPointProperty()[1]);
-								oldVals.add(old);
-								sta.getPointProperty()[1].set((old - scaleY) * scaleH + scaleY);
-								newVals.add(sta.getPointProperty()[1].get());
-								sta.setDrawn(true);
-							}
-						}
+					double scaleX = Double.parseDouble(scale_Width.getEditor().getText()) / 100;
+					double scaleY = Double.parseDouble(scale_Height.getEditor().getText()) / 100;
+					int pivotX = Integer.parseInt(scale_X.getEditor().getText());
+					int pivotY = Integer.parseInt(scale_Y.getEditor().getText());
+					CompositeCommand commands = new CompositeCommand();
+					Command scaleLineStationsCommand = new ScaleLineStationsCommand(lineList, scaleX, scaleX, pivotX, pivotY);
+					commands.addCommand(scaleLineStationsCommand);
+					canvasSize[0] = (canvasSize[0] - pivotX) * scaleX + pivotX;
+					canvasSize[1] = (canvasSize[1] - pivotY) * scaleY + pivotY;
+
+					if (choice == WITH_FI) {
+						Command scaleFreeItemsCommand = new ScaleFreeItemsCommand(freeItems, scaleX, scaleY, pivotX, pivotY);
+						commands.addCommand(scaleFreeItemsCommand);
 					}
-					canvasSize[0] = (canvasSize[0] - scaleX) * scaleW + scaleX;
-					canvasSize[1] = (canvasSize[1] - scaleY) * scaleH + scaleY;
-					if(choice == WITH_FI){
-						for(FreeItem item: freeItems){
-							double old;
-							//X
-							props.add(item.getParams()[0]);
-							old = item.getParams()[0].get();
-							oldVals.add(item.getParams()[0].get());
-							item.getParams()[0].set((old - scaleX) * scaleW + scaleX);
-							newVals.add(item.getParams()[0].get());
-							//Y
-							props.add(item.getParams()[1]);
-							old = item.getParams()[1].get();
-							oldVals.add(item.getParams()[1].get());
-							item.getParams()[1].set((old - scaleY) * scaleH + scaleY);
-							newVals.add(item.getParams()[1].get());
-						}
-					}
-					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
-					urManager.push(command);
+					commands.execute();
+					urManager.push(commands);
 					uic.ReDraw();
 					stage.close();
 				}catch(NumberFormatException e){

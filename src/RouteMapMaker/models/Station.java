@@ -37,7 +37,6 @@ public class Station {//駅に関する情報を保持するクラス
 	private IntegerProperty nameX = new SimpleIntegerProperty(0);//駅名の描画位置のズレ
 	private IntegerProperty nameY = new SimpleIntegerProperty(0);
 	private BooleanProperty shiftOnStation = new SimpleBooleanProperty(false);//描画位置修正を駅ごとの設定に従うか否か
-	private boolean isdrawn = false;//その駅名がすでに描画されたか。駅名多重描画の防止に使う。駅座標変換フラグにも使う。
 	
 	public Station(String name){
 		setName(name);
@@ -192,13 +191,6 @@ public class Station {//駅に関する情報を保持するクラス
 	}
 	public void setShiftBase(boolean b){
 		this.shiftOnStation.set(b);
-	}
-
-	public boolean isDrawn(){
-		return this.isdrawn;
-	}
-	public void setDrawn(boolean b){
-		this.isdrawn = b;
 	}
 
 	/**
