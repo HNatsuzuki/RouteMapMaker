@@ -2065,11 +2065,13 @@ public class UIController implements Initializable{
 			commands.addCommand(translateFreeItemsCommand);
 		}
 
+		var canvasSize = drawer.getCanvasSize();
+		Command setCanvasSizeCommand = new ValueSetCommand<>(drawer.getCanvasSizeProperty(), new Dimension2D(canvasSize.getWidth() + params.getX(), canvasSize.getHeight() + params.getY()));
+		commands.addCommand(setCanvasSizeCommand);
+
 		commands.execute();
 		urManager.push(commands);
 
-		var canvasSize = drawer.getCanvasSize();
-		drawer.setCanvasSize(new Dimension2D(canvasSize.getWidth() + params.getX(), canvasSize.getHeight() + params.getY()));
 		ReDraw();
 	}
 
@@ -2087,13 +2089,15 @@ public class UIController implements Initializable{
 			Command scaleFreeItemsCommand = new ScaleFreeItemsCommand(freeItems, params.getScaleX(), params.getScaleY(), params.getPivotX(), params.getPivotY());
 			commands.addCommand(scaleFreeItemsCommand);
 		}
-		commands.execute();
-		urManager.push(commands);
 
 		var canvasSize = drawer.getCanvasSize();
 		double width = (canvasSize.getWidth() - params.getPivotX()) * params.getScaleX() + params.getPivotX();
 		double height = (canvasSize.getHeight() - params.getPivotY()) * params.getScaleY() + params.getPivotY();
-		drawer.setCanvasSize(new Dimension2D(width, height));
+		Command setCanvasSizeCommand = new ValueSetCommand<>(drawer.getCanvasSizeProperty(), new Dimension2D(width, height));
+		commands.addCommand(setCanvasSizeCommand);
+
+		commands.execute();
+		urManager.push(commands);
 		ReDraw();
 	}
 	
