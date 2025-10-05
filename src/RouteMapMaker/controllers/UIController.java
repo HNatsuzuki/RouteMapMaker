@@ -102,7 +102,6 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.LineFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
-import RouteMapMaker.factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
@@ -1231,7 +1230,7 @@ public class UIController implements Initializable{
 					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ConfigUIController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ConfigUIController.class) {
-							return new ConfigUIController(config, sceneFactory);
+							return new ConfigUIController(config, selectFontFactory);
 						} else {
 							throw new RuntimeException();
 						}
@@ -1294,7 +1293,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(sceneFactory, alertFactory, fileChooserFactory, config);
+						return new CustomMarkController(selectFontFactory, alertFactory, fileChooserFactory, config);
 					} else {
 						throw new RuntimeException();
 					}

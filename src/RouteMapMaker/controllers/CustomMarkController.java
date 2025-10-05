@@ -8,9 +8,7 @@ import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.FileChooserFactory;
-import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
-import RouteMapMaker.factories.View;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.StopMark;
@@ -22,10 +20,9 @@ import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.services.CustomMarkDrawer;
+import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -60,7 +57,7 @@ public class CustomMarkController implements Initializable{
 	private ObservableList<String> LayerListOb = FXCollections.observableArrayList();
 	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
 	private URElements urManager = new URElements();//undoとredoを管理する。
-	private final SceneFactory sceneFactory;
+	private final SelectFontFactory selectFontFactory;
 	private final AlertFactory alertFactory;
 	private CustomMarkDrawer drawer;
 	private final FileChooserFactory fileChooserFactory;
@@ -110,8 +107,8 @@ public class CustomMarkController implements Initializable{
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
 
-	public CustomMarkController(SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
-		this.sceneFactory = sceneFactory;
+	public CustomMarkController(SelectFontFactory selectFontFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
+		this.selectFontFactory = selectFontFactory;
 		this.alertFactory = alertFactory;
 		this.fileChooserFactory = fileChooserFactory;
 		this.config = config;
@@ -237,22 +234,14 @@ public class CustomMarkController implements Initializable{
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
 				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
-				String newFont = null;
 				String current = l.getFontName();
-				SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-				View<SelectFontController> view = factory.createSelectFontView(current);
-				SelectFontController euc = view.getController();
-				Stage editStage = view.getStage();
-				editStage.showAndWait();
-				if(euc.isAccepted()){
-					newFont = euc.getSelectedFontName();
-				}else{
-					newFont = current;
-				}
-				if (!current.equals(newFont)) {
-					Command command = new ValueSetCommand<>(l.getFontNameProperty(), current, newFont);
-					urManager.execute(command);
-				}
+				var dialog = new FontSelectDialogService(current, selectFontFactory);
+				dialog.showDialog().ifPresent(newFont -> {
+					if (!current.equals(newFont)) {
+						Command command = new ValueSetCommand<>(l.getFontNameProperty(), current, newFont);
+						urManager.execute(command);
+					}
+				});
 			}
 			draw();
 		});
