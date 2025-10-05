@@ -72,8 +72,8 @@ public class ConfigUIController implements Initializable{
 			stage.showAndWait();
 			SelectFontController controller = view.getController();
 
-			if (controller.shouldSave()) {
-				String newFont = controller.getFontName();
+			if (controller.isAccepted()) {
+				String newFont = controller.getSelectedFontName();
 				config.setUiFont(newFont);
 				uiFont.setText(newFont);
 			}

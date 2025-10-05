@@ -244,8 +244,8 @@ public class CustomMarkController implements Initializable{
 				SelectFontController euc = view.getController();
 				Stage editStage = view.getStage();
 				editStage.showAndWait();
-				if(euc.shouldSave()){
-					newFont = euc.getFontName();
+				if(euc.isAccepted()){
+					newFont = euc.getSelectedFontName();
 				}else{
 					newFont = current;
 				}

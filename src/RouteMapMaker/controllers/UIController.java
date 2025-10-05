@@ -170,7 +170,7 @@ public class UIController implements Initializable{
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
 	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
-	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
+	private StringProperty stationFontFamily = new SimpleStringProperty("System");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
 	private final Configuration config;

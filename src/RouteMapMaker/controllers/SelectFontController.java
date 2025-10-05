@@ -1,14 +1,16 @@
 package RouteMapMaker.controllers;
 
-import java.util.List;
 import java.net.URL;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.listcells.FontFormatCell;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -22,82 +24,65 @@ public class SelectFontController implements Initializable{
 	@FXML Button defaultFont;
 	@FXML Label sampleText;
 	@FXML ListView<String> FontList;
-	private int fontIndex;//今どれが選択されているか
-	private int defaultIndex;//デフォルトのフォントのindexを保持する
-	private boolean saved;//戻る時に変更を反映するかしないか
-	private ObservableList<String> fn = FXCollections.observableArrayList();
+	private boolean accepted;
+	private final ObservableList<String> fontNames = FXCollections.observableArrayList();
+	private final StringProperty selectedFontName = new SimpleStringProperty();
+	private final String currentFont;
+	private final String DEFAULT_FONT_NAME = "System";
+
+	public SelectFontController(String currentFont) {
+		// すべてのフォントを表示用リストに追加
+		fontNames.addAll(Font.getFamilies());
+
+		if (fontNames.contains(currentFont)) {
+			this.currentFont = currentFont;
+		} else {
+			this.currentFont = DEFAULT_FONT_NAME;
+		}
+	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
-		//デフォルトフォントを探索
-		defaultIndex = getFontIndex("System");
+		// フォント名プロパティのバインド
+		selectedFontName.bind(FontList.getSelectionModel().selectedItemProperty());
+		selectedFontName.addListener((observable, oldValue, newValue) -> {
+			sampleText.setFont(Font.font(newValue));
+		});
 
-		for(int i = 0; i < Font.getFamilies().size(); i++){
-			fn.add(Font.getFamilies().get(i));
-		}
-		FontList.setItems(fn);
+		// フォントリストの初期化
+		FontList.setItems(fontNames);
+		FontList.getSelectionModel().select(currentFont);
 		FontList.setCellFactory((ListView<String> l) -> new FontFormatCell());
-		FontList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-			fontIndex = FontList.getSelectionModel().getSelectedIndex();
-			sampleText.setFont(Font.font(Font.getFamilies().get(fontIndex)));
+
+		// 「デフォルトのフォント」ボタン押下時処理
+		defaultFont.setOnAction(e ->{
+			FontList.getSelectionModel().select(DEFAULT_FONT_NAME);
 		});
-		defaultFont.setOnAction((ActionEvent) ->{
-			fontIndex = defaultIndex;
-			FontList.getSelectionModel().select(fontIndex);
-			sampleText.setFont(Font.font(Font.getFamilies().get(fontIndex)));
+
+		// 「キャンセル」ボタン押下時処理
+		cancelBT.setOnAction(e ->{
+			accepted = false;
+			((Stage)((Node)e.getSource()).getScene().getWindow()).close();
 		});
-		cancelBT.setOnAction((ActionEvent) ->{
-			saved = false;
-			Stage stage = (Stage)cancelBT.getScene().getWindow();
-			stage.close();
-		});
-		saveBT.setOnAction((ActionEvent) ->{
-			saved = true;
-			Stage stage = (Stage)saveBT.getScene().getWindow();
-			stage.close();
+
+		// 「決定」ボタン押下時処理
+		saveBT.setOnAction(e ->{
+			accepted = true;
+			((Stage)((Node)e.getSource()).getScene().getWindow()).close();
 		});
 	}
-	public void setObject(String currentFont){
-		if(currentFont == null){//nullのときはSystemを指定します。
-			fontIndex = defaultIndex;
-		}else{
-			int index = getFontIndex(currentFont);
 
-			if (index == -1){
-				fontIndex = defaultIndex;
-			} else {
-				fontIndex = index;
-			}
+	/** ダイアログの結果 OK となったか */
+	public boolean isAccepted() {
+		return accepted;
+	}
+
+	/** 選択したフォント */
+	public String getSelectedFontName() {
+		if (accepted) {
+			return selectedFontName.get();
+		} else {
+			throw new IllegalStateException("選択したフォントを取得できません。フォント選択がキャンセルされました。");
 		}
-		FontList.getSelectionModel().select(fontIndex);
-	}
-	public boolean shouldSave(){
-		return saved;
-	}
-	public String getFontName(){
-		if(saved){
-			return Font.getFamilies().get(fontIndex);
-		}else{
-			throw new IllegalArgumentException("shouldSaveがfalseです。フォント名は渡せません");
-		}
-	}
-
-	/**
-	 * フォント名からフォントのインデックスを取得します。
-	 *
-	 * @param  fontName フォント名
-	 * @return インデックス (見つからなかった場合は -1)
-	 */
-	private int getFontIndex(String fontName) {
-		List<String> families = Font.getFamilies();
-
-		for (int i = 0; i < families.size(); ++i) {
-			if (families.get(i).equals(fontName)) {
-				return i;
-			}
-		}
-
-		return -1;
 	}
 }

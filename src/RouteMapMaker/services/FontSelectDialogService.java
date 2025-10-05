@@ -26,8 +26,8 @@ public class FontSelectDialogService implements DialogService<String> {
         SelectFontController controller = view.getController();
         stage.showAndWait();
 
-        if (controller.shouldSave()) {
-            return Optional.of(controller.getFontName());
+        if (controller.isAccepted()) {
+            return Optional.of(controller.getSelectedFontName());
         } else {
             return Optional.empty();
         }

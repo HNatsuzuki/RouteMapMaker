@@ -36,13 +36,19 @@ public class SelectFontFactory {
 
         try {
             loader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/selectFontController.fxml"));
+            loader.setControllerFactory(param -> {
+                if (param == SelectFontController.class) {
+                    return new SelectFontController(current);
+                } else {
+                    throw new RuntimeException();
+                }
+            });
             parent = loader.load();
         } catch (Exception ex) {
             throw new RuntimeException();
         }
 
         SelectFontController controller = loader.getController();
-        controller.setObject(current);
         Scene scene = sceneFactory.createScene(parent, 400, 300);
         stage.setScene(scene);
         stage.setTitle("フォントの選択");
