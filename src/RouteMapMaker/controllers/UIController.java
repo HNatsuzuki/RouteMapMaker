@@ -139,6 +139,7 @@ import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
 import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
 import RouteMapMaker.services.MapDrawer;
@@ -187,6 +188,7 @@ public class UIController implements Initializable{
 	private final FileChooserFactory fileChooserFactory;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
+	private final SelectFontFactory selectFontFactory;
 	private MapDrawer drawer;
 
 	@FXML AnchorPane leftPane;
@@ -299,6 +301,7 @@ public class UIController implements Initializable{
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
 		this.fileChooserFactory = fileChooserFactory;
+		selectFontFactory = new SelectFontFactory(sceneFactory);
 	}
 
 	@Override
@@ -2672,18 +2675,9 @@ public class UIController implements Initializable{
 	}
 	String selectFontFamily(String current){//フォント選択画面を出す。選択されたフォントファミリ名を返す。（not exactフォント名）
 		//個別のテキスト挿入にも対応したいので選択されたファミリ名を直接変数に代入することはしません
-		String newFont = null;
-		SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-		View<SelectFontController> view = factory.createSelectFontView(current);
-		Stage editStage = view.getStage();
-		SelectFontController euc = view.getController();
-		editStage.showAndWait();
-		if(euc.shouldSave()){
-			newFont = euc.getFontName();
-		}else{
-			newFont = current;
-		}
-		return newFont;
+		var dialog = new FontSelectDialogService(current, selectFontFactory);
+
+		return dialog.showDialog().orElse(current);
 	}
 	void exportImage(){
 		//新しくウィンドウを開いて何倍にするか聞く
