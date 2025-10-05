@@ -141,8 +141,7 @@ public class CustomMarkController implements Initializable{
 			System.out.println("add called.");
 			StopMark newMark = new StopMark();
 			Command command = new AddListItemCommand<>(customMarks, newMark);
-			command.execute();
-			urManager.push(command);
+			urManager.execute(command);
 			MarkList.getSelectionModel().selectLast();
 		});
 		MarkCopy.setOnAction((ActionEvent) ->{//マークをコピー
@@ -150,16 +149,14 @@ public class CustomMarkController implements Initializable{
 			if(index != -1){
 				StopMark cloneMark = customMarks.get(index).clone();
 				Command command = new AddListItemCommand<>(customMarks, cloneMark);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 		});
 		MarkDelete.setOnAction((ActionEvent) ->{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				Command command = new RemoveListItemCommand<>(customMarks, index);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 		});
 		prevbgSetter.setValue(Color.BLACK);//初期値は黒。
@@ -171,8 +168,7 @@ public class CustomMarkController implements Initializable{
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
 				Command command = new ValueSetCommand<>(customMarks.get(indexM).getLayers().get(indexL).getColorProperty(), paramColor.getValue());
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 			draw();
 		});
@@ -187,15 +183,13 @@ public class CustomMarkController implements Initializable{
 				if(paramDraw.getSelectionModel().getSelectedIndex() == 0){
 					if (l.getPaint() == MarkLayer.STROKE) {
 						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.STROKE, MarkLayer.FILL);
-						command.execute();
-						urManager.push(command);
+						urManager.execute(command);
 					}
 				}
 				if(paramDraw.getSelectionModel().getSelectedIndex() == 1){
 					if (l.getPaint() == MarkLayer.FILL) {
 						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.FILL, MarkLayer.STROKE);
-						command.execute();
-						urManager.push(command);
+						urManager.execute(command);
 					}
 				}
 				//レイヤーリスト更新
@@ -220,22 +214,19 @@ public class CustomMarkController implements Initializable{
 				if(l.getType() == MarkLayer.ARC){
 					if((int)l.getParam(7) != paramST.getSelectionModel().getSelectedIndex()) {
 						Command command = new ValueSetCommand<>(l.getParamProperty().get(7), (double)selectedIndex);
-						command.execute();
-						urManager.push(command);
+						urManager.execute(command);
 					}
 				}
 				if(l.getType() == MarkLayer.TEXT){
 					if((int)l.getParam(4) != paramST.getSelectionModel().getSelectedIndex()) {
 						Command command = new ValueSetCommand<>(l.getParamProperty().get(4), (double)selectedIndex);
-						command.execute();
-						urManager.push(command);
+						urManager.execute(command);
 					}
 				}
 				if(l.getType() == MarkLayer.LINE){
 					if((int)l.getParam(5) != paramST.getSelectionModel().getSelectedIndex()) {
 						Command command = new ValueSetCommand<>(l.getParamProperty().get(5), (double)selectedIndex);
-						command.execute();
-						urManager.push(command);
+						urManager.execute(command);
 					}
 				}
 				draw();
@@ -260,8 +251,7 @@ public class CustomMarkController implements Initializable{
 				}
 				if (!current.equals(newFont)) {
 					Command command = new ValueSetCommand<>(l.getFontNameProperty(), current, newFont);
-					command.execute();
-					urManager.push(command);
+					urManager.execute(command);
 				}
 			}
 			draw();
@@ -274,8 +264,7 @@ public class CustomMarkController implements Initializable{
 
 				if (layer.getText() != paramText.getText()) {
 					Command command = new ValueSetCommand<>(layer.getTextProperty(), paramText.getText());
-					command.execute();
-					urManager.push(command);
+					urManager.execute(command);
 				}
 				draw();
 			}
@@ -293,8 +282,7 @@ public class CustomMarkController implements Initializable{
 				newOval.setPaint(MarkLayer.FILL);
 				newOval.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newOval);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -315,8 +303,7 @@ public class CustomMarkController implements Initializable{
 				newRect.setPaint(MarkLayer.FILL);
 				newRect.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newRect);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -334,8 +321,7 @@ public class CustomMarkController implements Initializable{
 				newLine.addParam(0);//端はSQUARE
 				newLine.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newLine);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -357,8 +343,7 @@ public class CustomMarkController implements Initializable{
 				newArc.setPaint(MarkLayer.FILL);
 				newArc.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newArc);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -379,8 +364,7 @@ public class CustomMarkController implements Initializable{
 				newText.setText("※");
 				newText.setFontName("system");
 				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newText);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(index));
 				LayerList.getSelectionModel().selectLast();
 				draw();
@@ -422,8 +406,7 @@ public class CustomMarkController implements Initializable{
 								newImage.addParam(h/w);//高さ
 							}
 							Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newImage);
-							command.execute();
-							urManager.push(command);
+							urManager.execute(command);
 							setLayerList(customMarks.get(index));
 							LayerList.getSelectionModel().selectLast();
 							draw();
@@ -460,8 +443,7 @@ public class CustomMarkController implements Initializable{
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL != -1){
 				Command command = new RemoveListItemCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(indexM));
 				if(customMarks.get(indexM).getLayers().size() == 0){
 					paramColor.setDisable(true);
@@ -479,8 +461,7 @@ public class CustomMarkController implements Initializable{
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
 			if(indexM != -1 && indexL > 0){//indexLが0だとコレは意味を持たない
 				Command command = new SwapListItemUpCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(indexM));
 				LayerList.getSelectionModel().select(indexL - 1);
 				draw();
@@ -492,8 +473,7 @@ public class CustomMarkController implements Initializable{
 			if(indexM != -1 && indexL != -1 && indexL != customMarks.get(indexM).getLayers().size() - 1){
 				//indexLが最後だとコレは意味を持たない
 				Command command = new SwapListItemDownCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 				setLayerList(customMarks.get(indexM));
 				LayerList.getSelectionModel().select(indexL + 1);
 				draw();
@@ -504,8 +484,7 @@ public class CustomMarkController implements Initializable{
 			if(index != -1){
 				BooleanProperty property = customMarks.get(index).getRotateProperty();
 				Command command = new ValueSetCommand<>(property, rotateMark.isSelected());
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 		});
 		Undo.setOnAction((ActionEvent)->{
@@ -720,15 +699,13 @@ public class CustomMarkController implements Initializable{
 			if (oldValue == layer.getParam(index) * prevSize) {
 				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
 						oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 		} else {
 			if (oldValue == layer.getParam(index)) {
 				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
 						oldValue.doubleValue(), newValue.doubleValue());
-				command.execute();
-				urManager.push(command);
+				urManager.execute(command);
 			}
 		}
 

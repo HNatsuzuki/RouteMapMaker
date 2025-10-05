@@ -41,6 +41,19 @@ public class URElements {//undo_redoのための情報を保持する。
 		}
 	}
 
+	/**
+	 * コマンドを実行し、undo を可能にします。
+	 *
+	 * @param command
+	 */
+	public void execute(Command command) {
+		command.execute();
+		undoStack.push(command);
+		redoStack.clear();
+		canUndo.set(true);
+		canRedo.set(false);
+	}
+
 	public void push(Command command) {
 		undoStack.push(command);
 		redoStack.clear();
