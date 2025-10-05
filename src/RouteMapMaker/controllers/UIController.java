@@ -109,11 +109,15 @@ import RouteMapMaker.commands.CompositeCommand;
 import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
+import RouteMapMaker.commands.ScaleFreeItemsCommand;
+import RouteMapMaker.commands.ScaleLineStationsCommand;
 import RouteMapMaker.commands.SetBackgroundCommand;
 import RouteMapMaker.commands.SetListItemCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
+import RouteMapMaker.commands.TranslateFreeItemsCommand;
+import RouteMapMaker.commands.TranslateLineStationsCommand;
 import RouteMapMaker.file.ErmFileReader;
 import RouteMapMaker.file.ErmFileWriter;
 import RouteMapMaker.file.RmmFileReader;
@@ -128,14 +132,17 @@ import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.ScaleParameters;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
+import RouteMapMaker.models.TranslateParameters;
 import RouteMapMaker.services.ErrorReporter;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
 import RouteMapMaker.services.MapDrawer;
+import RouteMapMaker.services.TransformDialogService;
 
 public class UIController implements Initializable{
 	
@@ -1401,32 +1408,17 @@ public class UIController implements Initializable{
 			//運転経路編集モードなら再描画
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
-		mb_transform.setOnAction((ActionEvent) ->{
-			TransformController euc = null;
-			FXMLLoader editLoader = null;
-			Stage editStage = new Stage();
-			editStage.initModality(Modality.APPLICATION_MODAL);
-			VBox ap = null;
-			try {
-				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/TransformController.fxml"));
-				editLoader.setControllerFactory(param -> {
-					if (param == TransformController.class) {
-						return new TransformController(alertFactory);
-					} else {
-						throw new RuntimeException();
-					}
-				});
-				ap= (VBox)editLoader.load();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			euc = editLoader.getController();
-			euc.setObject(canvasOriginal, editStage, this, lineList, freeItems, urManager);
-			Scene sc = sceneFactory.createScene(ap);
-			editStage.setScene(sc);
-			editStage.setTitle("座標変換");
-			editStage.showAndWait();
+		mb_transform.setOnAction(e -> {
+			var dialog = new TransformDialogService(sceneFactory, alertFactory, drawer.getCanvasSize());
+			dialog.showDialog().ifPresent(p -> {
+				if (p instanceof TranslateParameters) {
+					var params = (TranslateParameters)p;
+					translate(params);
+				} else if (p instanceof ScaleParameters) {
+					var params = (ScaleParameters)p;
+					scale(params);
+				}
+			});
 		});
 		mb_undo.setOnAction((ActionEvent) ->{
 			urManager.undo();
@@ -2056,6 +2048,57 @@ public class UIController implements Initializable{
 	private Object Integer(int indexS) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	/**
+	 * 平行移動を行います。
+	 *
+	 * @param params 平行移動のパラメータ
+	 */
+	private void translate(TranslateParameters params) {
+		CompositeCommand commands = new CompositeCommand();
+		Command translateLineStationsCommand = new TranslateLineStationsCommand(lineList, params.getX(), params.getY());
+		commands.addCommand(translateLineStationsCommand);
+
+		if (params.isTransformWithFreeItem()) {
+			Command translateFreeItemsCommand = new TranslateFreeItemsCommand(freeItems, params.getX(), params.getY());
+			commands.addCommand(translateFreeItemsCommand);
+		}
+
+		var canvasSize = drawer.getCanvasSize();
+		Command setCanvasSizeCommand = new ValueSetCommand<>(drawer.getCanvasSizeProperty(), new Dimension2D(canvasSize.getWidth() + params.getX(), canvasSize.getHeight() + params.getY()));
+		commands.addCommand(setCanvasSizeCommand);
+
+		commands.execute();
+		urManager.push(commands);
+
+		ReDraw();
+	}
+
+	/**
+	 * 拡大縮小を行います。
+	 *
+	 * @param params 拡大縮小のパラメータ
+	 */
+	private void scale(ScaleParameters params) {
+		CompositeCommand commands = new CompositeCommand();
+		Command scaleLineStationsCommand = new ScaleLineStationsCommand(lineList, params.getScaleX(), params.getScaleY(), params.getPivotX(), params.getPivotY());
+		commands.addCommand(scaleLineStationsCommand);
+
+		if (params.isTransformWithFreeItem()) {
+			Command scaleFreeItemsCommand = new ScaleFreeItemsCommand(freeItems, params.getScaleX(), params.getScaleY(), params.getPivotX(), params.getPivotY());
+			commands.addCommand(scaleFreeItemsCommand);
+		}
+
+		var canvasSize = drawer.getCanvasSize();
+		double width = (canvasSize.getWidth() - params.getPivotX()) * params.getScaleX() + params.getPivotX();
+		double height = (canvasSize.getHeight() - params.getPivotY()) * params.getScaleY() + params.getPivotY();
+		Command setCanvasSizeCommand = new ValueSetCommand<>(drawer.getCanvasSizeProperty(), new Dimension2D(width, height));
+		commands.addCommand(setCanvasSizeCommand);
+
+		commands.execute();
+		urManager.push(commands);
+		ReDraw();
 	}
 	
 	// 背景関連のGUIコンポーネントを更新する

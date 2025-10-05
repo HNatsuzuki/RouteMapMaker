@@ -84,8 +84,16 @@ public class FreeItem implements Cloneable{//路線図上に自由挿入でき�
 		return this.params[0].doubleValue();
 	}
 
+	public void setX(double x) {
+		this.params[0].set(x);
+	}
+
 	public double getY() {
 		return this.params[1].doubleValue();
+	}
+
+	public void setY(double y) {
+		this.params[1].set(y);
 	}
 
 	public double getWidth() {
@@ -169,6 +177,17 @@ public class FreeItem implements Cloneable{//路線図上に自由挿入でき�
 		} else {
 			throw new IllegalStateException("縦書き設定が異常です: " + this.params[7].get());
 		}
+	}
+
+	/**
+	 * 平行移動を行います。
+	 *
+	 * @param x x方向の移動量
+	 * @param y y方向の移動量
+	 */
+	public void translate(double x, double y) {
+		this.params[0].set(this.params[0].get() + x);
+		this.params[1].set(this.params[1].get() + y);
 	}
 
 	@Override

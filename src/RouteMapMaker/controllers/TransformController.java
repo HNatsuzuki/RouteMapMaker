@@ -5,18 +5,9 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.AlertFactory;
-import RouteMapMaker.models.FreeItem;
-import RouteMapMaker.models.Line;
-import RouteMapMaker.models.LineList;
-import RouteMapMaker.models.Station;
-import RouteMapMaker.commands.Command;
-import RouteMapMaker.commands.TransformCommand;
-import RouteMapMaker.services.MainURManager;
-import javafx.beans.property.DoubleProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Dimension2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -25,22 +16,25 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.stage.Stage;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 
 public class TransformController implements Initializable {
 
-	private double[] canvasSize;//キャンバスのサイズを取得、設定
-	private UIController uic;//Redraw用
-	private Stage stage;
-	private LineList lineList;
-	private ObservableList<FreeItem> freeItems;
-	private MainURManager urManager;
-	private double[] originalSize = new double[2];
 	private final int WITH_FI = -10;
 	private final int NO_FI = -11;
 	private final int CANCEL = -12;
 	private final AlertFactory alertFactory;
+	private final Dimension2D canvasSize;
+	private TransformType transformType = TransformType.NONE;
+	private boolean transformWithFreeItem = false;
+
+	public enum TransformType {
+		NONE,
+		TRANSLATE,
+		SCALE,
+	}
 	
 	@FXML Spinner<Integer> trans_X;
 	@FXML Spinner<Integer> trans_Y;
@@ -53,77 +47,25 @@ public class TransformController implements Initializable {
 	@FXML Label scale_after;
 	@FXML Button scale_AP;
 
-	public TransformController(AlertFactory alertFactory) {
+	public TransformController(AlertFactory alertFactory, Dimension2D canvasSize) {
 		this.alertFactory = alertFactory;
+		this.canvasSize = canvasSize;
 	}
 	
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
 		trans_X.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
 		trans_Y.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
 		trans_AP.setOnAction((ActionEvent) ->{
+			if (!validateTranslateParameters()) {
+				return;
+			}
+
 			int choice = confirm("平行移動");
 			if(choice != CANCEL){
-				//変更したパラメーターを格納してまとめてpush
-				ObservableList<DoubleProperty> props = FXCollections.observableArrayList();
-				ObservableList<Double> oldVals = FXCollections.observableArrayList();
-				ObservableList<Double> newVals = FXCollections.observableArrayList();
-				for(Line line: lineList){
-					for(Station sta: line.getStations()){
-						sta.setDrawn(false);
-					}
-				}
-				try{
-					for(Line line: lineList){
-						for(Station sta: line.getStations()){
-							double old;
-							if(! sta.isDrawn()){
-								//X
-								props.add(sta.getPointProperty()[0]);
-								old = sta.getPointProperty()[0].get();
-								oldVals.add(sta.getPointProperty()[0].get());
-								sta.getPointProperty()[0].set(old + Integer.parseInt(trans_X.getEditor().getText()));
-								newVals.add(sta.getPointProperty()[0].get());
-								//Y
-								props.add(sta.getPointProperty()[1]);
-								old = sta.getPointProperty()[1].get();
-								oldVals.add(sta.getPointProperty()[1].get());
-								sta.getPointProperty()[1].set(old + Integer.parseInt(trans_Y.getEditor().getText()));
-								newVals.add(sta.getPointProperty()[1].get());
-								sta.setDrawn(true);
-							}
-						}
-					}
-					canvasSize[0] = canvasSize[0] + Integer.parseInt(trans_X.getEditor().getText());
-					canvasSize[1] = canvasSize[1] + Integer.parseInt(trans_Y.getEditor().getText());
-					if(choice == WITH_FI){
-						for(FreeItem item: freeItems){
-							double old;
-							//X
-							props.add(item.getParams()[0]);
-							old = item.getParams()[0].get();
-							oldVals.add(item.getParams()[0].get());
-							item.getParams()[0].set(old + Integer.parseInt(trans_X.getEditor().getText()));
-							newVals.add(item.getParams()[0].get());
-							//Y
-							props.add(item.getParams()[1]);
-							old = item.getParams()[1].get();
-							oldVals.add(item.getParams()[1].get());
-							item.getParams()[1].set(old + Integer.parseInt(trans_Y.getEditor().getText()));
-							newVals.add(item.getParams()[1].get());
-						}
-					}
-					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
-					urManager.push(command);
-					System.out.println("pushed.");
-					uic.ReDraw();
-					stage.close();
-				}catch(NumberFormatException e){
-					Alert alert = alertFactory.createAlert(AlertType.ERROR);
-					alert.setContentText("パラメーターを確認してください。\nパラメーターには半角数字を入力してください。");
-					alert.showAndWait();
-				}
+				transformType = TransformType.TRANSLATE;
+				transformWithFreeItem = choice == WITH_FI;
+				((Stage)((Node)ActionEvent.getSource()).getScene().getWindow()).close();
 			}
 		});
 		scale_Width.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE));
@@ -131,6 +73,8 @@ public class TransformController implements Initializable {
 		scale_fix.setSelected(true);
 		scale_X.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
 		scale_Y.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE, 0));
+		scale_Width.getValueFactory().setValue(100);
+		scale_Height.getValueFactory().setValue(100);
 		scale_Width.valueProperty().addListener((obs, oldVal, newVal) -> {
 			if(scale_fix.isSelected()) scale_Height.getValueFactory().setValue(scale_Width.getValue());
 			calcSize();
@@ -146,87 +90,20 @@ public class TransformController implements Initializable {
 			calcSize();
 		});
 		scale_AP.setOnAction((ActionEvent) ->{
+			if (!validateScaleParameters()) {
+				return;
+			}
+
 			int choice = confirm("平行移動");
 			if(choice != CANCEL){
-				//変更したパラメーターを格納してまとめてpush
-				ObservableList<DoubleProperty> props = FXCollections.observableArrayList();
-				ObservableList<Double> oldVals = FXCollections.observableArrayList();
-				ObservableList<Double> newVals = FXCollections.observableArrayList();
-				for(Line line: lineList){
-					for(Station sta: line.getStations()){
-						sta.setDrawn(false);
-					}
-				}
-				try{
-					double scaleW = Double.parseDouble(scale_Width.getEditor().getText()) / 100;
-					double scaleH = Double.parseDouble(scale_Height.getEditor().getText()) / 100;
-					int scaleX = Integer.parseInt(scale_X.getEditor().getText());
-					int scaleY = Integer.parseInt(scale_Y.getEditor().getText());
-					for(Line l: lineList){
-						for(Station sta: l.getStations()){
-							if(! sta.isDrawn()){
-								double old;
-								//X
-								old = sta.getPointProperty()[0].get();
-								props.add(sta.getPointProperty()[0]);
-								oldVals.add(old);
-								sta.getPointProperty()[0].set((old - scaleX) * scaleW + scaleX);
-								newVals.add(sta.getPointProperty()[0].get());
-								//Y
-								old = sta.getPointProperty()[1].get();
-								props.add(sta.getPointProperty()[1]);
-								oldVals.add(old);
-								sta.getPointProperty()[1].set((old - scaleY) * scaleH + scaleY);
-								newVals.add(sta.getPointProperty()[1].get());
-								sta.setDrawn(true);
-							}
-						}
-					}
-					canvasSize[0] = (canvasSize[0] - scaleX) * scaleW + scaleX;
-					canvasSize[1] = (canvasSize[1] - scaleY) * scaleH + scaleY;
-					if(choice == WITH_FI){
-						for(FreeItem item: freeItems){
-							double old;
-							//X
-							props.add(item.getParams()[0]);
-							old = item.getParams()[0].get();
-							oldVals.add(item.getParams()[0].get());
-							item.getParams()[0].set((old - scaleX) * scaleW + scaleX);
-							newVals.add(item.getParams()[0].get());
-							//Y
-							props.add(item.getParams()[1]);
-							old = item.getParams()[1].get();
-							oldVals.add(item.getParams()[1].get());
-							item.getParams()[1].set((old - scaleY) * scaleH + scaleY);
-							newVals.add(item.getParams()[1].get());
-						}
-					}
-					Command command = new TransformCommand(props, oldVals, newVals, originalSize, canvasSize, uic);
-					urManager.push(command);
-					uic.ReDraw();
-					stage.close();
-				}catch(NumberFormatException e){
-					Alert alert = alertFactory.createAlert(AlertType.ERROR);
-					alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
-					alert.showAndWait();
-				}
+				transformType = TransformType.SCALE;
+				transformWithFreeItem = choice == WITH_FI;
+				((Stage)((Node)ActionEvent.getSource()).getScene().getWindow()).close();
 			}
 		});
+		scale_after.setText(canvasSize.getWidth() + " × " + canvasSize.getHeight());
 	}
-	public void setObject(double[] canvasOriginal, Stage stage, UIController uic, LineList lineList, 
-			ObservableList<FreeItem> freeItems, MainURManager urManager){
-		this.canvasSize = canvasOriginal;
-		this.uic = uic;
-		this.stage = stage;
-		this.lineList = lineList;
-		this.freeItems = freeItems;
-		this.urManager = urManager;
-		originalSize[0] = canvasSize[0];
-		originalSize[1] = canvasSize[1];
-		scale_Width.getValueFactory().setValue(100);
-		scale_Height.getValueFactory().setValue(100);
-		scale_after.setText((int)originalSize[0] + " × " + (int)originalSize[1]);
-	}
+
 	private int confirm(String text){//FreeItemも一緒に移すかやらないかキャンセルかを問うダイアログを作る
 		Alert alert = alertFactory.createAlert(AlertType.CONFIRMATION);
 		alert.setContentText(text + " を行います。\n"
@@ -251,12 +128,85 @@ public class TransformController implements Initializable {
 			double Y = scale_Y.getValue().doubleValue();
 			double W = scale_Width.getValue().doubleValue() / 100;
 			double H = scale_Height.getValue().doubleValue() / 100;
-			after[0] = (originalSize[0] - X) * W + X;
-			after[1] = (originalSize[1] - Y) * H + Y;
+			after[0] = (canvasSize.getWidth() - X) * W + X;
+			after[1] = (canvasSize.getHeight() - Y) * H + Y;
 			scale_after.setText((int)after[0] + " × " + (int) after[1]);
 		}catch(NumberFormatException e){
 			scale_after.setText("");
 		}
 	}
 
+	/**
+	 * 平行移動パラメータの入力チェックを行います。
+	 *
+	 * @return エラーがない場合 true
+	 */
+	private boolean validateTranslateParameters() {
+		try {
+			Integer.parseInt(trans_X.getEditor().getText());
+			Integer.parseInt(trans_Y.getEditor().getText());
+
+			return true;
+		} catch (NumberFormatException e) {
+			Alert alert = alertFactory.createAlert(AlertType.ERROR);
+			alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
+			alert.showAndWait();
+
+			return false;
+		}
+	}
+
+	/**
+	 * 拡大縮小パラメータの入力チェックを行います。
+	 *
+	 * @return エラーがない場合 true
+	 */
+	private boolean validateScaleParameters() {
+		try {
+			Double.parseDouble(scale_Width.getEditor().getText());
+			Double.parseDouble(scale_Height.getEditor().getText());
+			Integer.parseInt(scale_X.getEditor().getText());
+			Integer.parseInt(scale_Y.getEditor().getText());
+
+			return true;
+		} catch(NumberFormatException e) {
+			Alert alert = alertFactory.createAlert(AlertType.ERROR);
+			alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
+			alert.showAndWait();
+
+			return false;
+		}
+	}
+
+	public double getTranslateX() {
+		return Integer.parseInt(trans_X.getEditor().getText());
+	}
+
+	public double getTranslateY() {
+		return Integer.parseInt(trans_Y.getEditor().getText());
+	}
+
+	public double getScaleX() {
+		return Double.parseDouble(scale_Width.getEditor().getText()) / 100;
+	}
+
+	public double getScaleY() {
+		return Double.parseDouble(scale_Height.getEditor().getText()) / 100;
+	}
+
+	public double getPivotX() {
+		return Integer.parseInt(scale_X.getEditor().getText());
+	}
+
+	public double getPivotY() {
+		return Integer.parseInt(scale_Y.getEditor().getText());
+	}
+
+	public TransformType getTransformType() {
+		return transformType;
+	}
+
+	public boolean isTransformWithFreeItem() {
+		return transformWithFreeItem;
+	}
 }
