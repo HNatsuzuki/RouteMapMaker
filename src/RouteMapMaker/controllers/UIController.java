@@ -102,7 +102,6 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.LineFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
-import RouteMapMaker.factories.View;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
@@ -139,6 +138,7 @@ import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
 import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
 import RouteMapMaker.services.MapDrawer;
@@ -169,7 +169,7 @@ public class UIController implements Initializable{
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
 	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
-	private StringProperty stationFontFamily = new SimpleStringProperty("system");//駅名に使用するフォントファミリ名
+	private StringProperty stationFontFamily = new SimpleStringProperty("System");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
 	private final Configuration config;
@@ -187,6 +187,7 @@ public class UIController implements Initializable{
 	private final FileChooserFactory fileChooserFactory;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
+	private final SelectFontFactory selectFontFactory;
 	private MapDrawer drawer;
 
 	@FXML AnchorPane leftPane;
@@ -299,6 +300,7 @@ public class UIController implements Initializable{
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
 		this.fileChooserFactory = fileChooserFactory;
+		selectFontFactory = new SelectFontFactory(sceneFactory);
 	}
 
 	@Override
@@ -1228,7 +1230,7 @@ public class UIController implements Initializable{
 					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ConfigUIController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ConfigUIController.class) {
-							return new ConfigUIController(config, sceneFactory);
+							return new ConfigUIController(config, selectFontFactory);
 						} else {
 							throw new RuntimeException();
 						}
@@ -1291,7 +1293,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(sceneFactory, alertFactory, fileChooserFactory, config);
+						return new CustomMarkController(selectFontFactory, alertFactory, fileChooserFactory, config);
 					} else {
 						throw new RuntimeException();
 					}
@@ -2672,18 +2674,9 @@ public class UIController implements Initializable{
 	}
 	String selectFontFamily(String current){//フォント選択画面を出す。選択されたフォントファミリ名を返す。（not exactフォント名）
 		//個別のテキスト挿入にも対応したいので選択されたファミリ名を直接変数に代入することはしません
-		String newFont = null;
-		SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-		View<SelectFontController> view = factory.createSelectFontView(current);
-		Stage editStage = view.getStage();
-		SelectFontController euc = view.getController();
-		editStage.showAndWait();
-		if(euc.shouldSave()){
-			newFont = euc.getFontName();
-		}else{
-			newFont = current;
-		}
-		return newFont;
+		var dialog = new FontSelectDialogService(current, selectFontFactory);
+
+		return dialog.showDialog().orElse(current);
 	}
 	void exportImage(){
 		//新しくウィンドウを開いて何倍にするか聞く

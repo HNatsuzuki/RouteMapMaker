@@ -3,10 +3,9 @@ package RouteMapMaker.controllers;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.factories.SelectFontFactory;
-import RouteMapMaker.factories.View;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.services.FontSelectDialogService;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -17,11 +16,10 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleGroup;
-import javafx.stage.Stage;
 
 public class ConfigUIController implements Initializable{
 	private final Configuration config;//設定はここに保存。
-	private final SceneFactory sceneFactory;
+	private final SelectFontFactory selectFontFactory;
 	
 	@FXML CheckBox showGrid;
 	@FXML Spinner<Integer> GridInterval;
@@ -35,9 +33,9 @@ public class ConfigUIController implements Initializable{
 	@FXML Label uiFont;
 	@FXML Button selectFont;
 	
-	public ConfigUIController(Configuration config, SceneFactory sceneFactory) {
+	public ConfigUIController(Configuration config, SelectFontFactory selectFontFactory) {
 		this.config = config;
-		this.sceneFactory = sceneFactory;
+		this.selectFontFactory = selectFontFactory;
 	}
 
 	@Override
@@ -66,17 +64,11 @@ public class ConfigUIController implements Initializable{
 			config.setNonFixedColor(nonFixedColor.getValue());
 		});
 		selectFont.setOnAction((ActionEvent) -> {
-			SelectFontFactory factory = new SelectFontFactory(sceneFactory);
-			View<SelectFontController> view = factory.createSelectFontView(config.getUiFont());
-			Stage stage = view.getStage();
-			stage.showAndWait();
-			SelectFontController controller = view.getController();
-
-			if (controller.shouldSave()) {
-				String newFont = controller.getFontName();
-				config.setUiFont(newFont);
-				uiFont.setText(newFont);
-			}
+			var dialog = new FontSelectDialogService(config.getUiFont(), selectFontFactory);
+			dialog.showDialog().ifPresent(font -> {
+				config.setUiFont(font);
+				uiFont.setText(font);
+			});
 		});
 		
 		final ToggleGroup gridGroup = new ToggleGroup();
