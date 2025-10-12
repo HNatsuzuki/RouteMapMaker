@@ -20,11 +20,11 @@ public class MarkLayerCell extends ListCell<MarkLayer> {
             textProperty().bind(Bindings.createStringBinding(() -> {
                 String paintType;
 
-                switch (item.getPaint()) {
-                    case MarkLayer.FILL:
+                switch (item.getPaintMode()) {
+                    case FILL:
                         paintType = "Fill";
                         break;
-                    case MarkLayer.STROKE:
+                    case STROKE:
                         paintType = "Stroke";
                         break;
                     default:
@@ -50,7 +50,7 @@ public class MarkLayerCell extends ListCell<MarkLayer> {
                     default:
                         return "";
                 }
-            }, item.getPaintProperty()));
+            }, item.paintModeProperty()));
         }
     }
 }

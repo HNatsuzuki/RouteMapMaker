@@ -10,6 +10,7 @@ import java.util.ResourceBundle;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
+import RouteMapMaker.models.PaintMode;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.commands.AddListItemCommand;
@@ -54,7 +55,6 @@ public class CustomMarkController implements Initializable{
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private GraphicsContext gc;
-	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
 	private URElements urManager = new URElements();//undoとredoを管理する。
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
@@ -66,7 +66,7 @@ public class CustomMarkController implements Initializable{
 	@FXML private Rectangle previewBackground;
 	@FXML private ColorPicker previewBackgroundColorPicker;
 	@FXML private ColorPicker layerColorPicker;
-	@FXML private ChoiceBox<String> paintModeChoiceBox;
+	@FXML private ChoiceBox<PaintMode> paintModeChoiceBox;
 	@FXML private CheckBox rotateMark;
 	@FXML private TextField paramText;
 	@FXML private Label paramL1;
@@ -175,24 +175,16 @@ public class CustomMarkController implements Initializable{
 			}
 			draw();
 		});
-		paramDrawOb.add("fill");
-		paramDrawOb.add("stroke");
-		paintModeChoiceBox.setItems(paramDrawOb);
+		
+		ObservableList<PaintMode> paintModes = FXCollections.observableArrayList(PaintMode.values());
+		paintModeChoiceBox.setItems(paintModes);
 		paintModeChoiceBox.valueProperty().addListener((obs, oldValue, newValue) -> {
 			MarkLayer markLayer = selectedLayer.get();
 
 			if (markLayer != null) {
-				if(paintModeChoiceBox.getSelectionModel().getSelectedIndex() == 0){
-					if (markLayer.getPaint() == MarkLayer.STROKE) {
-						Command command = new ValueSetCommand<>(markLayer.getPaintProperty(), MarkLayer.STROKE, MarkLayer.FILL);
-						urManager.execute(command);
-					}
-				}
-				if(paintModeChoiceBox.getSelectionModel().getSelectedIndex() == 1){
-					if (markLayer.getPaint() == MarkLayer.FILL) {
-						Command command = new ValueSetCommand<>(markLayer.getPaintProperty(), MarkLayer.FILL, MarkLayer.STROKE);
-						urManager.execute(command);
-					}
+				if (markLayer.getPaintMode() != newValue) {
+					Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
+					urManager.execute(command);
 				}
 
 				draw();
@@ -274,7 +266,7 @@ public class CustomMarkController implements Initializable{
 				newOval.addParam(1.0);//横直径
 				newOval.addParam(1.0);//縦直径
 				newOval.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
-				newOval.setPaint(MarkLayer.FILL);
+				newOval.setPaintMode(PaintMode.FILL);
 				newOval.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), newOval);
 				urManager.execute(command);
@@ -295,7 +287,7 @@ public class CustomMarkController implements Initializable{
 				newRect.addParam(0.0);//円弧幅
 				newRect.addParam(0.0);//円弧高さ
 				newRect.addParam(0.05);//lineWidth
-				newRect.setPaint(MarkLayer.FILL);
+				newRect.setPaintMode(PaintMode.FILL);
 				newRect.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), newRect);
 				urManager.execute(command);
@@ -335,7 +327,7 @@ public class CustomMarkController implements Initializable{
 				newArc.addParam(120.0);//角の大きさ
 				newArc.addParam(0.05);//lineWidth
 				newArc.addParam(2.0);//closure
-				newArc.setPaint(MarkLayer.FILL);
+				newArc.setPaintMode(PaintMode.FILL);
 				newArc.setColor(Color.WHITE);
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), newArc);
 				urManager.execute(command);
@@ -354,7 +346,7 @@ public class CustomMarkController implements Initializable{
 				newText.addParam(1.0);//size
 				newText.addParam(0.05);//lineWidth
 				newText.addParam(0.0);//type
-				newText.setPaint(MarkLayer.FILL);
+				newText.setPaintMode(PaintMode.FILL);
 				newText.setColor(Color.WHITE);
 				newText.setText("※");
 				newText.setFontName("system");
@@ -527,8 +519,7 @@ public class CustomMarkController implements Initializable{
 			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
-			if(l.getPaint() == MarkLayer.FILL) paintModeChoiceBox.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paintModeChoiceBox.getSelectionModel().select(1);
+			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"左上X","左上Y","直径X","直径Y","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.RECT){
@@ -537,8 +528,7 @@ public class CustomMarkController implements Initializable{
 			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
-			if(l.getPaint() == MarkLayer.FILL) paintModeChoiceBox.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paintModeChoiceBox.getSelectionModel().select(1);
+			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"左上X","左上Y","幅","高さ","角円幅","角円高さ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.LINE){
@@ -560,8 +550,7 @@ public class CustomMarkController implements Initializable{
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
 			paintModeChoiceBox.setDisable(false);
-			if(l.getPaint() == MarkLayer.FILL) paintModeChoiceBox.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paintModeChoiceBox.getSelectionModel().select(1);
+			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"X","Y","幅","高さ","始角(°)","角大きさ","線の太さ"};
 			setNumericParams(l,texts);
 			paramLT.setDisable(false);
@@ -583,8 +572,7 @@ public class CustomMarkController implements Initializable{
 			fontSelectButton.setDisable(false);
 			paramText.setDisable(false);
 			paramText.setText(l.getText());
-			if(l.getPaint() == MarkLayer.FILL) paintModeChoiceBox.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paintModeChoiceBox.getSelectionModel().select(1);
+			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){

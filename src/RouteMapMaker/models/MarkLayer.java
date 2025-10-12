@@ -1,10 +1,8 @@
 package RouteMapMaker.models;
 
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -36,7 +34,8 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	 * IMAGE：image,text,{左上X,左上Y,描画幅,描画高さ}
 	 */
 	private int type;
-	private IntegerProperty paint = new SimpleIntegerProperty(FILL);//fillかstrokeか。デフォルトはfill。
+	//fillかstrokeか。デフォルトはfill。
+	private final ObjectProperty<PaintMode> paintModeProperty = new SimpleObjectProperty<>(PaintMode.FILL);
 	private ObservableList<DoubleProperty> params = FXCollections.observableArrayList();//パラメーターを保持
 	private final boolean[] paramsProportion;//格納されているパラメーターはマークの大きさに依存するか。
 	private StringProperty text = new SimpleStringProperty();//文字列だった場合にはtextを保持。IMAGEの場合は画像名
@@ -82,15 +81,47 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public boolean[] getParamsProportion(){
 		return this.paramsProportion;
 	}
-	public int getPaint(){
-		return this.paint.get();
+
+	/** レイヤーの図形描画方法を取得します。これは従来との互換性のために残されています。 */
+	public int getPaint() {
+		switch (paintModeProperty.get()) {
+			case FILL:
+				return FILL;
+			case STROKE:
+				return STROKE;
+			default:
+				throw new UnsupportedOperationException("内部状態が不正です。");
+		}
 	}
-	public IntegerProperty getPaintProperty(){
-		return this.paint;
+
+	/** レイヤーの図形描画方法を設定します。これは従来との互換性のために残されています。 */
+	public void setPaint(int paint) {
+		switch (paint) {
+			case FILL:
+				paintModeProperty.set(PaintMode.FILL);
+				break;
+			case STROKE:
+				paintModeProperty.set(PaintMode.STROKE);
+				break;
+			default:
+				throw new IllegalArgumentException("不正なパラメータです。");
+		}
 	}
-	public void setPaint(int p){
-		this.paint.set(p);
+
+	/** レイヤーの図形描画方法を取得します。 */
+	public PaintMode getPaintMode() {
+		return paintModeProperty.get();
 	}
+
+	/** レイヤーの図形描画方法を設定します。 */
+	public void setPaintMode(PaintMode paintMode) {
+		this.paintModeProperty.set(paintMode);
+	}
+
+	public ObjectProperty<PaintMode> paintModeProperty() {
+		return paintModeProperty;
+	}
+
 	public ObservableList<DoubleProperty> getParamProperty(){
 		return this.params;
 	}
@@ -147,7 +178,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			//参照型の変数は全てクローンしてください。
 			t.params = FXCollections.observableArrayList();
 			for(int i = 0;i < this.params.size(); i++) t.params.add(new SimpleDoubleProperty(this.params.get(i).get()));
-			t.paint = new SimpleIntegerProperty(this.paint.get());
+			t.paintModeProperty.set(paintModeProperty.get());
 			t.text = new SimpleStringProperty(this.text.get());
 			t.fontName = new SimpleStringProperty(this.fontName.get());
 			t.color = new SimpleObjectProperty<>(this.color.get());
