@@ -137,6 +137,7 @@ import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
+import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.ErrorReporter;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
@@ -188,6 +189,7 @@ public class UIController implements Initializable{
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private final SelectFontFactory selectFontFactory;
+	private final AlertService alert;
 	private MapDrawer drawer;
 
 	@FXML AnchorPane leftPane;
@@ -301,6 +303,7 @@ public class UIController implements Initializable{
 		this.alertFactory = alertFactory;
 		this.fileChooserFactory = fileChooserFactory;
 		selectFontFactory = new SelectFontFactory(sceneFactory);
+		alert = new AlertService(alertFactory);
 	}
 
 	@Override
@@ -378,15 +381,11 @@ public class UIController implements Initializable{
 					lineDraw();
 				}
 			}catch(IOException e){
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("エラーが発生しました。ファイルを読み込めません。");
-				alert.showAndWait();
+				alert.showError("エラーが発生しました。ファイルを読み込めません。");
 			}catch(Exception e){
 				e.printStackTrace();
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("エラーが発生しました。\n"
+				alert.showError("エラーが発生しました。\n"
 						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
-				alert.showAndWait();
 			}
 		});
 		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
@@ -394,9 +393,8 @@ public class UIController implements Initializable{
 				Toggle new_toggle) ->{
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
 					if(RouteIndex == -1){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("路線を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("路線を選択してください。");
+
 						return;
 					}
 					Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
@@ -416,9 +414,8 @@ public class UIController implements Initializable{
 				Toggle new_toggle) ->{
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
 					if(RouteIndex == -1){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("路線を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("路線を選択してください。");
+
 						return;
 					}
 					if(new_toggle==null && old_toggle!=null) {
@@ -526,14 +523,10 @@ public class UIController implements Initializable{
 		StationAdd.setOnAction((ActionEvent) ->{
 			int index = StationList.getSelectionModel().getSelectedIndex();
 			if(index == 0){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("駅は2番目以降に挿入してください。");
-				alert.showAndWait();
+				alert.showWarning("駅は2番目以降に挿入してください。");
 			}
 			else if(line.getCurveConnection(index) && line.isCurvable(index)) {
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("曲線区間に駅を挿入することはできません．");
-				alert.showAndWait();
+				alert.showWarning("曲線区間に駅を挿入することはできません．");
 			}
 			else{
 				int staNum = 0;
@@ -563,9 +556,7 @@ public class UIController implements Initializable{
 			int index = StationList.getSelectionModel().getSelectedIndex();
 			if(index == 0 || index == line.getStations().size() - 1){
 				//削除は受け付けない
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("始点と終点は削除できません。");
-				alert.showAndWait();
+				alert.showWarning("始点と終点は削除できません。");
 			}else if(index != -1){
 				Command removeConnectionCommand = new RemoveListItemCommand<>(line.getConnections(), index);
 				Station removeCandidate = line.getStations().get(index);
@@ -588,9 +579,7 @@ public class UIController implements Initializable{
 				if (commands.size() > 0) {
 					// 運転系統に削除対象がある場合は確認ダイアログを出す
 					String trainName = String.join(" ", trainNames);
-					Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-					alert.setContentText("運転経路"+trainName+"に削除対象駅が含まれています。削除してよろしいですか？");
-					Optional<ButtonType> result = alert.showAndWait();
+					Optional<ButtonType> result = alert.showConfirmation("運転経路" + trainName + "に削除対象駅が含まれています。削除してよろしいですか？");
 
 					if (result.get() == ButtonType.OK) {
 						CompositeCommand compositeCommand = new CompositeCommand(commands);
@@ -619,10 +608,8 @@ public class UIController implements Initializable{
 				String str = StationList.getSelectionModel().getSelectedItem();//変更しようとしてる駅名
 				//途中駅でも接続することにしました。
 				if(str.equals("")){
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("駅名は空にはできません。\n"
+					alert.showWarning("駅名は空にはできません。\n"
 							+ "中継点を設定するときは駅名大きさパラメーターを-1にしてください。");
-					alert.showAndWait();
 				}else if(!str.equals(prev)){
 					//同名の駅による置き換えを試みる
 					if(stationConnect(indexS, indexR, str)==1) {
@@ -765,14 +752,10 @@ public class UIController implements Initializable{
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexS != -1){
 				if(indexS == 0 || indexS == lineList.get(indexR).getStations().size() - 1){
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("始点または終点の座標固定を解除することはできません");
-					alert.showAndWait();
+					alert.showWarning("始点または終点の座標固定を解除することはできません");
 				}else if(detectConnectedLine(lineList.get(indexR).getStations().get(indexS)).size() > 1){
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("複数路線に所属する駅の座標固定を解除することはできません。\n"
+					alert.showWarning("複数路線に所属する駅の座標固定を解除することはできません。\n"
 							+ "「駅の接続解除」ボタンで駅の接続を解除できます。");
-					alert.showAndWait();
 				}else{
 					BooleanProperty property = lineList.get(indexR).getStations().get(indexS).getPointSetProperty();
 					Command command = new ValueSetCommand<>(property, false);
@@ -787,9 +770,7 @@ public class UIController implements Initializable{
 			if(indexR != -1 && indexS != -1){
 				if(detectConnectedLine(lineList.get(indexR).getStations().get(indexS)).size() < 2){
 					//この場合は接続を解除する意味がないのでなにもしない。
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("指定された駅は他の路線と接続していません。");
-					alert.showAndWait();
+					alert.showWarning("指定された駅は他の路線と接続していません。");
 				}else{
 					Station oldSta = lineList.get(indexR).getStations().get(indexS);
 					Station newSta = new Station("新-" + oldSta.getName());
@@ -894,9 +875,7 @@ public class UIController implements Initializable{
 				config.setImageFileDir(imageFile.getParent());
 				Image im = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
 				if(im.isError()) { //イメージのロード中にエラーが検出されたことを示す。
-					Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-					alert.showAndWait();
+					alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 					return;
 				}
 				Background prev_bg = background.clone();
@@ -907,9 +886,7 @@ public class UIController implements Initializable{
 				lineDraw();
 			} catch (Exception e) {
 				e.printStackTrace();
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
-				alert.showAndWait();
+				alert.showError("選択されたファイルを開くことができませんでした。");
 			}
 		});
 		
@@ -1136,16 +1113,12 @@ public class UIController implements Initializable{
 					readRMMFile(dataFile);
 				}
 			}catch(IOException e){
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("エラーが発生しました。ファイルを読み込めません。");
-				alert.showAndWait();
+				alert.showError("エラーが発生しました。ファイルを読み込めません。");
 				dataFile = null;
 			}catch(Exception e){
 				e.printStackTrace();
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("エラーが発生しました。データファイルに不備があります。\n"
+				alert.showError("エラーが発生しました。データファイルに不備があります。\n"
 						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
-				alert.showAndWait();
 				dataFile = null;
 			}
 		});
@@ -1159,12 +1132,9 @@ public class UIController implements Initializable{
 				try{
 					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
-					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
-					alert.show();
+					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
-					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
-					alert.showAndWait();
+					alert.showError("保存中にエラーが発生しました。");
 					dataFile = null;
 				}
 			}
@@ -1177,12 +1147,9 @@ public class UIController implements Initializable{
 				try{
 					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
-					Alert alert = alertFactory.createAlert(AlertType.INFORMATION, "保存しました。\n\n※このダイアログはenterキーで閉じます", ButtonType.OK);
-					alert.show();
+					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
-					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
-					alert.showAndWait();
+					alert.showError("保存中にエラーが発生しました。");
 					dataFile = null;
 				}
 			}
@@ -1214,9 +1181,7 @@ public class UIController implements Initializable{
 		mb_checkUpdate.setOnAction((ActionEvent) ->{
 			boolean b = checkUpdate(false);
 			if(! b){
-				Alert alert = alertFactory.createAlert(AlertType.INFORMATION,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("このバージョンは最新版です。");
-				alert.show();
+				alert.showInformation("このバージョンは最新版です。");
 			}
 			
 		});
@@ -1261,7 +1226,7 @@ public class UIController implements Initializable{
 					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ChangeAllController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ChangeAllController.class) {
-							return new ChangeAllController(alertFactory);
+							return new ChangeAllController(alert);
 						} else {
 							throw new RuntimeException();
 						}
@@ -1293,7 +1258,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(selectFontFactory, alertFactory, fileChooserFactory, config);
+						return new CustomMarkController(selectFontFactory, alert, fileChooserFactory, config);
 					} else {
 						throw new RuntimeException();
 					}
@@ -1333,7 +1298,7 @@ public class UIController implements Initializable{
 			//運転経路編集モードなら再描画
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
-		fic = new FreeItemsController(freeItems, this, alertFactory, fileChooserFactory, config);//コントローラーの初期化
+		fic = new FreeItemsController(freeItems, this, alert, fileChooserFactory, config);//コントローラーの初期化
 		mb_freeItem.setOnAction((ActionEvent e) ->{
 			//ショートカットキーを使って起動するとウィンドウを閉じてももう一度開く問題がある。
 			if(fiWindowOpened){
@@ -1370,7 +1335,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/LineDashesController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == LineDashesController.class) {
-						return new LineDashesController(alertFactory);
+						return new LineDashesController(alert);
 					} else {
 						throw new RuntimeException();
 					}
@@ -1390,7 +1355,7 @@ public class UIController implements Initializable{
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
 		mb_transform.setOnAction(e -> {
-			var dialog = new TransformDialogService(sceneFactory, alertFactory, drawer.getCanvasSize());
+			var dialog = new TransformDialogService(sceneFactory, alert, drawer.getCanvasSize());
 			dialog.showDialog().ifPresent(p -> {
 				if (p instanceof TranslateParameters) {
 					var params = (TranslateParameters)p;
@@ -1511,9 +1476,7 @@ public class UIController implements Initializable{
 				int indexT = t.getIndex();
 				TrainTable.getItems().set(t.getIndex(), t.getNewValue());
 				if(t.getNewValue().equals("")){//空白の系統名はダメです
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("系統名は空白にできません。何かしら名前をつけてください。");
-					alert.showAndWait();
+					alert.showWarning("系統名は空白にできません。何かしら名前をつけてください。");
 				}else{
 					if(! lineList.get(indexR).getTrains().get(indexT).getName().equals(t.getNewValue())){
 						Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getNameProperty(), t.getNewValue());
@@ -2313,9 +2276,7 @@ public class UIController implements Initializable{
 					continue;
 				}
 				if(candName!=null) {
-					Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-					alert.setContentText("マップ内に同じ駅名の駅があります。その駅と統合してよろしいですか？");
-					Optional<ButtonType> result = alert.showAndWait();
+					Optional<ButtonType> result = alert.showConfirmation("マップ内に同じ駅名の駅があります。その駅と統合してよろしいですか？");
 					if(result.get() == ButtonType.CANCEL) {
 						//結合せずにキャンセル．
 						return 2;
@@ -2479,16 +2440,12 @@ public class UIController implements Initializable{
 		try{
 			pVersion = Double.parseDouble(p.getProperty("version"));
 		}catch(NumberFormatException e){
-			Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-			alert.getDialogPane().setContentText("ファイルが不正です。読み込みできません。");
-			alert.showAndWait();
+			alert.showError("ファイルが不正です。読み込みできません。");
 			return;
 		}
 		if(pVersion > version){
-			Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-			alert.getDialogPane().setContentText("このバージョンのファイルには対応していません。読み込みできません。"
-					+ "データのバージョン："+pVersion);
-			alert.showAndWait();
+			alert.showError("このバージョンのファイルには対応していません。読み込みできません。" +
+				"データのバージョン：" + pVersion);
 			//return;
 		}
 		
@@ -2500,8 +2457,7 @@ public class UIController implements Initializable{
 
 		if (bgConverter.hasError()) {
 			String message = String.join(System.lineSeparator(), bgConverter.getErrorMessages());
-			Alert alert = alertFactory.createAlert(AlertType.WARNING, message, ButtonType.CLOSE);
-			alert.showAndWait();
+			alert.showWarning(message);
 		}
 
 		stationFontFamily.set(p.getProperty("stationFont", "system"));
@@ -2523,8 +2479,7 @@ public class UIController implements Initializable{
 
 			if (freeItemListPropertiesConverter.hasError()) {
 				String message = String.join(System.lineSeparator(), freeItemListPropertiesConverter.getErrorMessages());
-				Alert alert = alertFactory.createAlert(AlertType.ERROR, message, ButtonType.CLOSE);
-				alert.showAndWait();
+				alert.showError(message);
 			}
 		}
 		//customMarksを頂点とするデータ群（customMarksは後で使うので先に読み込んでおく。）
@@ -2536,8 +2491,7 @@ public class UIController implements Initializable{
 
 			if (stopMarkListPropertiesConverter.hasError()) {
 				String message = String.join(System.lineSeparator(), stopMarkListPropertiesConverter.getErrorMessages());
-				Alert alert = alertFactory.createAlert(AlertType.WARNING, message, ButtonType.CLOSE);
-				alert.showAndWait();
+				alert.showWarning(message);
 			}
 		}
 		setMarkList();
@@ -2553,8 +2507,7 @@ public class UIController implements Initializable{
 				String message =
 					"データファイルに不備があります。読み込みは続行されます。\n"
 					+ String.join(System.lineSeparator(), lineListPropertiesConverter.getErrorMessages());
-				Alert alert = alertFactory.createAlert(AlertType.WARNING, message, ButtonType.CLOSE);
-				alert.showAndWait();
+				alert.showWarning(message);
 		}
 
 		for (int i = 0; i < lineList.size(); ++i) {
@@ -2650,7 +2603,7 @@ public class UIController implements Initializable{
 			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/editUIController.fxml"));
 			editLoader.setControllerFactory(param -> {
 				if (param == EditUIController.class) {
-					return new EditUIController(alertFactory);
+					return new EditUIController(alert);
 				} else {
 					throw new RuntimeException();
 				}
@@ -2738,17 +2691,13 @@ public class UIController implements Initializable{
 							break;
 						}
 					}catch(IOException e){
-						Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("保存中にエラーが発生しました。");
-						alert.showAndWait();
+						alert.showError("保存中にエラーが発生しました。");
 					}
 				}
 				expStage.close();
 			}catch(RuntimeException e){
 				e.printStackTrace();
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("出力サイズが大きすぎるようです。倍率を下げてみてください。");
-				alert.showAndWait();
+				alert.showError("出力サイズが大きすぎるようです。倍率を下げてみてください。");
 			}
 		});
 		b2.setCancelButton(true);
@@ -2831,15 +2780,13 @@ public class UIController implements Initializable{
 			}else{
 				nv = true;
 				Platform.runLater(() ->{
-					Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
 					try {
-						alert.getDialogPane().setContentText("ソフトウェアのアップデートを確認できませんでした。\n" + 
-						conn.getResponseCode() + conn.getResponseMessage());
+						alert.showErrorAsync("ソフトウェアのアップデートを確認できませんでした。\n" +
+							conn.getResponseCode() + conn.getResponseMessage());
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					alert.show();
 				});
 			}
 		} catch (MalformedURLException e) {
@@ -2849,10 +2796,8 @@ public class UIController implements Initializable{
 			e.printStackTrace();
 			nv = true;
 			Platform.runLater(() ->{
-				Alert alert = alertFactory.createAlert(AlertType.ERROR,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("ソフトウェアのアップデートを確認できませんでした。\n" + 
-				"ネットワークに接続できません。");
-				alert.show();
+				alert.showErrorAsync("ソフトウェアのアップデートを確認できませんでした。\n" + 
+					"ネットワークに接続できません。");
 			});
 		} catch(SAXException e){
 			e.printStackTrace();
@@ -2943,9 +2888,7 @@ public class UIController implements Initializable{
 	}
 	void saveHistory(){//現在の状態をヒストリに加える。
 		//最初に保存していいか確認
-		Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-		alert.setContentText("ヒストリに保存するために現在の状態を保存します。よろしいですか？");
-		Optional<ButtonType> result = alert.showAndWait();
+		Optional<ButtonType> result = alert.showConfirmation("ヒストリに保存するために現在の状態を保存します。よろしいですか？");
 		if(result.get() == ButtonType.OK){
 			
 		}

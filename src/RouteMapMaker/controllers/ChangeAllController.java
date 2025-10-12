@@ -4,7 +4,6 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.LineDash;
@@ -14,6 +13,7 @@ import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
+import RouteMapMaker.services.AlertService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -28,8 +28,6 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 
@@ -39,7 +37,7 @@ public class ChangeAllController implements Initializable{
 	ObservableList<StopMark> B_markList = FXCollections.observableArrayList();
 	ObservableList<LineDash> lineDashes;
 	UIController uic;
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 	
 	@FXML ListView<Line> A_list;
 	@FXML ComboBox<Integer> A_Location;
@@ -95,8 +93,8 @@ public class ChangeAllController implements Initializable{
 	@FXML ComboBox<Integer> D_staStyle;
 	@FXML Button D_staStyle_AP;
 
-	public ChangeAllController(AlertFactory alertFactory) {
-		this.alertFactory = alertFactory;
+	public ChangeAllController(AlertService alert) {
+		this.alert = alert;
 	}
 	
 	@Override
@@ -129,9 +127,7 @@ public class ChangeAllController implements Initializable{
 				}
 				uic.ReDraw();
 			}else{
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("変更する路線を選択してください。");
-				alert.showAndWait();
+				alert.showWarning("変更する路線を選択してください。");
 			}
 		});
 		A_Color_AP.setOnAction((ActionEvent) ->{
@@ -141,9 +137,7 @@ public class ChangeAllController implements Initializable{
 						l.setNameColor(A_Color.getValue());
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する路線を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する路線を選択してください。");
 				}
 			}
 		});
@@ -156,9 +150,7 @@ public class ChangeAllController implements Initializable{
 						l.setNameSize(A_Size.getValue());
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する路線を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する路線を選択してください。");
 				}
 			}
 		});
@@ -175,9 +167,7 @@ public class ChangeAllController implements Initializable{
 						l.setNameStyle(A_Style.getSelectionModel().getSelectedItem().intValue());
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する路線を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する路線を選択してください。");
 				}
 			}
 		});
@@ -193,9 +183,7 @@ public class ChangeAllController implements Initializable{
 						l.setNameY(A_Y.getValue().intValue());
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する路線を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する路線を選択してください。");
 				}
 			}
 		});
@@ -350,9 +338,7 @@ public class ChangeAllController implements Initializable{
 						}
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する駅を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する駅を選択してください。");
 				}
 			}
 			uic.ReDraw();
@@ -383,9 +369,7 @@ public class ChangeAllController implements Initializable{
 						}
 					}
 				}else{
-					Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("変更する駅を選択してください。");
-					alert.showAndWait();
+					alert.showWarning("変更する駅を選択してください。");
 				}
 			}
 			uic.ReDraw();
@@ -413,9 +397,7 @@ public class ChangeAllController implements Initializable{
 					}
 				}else{
 					if(D_StaList.getSelectionModel().getSelectedItems().size() == 0){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("変更する駅を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("変更する駅を選択してください。");
 					}else{
 						for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
 							sta.setShiftBase(D_TBstaOn.isSelected());
@@ -440,9 +422,7 @@ public class ChangeAllController implements Initializable{
 					}
 				}else{
 					if(D_StaList.getSelectionModel().getSelectedItems().size() == 0){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("変更する駅を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("変更する駅を選択してください。");
 					}else{
 						for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
 							sta.setNameX(D_staX.getValue());
@@ -478,9 +458,7 @@ public class ChangeAllController implements Initializable{
 					}
 				}
 			}else if(D_StaList.getSelectionModel().getSelectedItems().size() == 0){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("変更する駅を選択してください。");
-				alert.showAndWait();
+				alert.showWarning("変更する駅を選択してください。");
 			}else{
 				for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
 					sta.setTextLocation(v);
@@ -501,9 +479,7 @@ public class ChangeAllController implements Initializable{
 					}
 				}else{
 					if(D_StaList.getSelectionModel().getSelectedItems().size() == 0){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("変更する駅を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("変更する駅を選択してください。");
 					}else{
 						for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
 							sta.setNameSize(D_staSize.getValue().intValue());
@@ -530,9 +506,7 @@ public class ChangeAllController implements Initializable{
 					}
 				}else{
 					if(D_StaList.getSelectionModel().getSelectedItems().size() == 0){
-						Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("変更する駅を選択してください。");
-						alert.showAndWait();
+						alert.showWarning("変更する駅を選択してください。");
 					}else{
 						for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
 							if(D_staStyle.getSelectionModel().getSelectedItem() != null)
@@ -545,14 +519,10 @@ public class ChangeAllController implements Initializable{
 		});
 	}
 	boolean confirm(String text){//trueならOK
-		Alert alert = alertFactory.createAlert(AlertType.CONFIRMATION);
-		alert.setHeaderText("一斉変更の確認");
-		if(text == null){
-			alert.setContentText("このパラメーターを選択された全てのアイテムに対して変更します。よろしいですか？");
-		}else{
-			alert.setContentText(text+" を選択された全てのアイテムに対して変更します。よろしいですか？");
-		}
-		Optional<ButtonType> result = alert.showAndWait();
+		String message = text == null
+			? "このパラメーターを選択された全てのアイテムに対して変更します。よろしいですか？"
+			: text + " を選択された全てのアイテムに対して変更します。よろしいですか？";
+		Optional<ButtonType> result = alert.showConfirmation(message, "一斉変更の確認");
 		if(result.get() == ButtonType.OK){
 			return true;
 		}else{
@@ -567,9 +537,7 @@ public class ChangeAllController implements Initializable{
 			}
 		}else{
 			if(B_TrainList.getSelectionModel().getSelectedItems().size() == 0){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("変更する駅を選択してください。");
-				alert.showAndWait();
+				alert.showWarning("変更する駅を選択してください。");
 			}else{
 				list = B_TrainList.getSelectionModel().getSelectedItems();
 			}

@@ -4,7 +4,7 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
+import RouteMapMaker.services.AlertService;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Dimension2D;
@@ -17,15 +17,13 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.stage.Stage;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 
 public class TransformController implements Initializable {
 
 	private final int WITH_FI = -10;
 	private final int NO_FI = -11;
 	private final int CANCEL = -12;
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 	private final Dimension2D canvasSize;
 	private TransformType transformType = TransformType.NONE;
 	private boolean transformWithFreeItem = false;
@@ -47,8 +45,8 @@ public class TransformController implements Initializable {
 	@FXML Label scale_after;
 	@FXML Button scale_AP;
 
-	public TransformController(AlertFactory alertFactory, Dimension2D canvasSize) {
-		this.alertFactory = alertFactory;
+	public TransformController(AlertService alert, Dimension2D canvasSize) {
+		this.alert = alert;
 		this.canvasSize = canvasSize;
 	}
 	
@@ -105,14 +103,12 @@ public class TransformController implements Initializable {
 	}
 
 	private int confirm(String text){//FreeItemも一緒に移すかやらないかキャンセルかを問うダイアログを作る
-		Alert alert = alertFactory.createAlert(AlertType.CONFIRMATION);
-		alert.setContentText(text + " を行います。\n"
-				+ "自由挿入アイテムの位置座標も一緒に変更しますか？");
 		ButtonType buttonWithFI = new ButtonType("一緒に変更");
 		ButtonType buttonNoFI = new ButtonType("駅座標だけ");
 		ButtonType buttonCancel = new ButtonType("キャンセル",ButtonData.CANCEL_CLOSE);
-		alert.getButtonTypes().setAll(buttonWithFI,buttonNoFI,buttonCancel);
-		Optional<ButtonType> result = alert.showAndWait();
+		
+		Optional<ButtonType> result = alert.showConfirmation(text + " を行います。\n"
+				+ "自由挿入アイテムの位置座標も一緒に変更しますか？", buttonWithFI, buttonNoFI, buttonCancel);
 		if(result.get() == buttonWithFI){
 			return WITH_FI;
 		}else if(result.get() == buttonNoFI){
@@ -148,9 +144,7 @@ public class TransformController implements Initializable {
 
 			return true;
 		} catch (NumberFormatException e) {
-			Alert alert = alertFactory.createAlert(AlertType.ERROR);
-			alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
-			alert.showAndWait();
+			alert.showError("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
 
 			return false;
 		}
@@ -170,9 +164,7 @@ public class TransformController implements Initializable {
 
 			return true;
 		} catch(NumberFormatException e) {
-			Alert alert = alertFactory.createAlert(AlertType.ERROR);
-			alert.setContentText("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
-			alert.showAndWait();
+			alert.showError("パラメーターを確認してください。\n パラメーターには半角数字を入力してください。");
 
 			return false;
 		}

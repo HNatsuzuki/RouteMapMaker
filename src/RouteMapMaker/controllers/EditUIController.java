@@ -4,16 +4,15 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
+import RouteMapMaker.services.AlertService;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -30,7 +29,7 @@ public class EditUIController implements Initializable{
 	private Stage stage;
 	private ObservableList<String> olB = FXCollections.observableArrayList();
 	private ObservableList<String> olC = FXCollections.observableArrayList();
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 	
 	@FXML ToggleButton Insert;
 	@FXML ToggleButton Delete;
@@ -41,8 +40,8 @@ public class EditUIController implements Initializable{
 	@FXML ListView listC;
 	@FXML Label infoLabel;
 
-	public EditUIController(AlertFactory alertFactory) {
-		this.alertFactory = alertFactory;
+	public EditUIController(AlertService alert) {
+		this.alert = alert;
 	}
 
 	@Override
@@ -67,10 +66,7 @@ public class EditUIController implements Initializable{
 		group.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
 					if(group.getSelectedToggle() == InsertAll){
-						Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-						alert.setTitle("選択路線駅全追加の確認");
-						alert.setContentText("全ての駅を停車駅として追加してよろしいですか？");
-						Optional<ButtonType> result = alert.showAndWait();
+						Optional<ButtonType> result = alert.showConfirmation("全ての駅を停車駅として追加してよろしいですか？", "選択路線駅全追加の確認");
 						if(result.get() == ButtonType.OK){
 							//全削除してから再度追加だと既存駅の属性が失われるので足りない分を追加する。
 							int count = 0;
@@ -91,10 +87,7 @@ public class EditUIController implements Initializable{
 						InsertAll.setSelected(false);
 					}
 					if(group.getSelectedToggle() == DeleteAll){
-						Alert alert = alertFactory.createAlert(Alert.AlertType.CONFIRMATION);
-						alert.setTitle("選択駅全消去の確認");
-						alert.setContentText("全ての停車駅を削除してよろしいですか？");
-						Optional<ButtonType> result = alert.showAndWait();
+						Optional<ButtonType> result = alert.showConfirmation("全ての停車駅を削除してよろしいですか？", "選択駅全消去の確認");
 						if(result.get() == ButtonType.OK){
 							//全消去処理
 							train.getStops().clear();
@@ -110,9 +103,7 @@ public class EditUIController implements Initializable{
 				int indexB = listB.getSelectionModel().getSelectedIndex();
 				int indexC = listC.getSelectionModel().getSelectedIndex();
 				if(indexC == -1){
-					Alert alert = alertFactory.createAlert(Alert.AlertType.ERROR);
-					alert.setContentText("停車駅を追加する位置を選んでください。");
-					alert.showAndWait();
+					alert.showError("停車駅を追加する位置を選んでください。");
 				}else if(indexB != -1){
 					//追加して大丈夫か検査する。
 					int pre;//前の停車駅の路線でのindex
@@ -136,16 +127,12 @@ public class EditUIController implements Initializable{
 							//indexエラーはここでは無視していいので何もしない
 						}
 						if(adjon){
-							Alert alert = alertFactory.createAlert(Alert.AlertType.WARNING);
-							alert.setContentText("同じ駅を隣接して追加することはできません。");
-							alert.showAndWait();
+							alert.showWarning("同じ駅を隣接して追加することはできません。");
 						}else{//順番検査と隣接検査をクリアしたら追加する。
 							train.getStops().add(indexC, new TrainStop(line.getStations().get(indexB)));
 						}
 					}else{
-						Alert alert = alertFactory.createAlert(Alert.AlertType.WARNING);
-						alert.setContentText("停車駅は駅一覧の上から順である必要があります。");
-						alert.showAndWait();
+						alert.showWarning("停車駅は駅一覧の上から順である必要があります。");
 					}
 					olC.clear();
 					for(int i = 0; i < train.getStops().size(); i++){

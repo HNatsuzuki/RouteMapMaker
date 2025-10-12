@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
@@ -19,6 +18,7 @@ import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
 import RouteMapMaker.listcells.StopMarkCell;
+import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.CustomMarkDrawer;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
@@ -29,9 +29,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ColorPicker;
@@ -41,7 +39,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -58,7 +55,7 @@ public class CustomMarkController implements Initializable{
 	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
 	private URElements urManager = new URElements();//undoとredoを管理する。
 	private final SelectFontFactory selectFontFactory;
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 	private CustomMarkDrawer drawer;
 	private final FileChooserFactory fileChooserFactory;
 	private final Configuration config;
@@ -107,9 +104,9 @@ public class CustomMarkController implements Initializable{
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
 
-	public CustomMarkController(SelectFontFactory selectFontFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
+	public CustomMarkController(SelectFontFactory selectFontFactory, AlertService alert, FileChooserFactory fileChooserFactory, Configuration config) {
 		this.selectFontFactory = selectFontFactory;
-		this.alertFactory = alertFactory;
+		this.alert = alert;
 		this.fileChooserFactory = fileChooserFactory;
 		this.config = config;
 	}
@@ -372,13 +369,9 @@ public class CustomMarkController implements Initializable{
 						newImage.setText(imageFile.getName());
 						if(newImage.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
 							newImage.getImage().getException().printStackTrace();
-							Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
-							alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-							alert.showAndWait();
+							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 						}else if(newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0){
-							Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
-							alert.getDialogPane().setContentText("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
-							alert.showAndWait();
+							alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
 						}else{//エラーなし
 							//初期値設定
 							double h = newImage.getImage().getHeight();
@@ -403,9 +396,7 @@ public class CustomMarkController implements Initializable{
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-						Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
-						alert.showAndWait();
+						alert.showError("選択されたファイルを開くことができませんでした。");
 					}
 				}
 			}

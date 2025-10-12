@@ -6,18 +6,16 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.listcells.FreeItemCell;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.FreeItem;
+import RouteMapMaker.services.AlertService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
@@ -25,14 +23,13 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 
 public class FreeItemsController implements Initializable{
 	ObservableList<FreeItem> freeItems;
 	UIController uic;
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 	private final FileChooserFactory fileChooserFactory;
 	private final Configuration config;
 	
@@ -55,10 +52,10 @@ public class FreeItemsController implements Initializable{
 	@FXML ChoiceBox<String> p_style;
 	@FXML Button selectFont;
 	
-	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, Configuration config) {
+	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertService alert, FileChooserFactory fileChooserFactory, Configuration config) {
 		this.freeItems = freeItems;
 		this.uic = uic;
-		this.alertFactory = alertFactory;
+		this.alert = alert;
 		this.fileChooserFactory = fileChooserFactory;
 		this.config = config;
 	}
@@ -78,9 +75,7 @@ public class FreeItemsController implements Initializable{
 					fi.setText(imageFile.getName());
 					if(fi.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
 						fi.getImage().getException().printStackTrace();
-						Alert alert = alertFactory.createAlert(AlertType.ERROR,"画像の読み込みエラー",ButtonType.CLOSE);
-						alert.getDialogPane().setContentText("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-						alert.showAndWait();
+						alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
 					}else{//エラーなし
 						//初期値設定
 						fi.getParams()[0].set(100);//X座標
@@ -95,9 +90,7 @@ public class FreeItemsController implements Initializable{
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-					Alert alert = alertFactory.createAlert(AlertType.ERROR,"ファイルのエラー",ButtonType.CLOSE);
-					alert.getDialogPane().setContentText("選択されたファイルを開くことができませんでした。");
-					alert.showAndWait();
+					alert.showError("選択されたファイルを開くことができませんでした。");
 				}
 			}
 		});
@@ -120,9 +113,7 @@ public class FreeItemsController implements Initializable{
 		copy.setOnAction((ActionEvent) ->{
 			int index = itemList.getSelectionModel().getSelectedIndex();
 			if(index == -1){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("コピーするアイテムを選択してください。");
-				alert.showAndWait();
+				alert.showWarning("コピーするアイテムを選択してください。");
 			}else{
 				freeItems.add(index+1, freeItems.get(index).clone());
 				uic.ReDraw();
@@ -131,9 +122,7 @@ public class FreeItemsController implements Initializable{
 		Delete.setOnAction((ActionEvent) ->{
 			int index = itemList.getSelectionModel().getSelectedIndex();
 			if(index == -1){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("削除するアイテムを選択してください。");
-				alert.showAndWait();
+				alert.showWarning("削除するアイテムを選択してください。");
 			}else{
 				freeItems.remove(index);
 				uic.ReDraw();

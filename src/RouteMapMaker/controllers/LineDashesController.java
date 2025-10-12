@@ -4,21 +4,18 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.models.LineDash;
+import RouteMapMaker.services.AlertService;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.paint.Color;
 
 public class LineDashesController implements Initializable{
@@ -31,10 +28,10 @@ public class LineDashesController implements Initializable{
 	@FXML Button delete;
 	ObservableList<LineDash> lineDashes;
 	LineDashCell ldCell;
-	private final AlertFactory alertFactory;
+	private final AlertService alert;
 
-	public LineDashesController(AlertFactory alertFactory) {
-		this.alertFactory = alertFactory;
+	public LineDashesController(AlertService alert) {
+		this.alert = alert;
 	}
 	
 	@Override
@@ -83,13 +80,9 @@ public class LineDashesController implements Initializable{
 		delete.setOnAction((ActionEvent) ->{
 			int selectedIndex = list.getSelectionModel().getSelectedIndex();
 			if(selectedIndex == -1){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("項目を選択してください。");
-				alert.showAndWait();
+				alert.showWarning("項目を選択してください。");
 			}else if(selectedIndex == 0){
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("直線パターンは削除できません。");
-				alert.showAndWait();
+				alert.showWarning("直線パターンは削除できません。");
 			}else{
 				lineDashes.remove(selectedIndex);
 				list.getSelectionModel().select(selectedIndex - 1);
@@ -99,9 +92,7 @@ public class LineDashesController implements Initializable{
 			LineDash daw = list.getSelectionModel().getSelectedItem();
 
 			if (daw == null) {
-				Alert alert = alertFactory.createAlert(AlertType.WARNING,"",ButtonType.CLOSE);
-				alert.getDialogPane().setContentText("項目を選択してください");
-				alert.showAndWait();
+				alert.showWarning("項目を選択してください");
 
 				return;
 			}
@@ -114,8 +105,7 @@ public class LineDashesController implements Initializable{
 				daw = LineDash.parse(text);
 				lineDashes.set(index, daw);
 			} catch (ParseException ex) {
-				Alert alert = alertFactory.createAlert(AlertType. WARNING,ex.getMessage(), ButtonType.CLOSE);
-				alert.showAndWait();
+				alert.showWarning(ex.getMessage());
 			}
 
 			setText(daw);
