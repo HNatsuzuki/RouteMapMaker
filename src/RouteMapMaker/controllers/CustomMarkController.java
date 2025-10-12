@@ -6,11 +6,11 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.RemoveListItemCommand;
@@ -20,6 +20,7 @@ import RouteMapMaker.commands.SwapListItemUpCommand;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.CustomMarkDrawer;
+import RouteMapMaker.services.FileOpenDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
 import javafx.beans.property.BooleanProperty;
@@ -43,7 +44,6 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class CustomMarkController implements Initializable{
@@ -57,7 +57,7 @@ public class CustomMarkController implements Initializable{
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
 	private CustomMarkDrawer drawer;
-	private final FileChooserFactory fileChooserFactory;
+	private final FileOpenDialogService fileOpenDialog;
 	private final Configuration config;
 	
 	@FXML Canvas markCanvas;
@@ -104,10 +104,10 @@ public class CustomMarkController implements Initializable{
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
 
-	public CustomMarkController(SelectFontFactory selectFontFactory, AlertService alert, FileChooserFactory fileChooserFactory, Configuration config) {
+	public CustomMarkController(SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
 		this.selectFontFactory = selectFontFactory;
 		this.alert = alert;
-		this.fileChooserFactory = fileChooserFactory;
+		this.fileOpenDialog = fileOpenDialog;
 		this.config = config;
 	}
 
@@ -360,45 +360,46 @@ public class CustomMarkController implements Initializable{
 			int index = MarkList.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				MarkLayer newImage = new MarkLayer(MarkLayer.IMAGE);
-				FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
-				File imageFile = fileChooser.showOpenDialog(null);
-				if(imageFile != null){
-					try {
+				fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
+					.ifPresent(r -> {
+						File imageFile = r.getFile();
 						config.setImageFileDir(imageFile.getParent());
-						newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
-						newImage.setText(imageFile.getName());
-						if(newImage.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
-							newImage.getImage().getException().printStackTrace();
-							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-						}else if(newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0){
-							alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
-						}else{//エラーなし
-							//初期値設定
-							double h = newImage.getImage().getHeight();
-							double w = newImage.getImage().getWidth();
-							if(w < h){//縦長
-								newImage.addParam((1-w/h)/2);//X
-								newImage.addParam(0.0);//Y
-								newImage.addParam(w/h);//幅
-								newImage.addParam(1.0);//高さ
-							}else{//横長
-								newImage.addParam(0.0);//X
-								newImage.addParam((1-h/w)/2);//Y
-								newImage.addParam(1.0);//幅
-								newImage.addParam(h/w);//高さ
+
+						try {
+							newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
+							newImage.setText(imageFile.getName());
+							if (newImage.getImage().isError()) {//イメージのロード中にエラーが検出されたことを示す。
+								newImage.getImage().getException().printStackTrace();
+								alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
+							} else if (newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0) {
+								alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
+							} else {//エラーなし
+								//初期値設定
+								double h = newImage.getImage().getHeight();
+								double w = newImage.getImage().getWidth();
+								if (w < h) {//縦長
+									newImage.addParam((1-w/h)/2);//X
+									newImage.addParam(0.0);//Y
+									newImage.addParam(w/h);//幅
+									newImage.addParam(1.0);//高さ
+								} else {//横長
+									newImage.addParam(0.0);//X
+									newImage.addParam((1-h/w)/2);//Y
+									newImage.addParam(1.0);//幅
+									newImage.addParam(h/w);//高さ
+								}
+								Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newImage);
+								urManager.execute(command);
+								setLayerList(customMarks.get(index));
+								LayerList.getSelectionModel().selectLast();
+								draw();
 							}
-							Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newImage);
-							urManager.execute(command);
-							setLayerList(customMarks.get(index));
-							LayerList.getSelectionModel().selectLast();
-							draw();
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							alert.showError("選択されたファイルを開くことができませんでした。");
 						}
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-						alert.showError("選択されたファイルを開くことができませんでした。");
-					}
-				}
+				});
 			}
 		});
 		LayerList.setItems(LayerListOb);
