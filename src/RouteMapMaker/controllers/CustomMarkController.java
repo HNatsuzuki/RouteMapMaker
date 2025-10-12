@@ -255,141 +255,94 @@ public class CustomMarkController implements Initializable{
 				draw();
 			}
 		});
-		ovalLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 楕円レイヤー作成ボタン
+		ovalLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newOval = new MarkLayer(MarkLayer.OVAL);
-				//初期値投入
-				newOval.addParam(0.0);//左上X
-				newOval.addParam(0.0);//左上Y
-				newOval.addParam(1.0);//横直径
-				newOval.addParam(1.0);//縦直径
-				newOval.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
-				newOval.setPaintMode(PaintMode.FILL);
-				newOval.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), newOval);
+				MarkLayer layer = MarkLayer.createOvalLayer();
+				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
 			}
 		});
-		rectangleLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 矩形レイヤー作成ボタン
+		rectangleLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newRect = new MarkLayer(MarkLayer.RECT);
-				//初期値投入
-				newRect.addParam(0.0);//左上X
-				newRect.addParam(0.0);//左上Y
-				newRect.addParam(1.0);//幅
-				newRect.addParam(1.0);//高さ
-				newRect.addParam(0.0);//円弧幅
-				newRect.addParam(0.0);//円弧高さ
-				newRect.addParam(0.05);//lineWidth
-				newRect.setPaintMode(PaintMode.FILL);
-				newRect.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), newRect);
+				MarkLayer layer = MarkLayer.createRectangleLayer();
+				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
 			}
 		});
-		lineLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 直線レイヤー作成ボタン
+		lineLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newLine = new MarkLayer(MarkLayer.LINE);
-				newLine.addParam(0.0);//始点X
-				newLine.addParam(0.0);//始点Y
-				newLine.addParam(1.0);//終点X
-				newLine.addParam(1.0);//終点Y
-				newLine.addParam(0.05);//lineWidth
-				newLine.addParam(0);//端はSQUARE
-				newLine.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), newLine);
+				MarkLayer layer = MarkLayer.createLineLayer();
+				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
 			}
 		});
-		arcLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 円弧レイヤー作成ボタン
+		arcLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newArc = new MarkLayer(MarkLayer.ARC);
-				//初期値投入
-				newArc.addParam(0.0);//X
-				newArc.addParam(0.0);//Y
-				newArc.addParam(1.0);//幅
-				newArc.addParam(1.0);//高さ
-				newArc.addParam(0.0);//始角
-				newArc.addParam(120.0);//角の大きさ
-				newArc.addParam(0.05);//lineWidth
-				newArc.addParam(2.0);//closure
-				newArc.setPaintMode(PaintMode.FILL);
-				newArc.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), newArc);
+				MarkLayer layer = MarkLayer.createArcLayer();
+				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
 			}
 		});
-		textLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 文字列レイヤー作成ボタン
+		textLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newText = new MarkLayer(MarkLayer.TEXT);
-				//初期値投入
-				newText.addParam(0.0);//X
-				newText.addParam(1.0);//Y
-				newText.addParam(1.0);//size
-				newText.addParam(0.05);//lineWidth
-				newText.addParam(0.0);//type
-				newText.setPaintMode(PaintMode.FILL);
-				newText.setColor(Color.WHITE);
-				newText.setText("※");
-				newText.setFontName("system");
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), newText);
+				MarkLayer layer = MarkLayer.createTextLayer();
+				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
 			}
 		});
-		imageLayerAddButton.setOnAction((ActionEvent) ->{
+
+		// 画像レイヤー
+		imageLayerAddButton.setOnAction(event -> {
 			StopMark stopMark = selectedMark.get();
 
 			if (stopMark != null) {
-				MarkLayer newImage = new MarkLayer(MarkLayer.IMAGE);
 				fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
 					.ifPresent(r -> {
 						File imageFile = r.getFile();
 						config.setImageFileDir(imageFile.getParent());
 
 						try {
-							newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
-							newImage.setText(imageFile.getName());
-							if (newImage.getImage().isError()) {//イメージのロード中にエラーが検出されたことを示す。
-								newImage.getImage().getException().printStackTrace();
+							Image image = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
+							if (image.isError()) {
+								//イメージのロード中にエラーが検出されたことを示す。
+								image.getException().printStackTrace();
 								alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-							} else if (newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0) {
+							} else if (image.getHeight() == 0 || image.getWidth() == 0) {
 								alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
-							} else {//エラーなし
-								//初期値設定
-								double h = newImage.getImage().getHeight();
-								double w = newImage.getImage().getWidth();
-								if (w < h) {//縦長
-									newImage.addParam((1-w/h)/2);//X
-									newImage.addParam(0.0);//Y
-									newImage.addParam(w/h);//幅
-									newImage.addParam(1.0);//高さ
-								} else {//横長
-									newImage.addParam(0.0);//X
-									newImage.addParam((1-h/w)/2);//Y
-									newImage.addParam(1.0);//幅
-									newImage.addParam(h/w);//高さ
-								}
-								Command command = new AddListItemCommand<>(stopMark.getLayers(), newImage);
+							} else {
+								//エラーなし
+								MarkLayer layer = MarkLayer.createImageLayer(image, imageFile.getName());
+								Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 								urManager.execute(command);
 								layerListView.getSelectionModel().selectLast();
 								draw();

@@ -75,6 +75,137 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			paramsProportion = null;
 		}
 	}
+
+	/**
+	 * 楕円レイヤーを作成します。
+	 *
+	 * @return 楕円レイヤー
+	 */
+	public static MarkLayer createOvalLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.OVAL);
+		//初期値投入
+		layer.addParam(0.0);//左上X
+		layer.addParam(0.0);//左上Y
+		layer.addParam(1.0);//横直径
+		layer.addParam(1.0);//縦直径
+		layer.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 矩形レイヤーを作成します。
+	 *
+	 * @return 矩形レイヤー
+	 */
+	public static MarkLayer createRectangleLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.RECT);
+		//初期値投入
+		layer.addParam(0.0);//左上X
+		layer.addParam(0.0);//左上Y
+		layer.addParam(1.0);//幅
+		layer.addParam(1.0);//高さ
+		layer.addParam(0.0);//円弧幅
+		layer.addParam(0.0);//円弧高さ
+		layer.addParam(0.05);//lineWidth
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 直線レイヤーを作成します。
+	 *
+	 * @return 直線レイヤー
+	 */
+	public static MarkLayer createLineLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.LINE);
+		layer.addParam(0.0);//始点X
+		layer.addParam(0.0);//始点Y
+		layer.addParam(1.0);//終点X
+		layer.addParam(1.0);//終点Y
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(0);//端はSQUARE
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 円弧レイヤーを作成します。
+	 *
+	 * @return 円弧レイヤー
+	 */
+	public static MarkLayer createArcLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.ARC);
+		//初期値投入
+		layer.addParam(0.0);//X
+		layer.addParam(0.0);//Y
+		layer.addParam(1.0);//幅
+		layer.addParam(1.0);//高さ
+		layer.addParam(0.0);//始角
+		layer.addParam(120.0);//角の大きさ
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(2.0);//closure
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 文字列レイヤーを作成します。
+	 *
+	 * @return 文字列レイヤー
+	 */
+	public static MarkLayer createTextLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.TEXT);
+		//初期値投入
+		layer.addParam(0.0);//X
+		layer.addParam(1.0);//Y
+		layer.addParam(1.0);//size
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(0.0);//type
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+		layer.setText("※");
+		layer.setFontName("System");
+
+		return layer;
+	}
+
+	/**
+	 * 画像レイヤーを作成します。
+	 *
+	 * @param image 画像
+	 * @param name 画像の名称
+	 * @return 画像レイヤー
+	 */
+	public static MarkLayer createImageLayer(Image image, String name) {
+		MarkLayer layer = new MarkLayer(MarkLayer.IMAGE);
+		layer.setImage(image);
+		layer.setText(name);
+		//初期値設定
+		double h = layer.getImage().getHeight();
+		double w = layer.getImage().getWidth();
+		if (w < h) {//縦長
+			layer.addParam((1 - w / h) / 2);//X
+			layer.addParam(0.0);//Y
+			layer.addParam(w / h);//幅
+			layer.addParam(1.0);//高さ
+		} else {//横長
+			layer.addParam(0.0);//X
+			layer.addParam((1 - h / w) / 2);//Y
+			layer.addParam(1.0);//幅
+			layer.addParam(h / w);//高さ
+		}
+
+		return layer;
+	}
+
 	public int getType(){
 		return this.type;
 	}
