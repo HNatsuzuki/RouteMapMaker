@@ -28,8 +28,10 @@ import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -57,6 +59,7 @@ public class CustomMarkController implements Initializable{
 	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private GraphicsContext gc;
 	private URElements urManager = new URElements();//undoとredoを管理する。
@@ -362,49 +365,28 @@ public class CustomMarkController implements Initializable{
 			}
 		});
 
+		// レイヤーリスト
 		layerListView.setCellFactory(listView -> new MarkLayerCell());
+
+		// 選択中レイヤーのインデックス
+		selectedLayerIndex.bind(layerListView.getSelectionModel().selectedIndexProperty());
+
+		// 選択中レイヤー
 		selectedLayer.bind(layerListView.getSelectionModel().selectedItemProperty());
 		selectedLayer.addListener((observable, oldValue, newValue) -> {
 			if (newValue != null) {
 				setParameters(newValue);
 			}
 		});
-		layerDeleteButton.setOnAction((ActionEvent) ->{
-			StopMark stopMark = selectedMark.get();
-			int indexL = layerListView.getSelectionModel().getSelectedIndex();
-			if (stopMark != null && indexL != -1) {
-				Command command = new RemoveListItemCommand<>(stopMark.getLayers(), indexL);
-				urManager.execute(command);
-				if (stopMark.getLayers().size() == 0) {
-					layerColorPicker.setDisable(true);
-					paintModeChoiceBox.setDisable(true);
-					setNumericParams(null, new String[0]);
-				} else if (indexL < layerListView.getItems().size()) {
-					layerListView.getSelectionModel().select(indexL);
-				}
-			}
-		});
-		layerUpButton.setOnAction((ActionEvent) ->{
-			StopMark stopMark = selectedMark.get();
-			int indexL = layerListView.getSelectionModel().getSelectedIndex();
-			if (stopMark != null && indexL > 0) {//indexLが0だとコレは意味を持たない
-				Command command = new SwapListItemUpCommand<>(stopMark.getLayers(), indexL);
-				urManager.execute(command);
-				layerListView.getSelectionModel().select(indexL - 1);
-				draw();
-			}
-		});
-		layerDownButton.setOnAction((ActionEvent) ->{
-			StopMark stopMark = selectedMark.get();
-			int indexL = layerListView.getSelectionModel().getSelectedIndex();
-			if (stopMark != null && indexL != -1 && indexL != stopMark.getLayers().size() - 1) {
-				//indexLが最後だとコレは意味を持たない
-				Command command = new SwapListItemDownCommand<>(stopMark.getLayers(), indexL);
-				urManager.execute(command);
-				layerListView.getSelectionModel().select(indexL + 1);
-				draw();
-			}
-		});
+
+		// レイヤー削除ボタン
+		layerDeleteButton.setOnAction(event -> deleteSelectedLayer());
+
+		// レイヤー上へ移動ボタン
+		layerUpButton.setOnAction(event -> moveUpSelectedLayer());
+
+		// レイヤー下へ移動ボタン
+		layerDownButton.setOnAction(event -> moveDownSelectedLayer());
 
 		// マーク回転チェックボックス
 		rotateMark.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedMark.get() == null, selectedMark));
@@ -420,6 +402,61 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 選択中のレイヤーを削除します。
+	 */
+	private void deleteSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex != -1) {
+			Command command = new RemoveListItemCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+
+			if (stopMark.getLayers().size() == 0) {
+				layerColorPicker.setDisable(true);
+				paintModeChoiceBox.setDisable(true);
+				setNumericParams(null, new String[0]);
+			} else if (layerIndex < stopMark.getLayers().size()) {
+				// 削除前のインデックスが範囲内だった場合は同じ場所を再選択する
+				// ListView は要素を削除した場合直前の要素が選択状態になる
+				layerListView.getSelectionModel().select(layerIndex);
+			}
+		}
+	}
+
+	/**
+	 * 選択中のレイヤーを上へ移動します。
+	 */
+	private void moveUpSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex > 0) {
+			// 最初のレイヤー以外の時に移動する
+			Command command = new SwapListItemUpCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+			layerListView.getSelectionModel().select(layerIndex - 1);
+			draw();
+		}
+	}
+
+	/**
+	 * 選択中のレイヤーを下へ移動します。
+	 */
+	private void moveDownSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex != -1 && layerIndex != stopMark.getLayers().size() - 1) {
+			// 最後のレイヤー以外の時に移動する
+			Command command = new SwapListItemDownCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+			layerListView.getSelectionModel().select(layerIndex + 1);
+			draw();
+		}
 	}
 
 	/**
@@ -447,14 +484,14 @@ public class CustomMarkController implements Initializable{
 	 */
 	private void undo() {
 		StopMark stopMark = selectedMark.get();
-		int layerListSelectedIndex = layerListView.getSelectionModel().getSelectedIndex();
+		int selectedLayerIndex = this.selectedLayerIndex.get();
 		urManager.undo();
 
 		if (stopMark == null) {
 			markListView.getSelectionModel().selectFirst();
 		} else {
-			if (layerListSelectedIndex != -1 && layerListSelectedIndex < stopMark.getLayers().size()){
-				layerListView.getSelectionModel().select(layerListSelectedIndex);
+			if (selectedLayerIndex != -1 && selectedLayerIndex < stopMark.getLayers().size()){
+				layerListView.getSelectionModel().select(selectedLayerIndex);
 			} else {
 				layerListView.getSelectionModel().selectFirst();
 			}
@@ -467,7 +504,7 @@ public class CustomMarkController implements Initializable{
 	 */
 	private void redo() {
 		StopMark stopMark = selectedMark.get();
-		int selectedLayerIndex = layerListView.getSelectionModel().getSelectedIndex();
+		int selectedLayerIndex = this.selectedLayerIndex.get();
 		urManager.redo();
 
 		if (stopMark == null) {
