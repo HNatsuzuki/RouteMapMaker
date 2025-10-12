@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.SelectFontFactory;
@@ -156,13 +157,11 @@ public class CustomMarkController implements Initializable{
 			markListView.getSelectionModel().selectLast();
 		});
 		markCopyButton.setOnAction((ActionEvent) ->{//マークをコピー
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				StopMark cloneMark = stopMark.clone();
 				Command command = new AddListItemCommand<>(customMarks, cloneMark);
 				urManager.execute(command);
-			}
+			});
 		});
 		markDeleteButton.setOnAction((ActionEvent) ->{
 			int index = markListView.getSelectionModel().getSelectedIndex();
@@ -267,74 +266,62 @@ public class CustomMarkController implements Initializable{
 
 		// 楕円レイヤー作成ボタン
 		ovalLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				MarkLayer layer = MarkLayer.createOvalLayer();
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
-			}
+			});
 		});
 
 		// 矩形レイヤー作成ボタン
 		rectangleLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				MarkLayer layer = MarkLayer.createRectangleLayer();
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
-			}
+			});
 		});
 
 		// 直線レイヤー作成ボタン
 		lineLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				MarkLayer layer = MarkLayer.createLineLayer();
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
-			}
+			});
 		});
 
 		// 円弧レイヤー作成ボタン
 		arcLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				MarkLayer layer = MarkLayer.createArcLayer();
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
-			}
+			});
 		});
 
 		// 文字列レイヤー作成ボタン
 		textLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				MarkLayer layer = MarkLayer.createTextLayer();
 				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 				urManager.execute(command);
 				layerListView.getSelectionModel().selectLast();
 				draw();
-			}
+			});
 		});
 
 		// 画像レイヤー
 		imageLayerAddButton.setOnAction(event -> {
-			StopMark stopMark = selectedMark.get();
-
-			if (stopMark != null) {
+			getSelectedStopMark().ifPresent(stopMark -> {
 				fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
 					.ifPresent(r -> {
 						File imageFile = r.getFile();
@@ -362,7 +349,7 @@ public class CustomMarkController implements Initializable{
 							alert.showError("選択されたファイルを開くことができませんでした。");
 						}
 				});
-			}
+			});
 		});
 
 		// レイヤーリスト
@@ -520,9 +507,7 @@ public class CustomMarkController implements Initializable{
 	}
 
 	void draw(){//プレビューを描画するメソッド。背景処理はやりません。
-		StopMark stopMark = selectedMark.get();
-
-		if (stopMark != null) {
+		getSelectedStopMark().ifPresent(stopMark -> {
 			drawer.drawCustomMarkPreview(stopMark, PREVIEW_SIZE);
 			//リストも更新・・・この処理は不具合を引き起こすのであとで対策
 			/*
@@ -531,7 +516,7 @@ public class CustomMarkController implements Initializable{
 			customMarks.remove(customMarks.size() - 1);
 			MarkList.getSelectionModel().select(markIndex);
 			*/
-		}
+		});
 	}
 
 	void setParameters(MarkLayer l){//各種パラメーターを設定していく。
@@ -653,5 +638,10 @@ public class CustomMarkController implements Initializable{
 		}
 
 		draw();
+	}
+
+	/** 現在選択されている StopMark を Optional で返します。 */
+	private Optional<StopMark> getSelectedStopMark() {
+		return Optional.ofNullable(selectedMark.get());
 	}
 }
