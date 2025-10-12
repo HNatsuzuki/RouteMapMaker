@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.SelectFontFactory;
@@ -192,12 +193,18 @@ public class CustomMarkController implements Initializable{
 				draw();
 			}
 		});
+
 		//スピナーについての設定は配列で一気に処理する
-		Spinner[] paramSs = {paramS1,paramS2,paramS3,paramS4,paramS5,paramS6,paramS7,paramS8};
-		for(int i = 0; i < 8; i++){
-			paramSs[i].setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE));
+		List<Spinner<Integer>> paramSs = List.of(paramS1, paramS2, paramS3, paramS4, paramS5, paramS6, paramS7, paramS8);
+		for (int i = 0; i < paramSs.size(); i++) {
+			Spinner<Integer> spinner = paramSs.get(i);
+			int spinnerId = i;
+			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE));
+			spinner.valueProperty().addListener((obs, oldValue, newValue) -> {
+				parameterChanged(spinnerId, oldValue, newValue);
+			});
 		}
-		setParamsReactions();//action定義が頭悪い方法でしかできないので隔離
+
 		paramST.valueProperty().addListener((obs, oldValue, newValue) -> {
 			int indexM = MarkList.getSelectionModel().getSelectedIndex();
 			int indexL = LayerList.getSelectionModel().getSelectedIndex();
@@ -619,45 +626,22 @@ public class CustomMarkController implements Initializable{
 	}
 	void setNumericParams(MarkLayer l, String[] texts){//下のパラメーターたちのdisableパラメタを一斉に切り替え、各種代入する
 		Label[] paramLs = {paramL1,paramL2,paramL3,paramL4,paramL5,paramL6,paramL7,paramL8};
-		Spinner[] paramSs = {paramS1,paramS2,paramS3,paramS4,paramS5,paramS6,paramS7,paramS8};
+		List<Spinner<Integer>> paramSs = List.of(paramS1, paramS2, paramS3, paramS4, paramS5, paramS6, paramS7, paramS8);
 		int i = texts.length;//定義文字配列の長さが有効パラメーターの個数と一致する。
 		for(int h = 0; h < i; h++){//iまでは全てfalse
 			paramLs[h].setDisable(false);
 			paramLs[h].setText(texts[h]);
-			paramSs[h].setDisable(false);
-			if(l.getParamsProportion()[h] == true)paramSs[h].getValueFactory().setValue((int)(l.getParam(h) * prevSize));
-			if(l.getParamsProportion()[h] == false)paramSs[h].getValueFactory().setValue((int)l.getParam(h));
+			paramSs.get(h).setDisable(false);
+			if (l.getParamsProportion()[h]) {
+				paramSs.get(h).getValueFactory().setValue((int)(l.getParam(h) * prevSize));
+			} else {
+				paramSs.get(h).getValueFactory().setValue((int)l.getParam(h));
+			}
 		}
 		for(int h = i; h < 8; h++){
 			paramLs[h].setDisable(true);
-			paramSs[h].setDisable(true);
+			paramSs.get(h).setDisable(true);
 		}
-	}
-	void setParamsReactions(){//Spinnerのジェネリクス縛り等の関係で全部手書きという頭悪いことしかうまくいかないのでここに隔離します。
-		paramS1.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(0, oldValue, newValue);
-		});
-		paramS2.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(1, oldValue, newValue);
-		});
-		paramS3.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(2, oldValue, newValue);
-		});
-		paramS4.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(3, oldValue, newValue);
-		});
-		paramS5.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(4, oldValue, newValue);
-		});
-		paramS6.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(5, oldValue, newValue);
-		});
-		paramS7.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(6, oldValue, newValue);
-		});
-		paramS8.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(7, oldValue, newValue);
-		});
 	}
 
 	private void parameterChanged(int index, Integer oldValue, Integer newValue) {
