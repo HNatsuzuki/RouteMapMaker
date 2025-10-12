@@ -355,6 +355,7 @@ public class CustomMarkController implements Initializable{
 				});
 			}
 		});
+
 		layerListView.setCellFactory(listView -> new MarkLayerCell());
 		selectedLayer.bind(layerListView.getSelectionModel().selectedItemProperty());
 		selectedLayer.addListener((observable, oldValue, newValue) -> {
@@ -407,44 +408,56 @@ public class CustomMarkController implements Initializable{
 				urManager.execute(command);
 			}
 		});
-		undoMenuItem.setOnAction((ActionEvent)->{
-			StopMark stopMark = selectedMark.get();
-			int layerListSelectedIndex = layerListView.getSelectionModel().getSelectedIndex();
-			urManager.undo();
-			if (stopMark == null) {
-				markListView.getSelectionModel().selectFirst();
-			} else {
-				if (layerListSelectedIndex != -1 && layerListSelectedIndex < stopMark.getLayers().size()){
-					layerListView.getSelectionModel().select(layerListSelectedIndex);
-				} else {
-					layerListView.getSelectionModel().selectFirst();
-				}
-			}
-			draw();
-		});
-		redoMenuItem.setOnAction((ActionEvent)->{
-			StopMark stopMark = selectedMark.get();
-			int layerListSelectedIndex = layerListView.getSelectionModel().getSelectedIndex();
-			urManager.redo();
-			if (stopMark == null) {
-				markListView.getSelectionModel().selectFirst();
-			} else {
-				if (layerListSelectedIndex != -1 && layerListSelectedIndex < stopMark.getLayers().size()) {
-					layerListView.getSelectionModel().select(layerListSelectedIndex);
-				} else {
-					layerListView.getSelectionModel().selectFirst();
-				}
-			}
-			draw();
-		});
-		urManager.getUndoableProperty().addListener((observable, oldValue, newValue) -> {
-			undoMenuItem.setDisable(! urManager.getUndoableProperty().get());
-		});
-		urManager.getRedoableProperty().addListener((observable, oldValue, newValue) -> {
-			redoMenuItem.setDisable(! urManager.getRedoableProperty().get());
-		});
+
+		// 元に戻す処理
+		undoMenuItem.setOnAction(event -> undo());
+		undoMenuItem.disableProperty().bind(urManager.getUndoableProperty().not());
+
+		// やり直し処理
+		redoMenuItem.setOnAction(event -> redo());
+		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
 	}
-	
+
+	/**
+	 * 元に戻す処理
+	 */
+	private void undo() {
+		StopMark stopMark = selectedMark.get();
+		int layerListSelectedIndex = layerListView.getSelectionModel().getSelectedIndex();
+		urManager.undo();
+
+		if (stopMark == null) {
+			markListView.getSelectionModel().selectFirst();
+		} else {
+			if (layerListSelectedIndex != -1 && layerListSelectedIndex < stopMark.getLayers().size()){
+				layerListView.getSelectionModel().select(layerListSelectedIndex);
+			} else {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+		draw();
+	}
+
+	/**
+	 * やり直し処理
+	 */
+	private void redo() {
+		StopMark stopMark = selectedMark.get();
+		int selectedLayerIndex = layerListView.getSelectionModel().getSelectedIndex();
+		urManager.redo();
+
+		if (stopMark == null) {
+			markListView.getSelectionModel().selectFirst();
+		} else {
+			if (selectedLayerIndex != -1 && selectedLayerIndex < stopMark.getLayers().size()) {
+				layerListView.getSelectionModel().select(selectedLayerIndex);
+			} else {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+		draw();
+	}
+
 	void draw(){//プレビューを描画するメソッド。背景処理はやりません。
 		StopMark stopMark = selectedMark.get();
 
