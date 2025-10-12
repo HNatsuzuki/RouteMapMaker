@@ -1255,7 +1255,6 @@ public class UIController implements Initializable{
 			}
 		});
 		mb_editCustomMark.setOnAction((ActionEvent) ->{
-			CustomMarkController euc = null;
 			FXMLLoader editLoader = null;
 			Stage editStage = new Stage();
 			editStage.initModality(Modality.APPLICATION_MODAL);
@@ -1264,7 +1263,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(selectFontFactory, alert, fileOpenDialog, config);
+						return new CustomMarkController(customMarks, selectFontFactory, alert, fileOpenDialog, config);
 					} else {
 						throw new RuntimeException();
 					}
@@ -1274,8 +1273,6 @@ public class UIController implements Initializable{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			euc = (CustomMarkController)editLoader.getController();
-			euc.setObject(editStage, customMarks);
 			Scene sc = sceneFactory.createScene(ap);
 			editStage.setScene(sc);
 			editStage.setTitle("カスタム停車マークの編集");

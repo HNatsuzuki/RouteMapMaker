@@ -44,12 +44,10 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Stage;
 
 public class CustomMarkController implements Initializable{
 	final int prevSize = 40;
-	private Stage stage;//このstageを保持する。
-	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタムマークの集合
+	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
 	private GraphicsContext gc;
 	private ObservableList<String> LayerListOb = FXCollections.observableArrayList();
 	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
@@ -104,7 +102,8 @@ public class CustomMarkController implements Initializable{
 	@FXML MenuItem Undo;
 	@FXML MenuItem Redo;
 
-	public CustomMarkController(SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
+	public CustomMarkController(ObservableList<StopMark> customMarks, SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
+		this.customMarks = customMarks;
 		this.selectFontFactory = selectFontFactory;
 		this.alert = alert;
 		this.fileOpenDialog = fileOpenDialog;
@@ -131,6 +130,7 @@ public class CustomMarkController implements Initializable{
 				rotateMark.setSelected(mark.isRotated());
 			}
 		});
+		MarkList.setItems(customMarks);
 		MarkAdd.setOnAction((ActionEvent) ->{//空のマークを追加する。
 			System.out.println("add called.");
 			StopMark newMark = new StopMark();
@@ -506,12 +506,6 @@ public class CustomMarkController implements Initializable{
 		urManager.getRedoableProperty().addListener((observable, oldValue, newValue) -> {
 			Redo.setDisable(! urManager.getRedoableProperty().get());
 		});
-	}
-	
-	public void setObject(Stage stage,ObservableList<StopMark> mm){
-		this.customMarks = mm;
-		MarkList.setItems(customMarks);//これをしないとObservableListからListViewに変更通知が行きません。
-		this.stage = stage;
 	}
 	
 	void draw(){//プレビューを描画するメソッド。背景処理はやりません。
