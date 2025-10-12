@@ -62,6 +62,7 @@ public class CustomMarkController implements Initializable{
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
+	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private GraphicsContext gc;
 	private URElements urManager = new URElements();//undoとredoを管理する。
@@ -182,19 +183,15 @@ public class CustomMarkController implements Initializable{
 				draw();
 			});
 		});
-		
+
+		// 描画モードの ChoiceBox
 		ObservableList<PaintMode> paintModes = FXCollections.observableArrayList(PaintMode.values());
 		paintModeChoiceBox.setItems(paintModes);
-		paintModeChoiceBox.valueProperty().addListener((obs, oldValue, newValue) -> {
-			getSelectedMarkLayer().ifPresent(markLayer -> {
-				if (markLayer.getPaintMode() != newValue) {
-					Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
-					urManager.execute(command);
-				}
+		paintModeChoiceBox.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasPaintMode(), selectedLayer).not());
 
-				draw();
-			});
-		});
+		// 選択中描画モード
+		selectedPaintMode.bindBidirectional(paintModeChoiceBox.valueProperty());
+		selectedPaintMode.addListener(this::selectedPaintModeChanged);
 
 		//スピナーについての設定は配列で一気に処理する
 		List<Spinner<Integer>> paramSs = List.of(paramS1, paramS2, paramS3, paramS4, paramS5, paramS6, paramS7, paramS8);
@@ -293,11 +290,7 @@ public class CustomMarkController implements Initializable{
 
 		// 選択中レイヤー
 		selectedLayer.bind(layerListView.getSelectionModel().selectedItemProperty());
-		selectedLayer.addListener((observable, oldValue, newValue) -> {
-			if (newValue != null) {
-				setParameters(newValue);
-			}
-		});
+		selectedLayer.addListener(this::selectedLayerChanged);
 
 		// レイヤー削除ボタン
 		layerDeleteButton.setOnAction(event -> deleteSelectedLayer());
@@ -322,6 +315,23 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 選択中描画モード変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedPaintModeChanged(ObservableValue<?> observable, PaintMode oldValue, PaintMode newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (markLayer.getPaintMode() != newValue) {
+				Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
+				urManager.execute(command);
+				draw();
+			}
+		});
 	}
 
 	/**
@@ -425,6 +435,28 @@ public class CustomMarkController implements Initializable{
 	}
 
 	/**
+	 * 選択中レイヤー変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedLayerChanged(ObservableValue<?> observable, MarkLayer oldValue, MarkLayer newValue) {
+		if (oldValue != null) {
+			if (oldValue.hasPaintMode()) {
+				selectedPaintMode.unbindBidirectional(oldValue.paintModeProperty());
+			}
+		}
+		if (newValue != null) {
+			setParameters(newValue);
+
+			if (newValue.hasPaintMode()) {
+				selectedPaintMode.bindBidirectional(newValue.paintModeProperty());
+			}
+		}
+	}
+
+	/**
 	 * 選択中のレイヤーを削除します。
 	 */
 	private void deleteSelectedLayer() {
@@ -437,7 +469,6 @@ public class CustomMarkController implements Initializable{
 
 			if (stopMark.getLayers().size() == 0) {
 				layerColorPicker.setDisable(true);
-				paintModeChoiceBox.setDisable(true);
 				setNumericParams(null, new String[0]);
 			} else if (layerIndex < stopMark.getLayers().size()) {
 				// 削除前のインデックスが範囲内だった場合は同じ場所を再選択する
@@ -561,28 +592,22 @@ public class CustomMarkController implements Initializable{
 		if(l.getType() == MarkLayer.OVAL){
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
-			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
-			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"左上X","左上Y","直径X","直径Y","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.RECT){
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
-			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
-			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"左上X","左上Y","幅","高さ","角円幅","角円高さ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.LINE){
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
-			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
-			paintModeChoiceBox.setDisable(true);
 			String[] texts = {"始点X","始点Y","終点X","終点Y","線の太さ"};
 			setNumericParams(l,texts);
 			paramLT.setDisable(false);
@@ -594,8 +619,6 @@ public class CustomMarkController implements Initializable{
 		}else if(l.getType() == MarkLayer.ARC){
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
-			paintModeChoiceBox.setDisable(false);
-			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"X","Y","幅","高さ","始角(°)","角大きさ","線の太さ"};
 			setNumericParams(l,texts);
 			paramLT.setDisable(false);
@@ -607,7 +630,6 @@ public class CustomMarkController implements Initializable{
 		}else if(l.getType() == MarkLayer.TEXT){
 			layerColorPicker.setDisable(false);
 			layerColorPicker.setValue(l.getColor());
-			paintModeChoiceBox.setDisable(false);
 			paramLT.setDisable(false);
 			paramLT.setText("スタイル");
 			paramST.setDisable(false);
@@ -617,12 +639,10 @@ public class CustomMarkController implements Initializable{
 			fontSelectButton.setDisable(false);
 			paramText.setDisable(false);
 			paramText.setText(l.getText());
-			paintModeChoiceBox.getSelectionModel().select(l.getPaintMode());
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){
 			layerColorPicker.setDisable(true);
-			paintModeChoiceBox.setDisable(true);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","画像幅","画像高さ"};

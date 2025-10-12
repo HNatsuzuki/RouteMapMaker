@@ -253,6 +253,22 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 		return paintModeProperty;
 	}
 
+	/** 図形描画方法を保持するかどうか */
+	public boolean hasPaintMode() {
+		switch (getType()) {
+			case OVAL:
+			case RECT:
+			case ARC:
+			case TEXT:
+				return true;
+			case LINE:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
 	public ObservableList<DoubleProperty> getParamProperty(){
 		return this.params;
 	}
