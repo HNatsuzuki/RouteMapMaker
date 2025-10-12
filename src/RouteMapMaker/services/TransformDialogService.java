@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Optional;
 
 import RouteMapMaker.controllers.TransformController;
-import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.models.ScaleParameters;
 import RouteMapMaker.models.TransformParameters;
@@ -21,12 +20,12 @@ import javafx.stage.Stage;
  */
 public class TransformDialogService implements DialogService<TransformParameters> {
     private final SceneFactory sceneFactory;
-    private final AlertFactory alertFactory;
+    private final AlertService alert;
     private final Dimension2D canvasSize;
 
-    public TransformDialogService(SceneFactory sceneFactory,  AlertFactory alertFactory, Dimension2D canvasSize) {
+    public TransformDialogService(SceneFactory sceneFactory,  AlertService alert, Dimension2D canvasSize) {
         this.sceneFactory = sceneFactory;
-        this.alertFactory = alertFactory;
+        this.alert = alert;
         this.canvasSize = canvasSize;
     }
 
@@ -35,7 +34,7 @@ public class TransformDialogService implements DialogService<TransformParameters
         FXMLLoader editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/TransformController.fxml"));
         editLoader.setControllerFactory(param -> {
             if (param == TransformController.class) {
-                return new TransformController(alertFactory, canvasSize);
+                return new TransformController(alert, canvasSize);
             } else {
                 throw new RuntimeException();
             }
