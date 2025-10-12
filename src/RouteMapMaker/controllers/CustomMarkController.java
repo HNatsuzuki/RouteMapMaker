@@ -265,92 +265,22 @@ public class CustomMarkController implements Initializable{
 		});
 
 		// 楕円レイヤー作成ボタン
-		ovalLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				MarkLayer layer = MarkLayer.createOvalLayer();
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-				urManager.execute(command);
-				layerListView.getSelectionModel().selectLast();
-				draw();
-			});
-		});
+		ovalLayerAddButton.setOnAction(event -> addOvalLayer());
 
 		// 矩形レイヤー作成ボタン
-		rectangleLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				MarkLayer layer = MarkLayer.createRectangleLayer();
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-				urManager.execute(command);
-				layerListView.getSelectionModel().selectLast();
-				draw();
-			});
-		});
+		rectangleLayerAddButton.setOnAction(event -> addRectangleLayer());
 
 		// 直線レイヤー作成ボタン
-		lineLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				MarkLayer layer = MarkLayer.createLineLayer();
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-				urManager.execute(command);
-				layerListView.getSelectionModel().selectLast();
-				draw();
-			});
-		});
+		lineLayerAddButton.setOnAction(event -> addLineLayer());
 
 		// 円弧レイヤー作成ボタン
-		arcLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				MarkLayer layer = MarkLayer.createArcLayer();
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-				urManager.execute(command);
-				layerListView.getSelectionModel().selectLast();
-				draw();
-			});
-		});
+		arcLayerAddButton.setOnAction(event -> addArcLayer());
 
 		// 文字列レイヤー作成ボタン
-		textLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				MarkLayer layer = MarkLayer.createTextLayer();
-				Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-				urManager.execute(command);
-				layerListView.getSelectionModel().selectLast();
-				draw();
-			});
-		});
+		textLayerAddButton.setOnAction(event -> addTextLayer());
 
 		// 画像レイヤー
-		imageLayerAddButton.setOnAction(event -> {
-			getSelectedStopMark().ifPresent(stopMark -> {
-				fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
-					.ifPresent(r -> {
-						File imageFile = r.getFile();
-						config.setImageFileDir(imageFile.getParent());
-
-						try {
-							Image image = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
-							if (image.isError()) {
-								//イメージのロード中にエラーが検出されたことを示す。
-								image.getException().printStackTrace();
-								alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-							} else if (image.getHeight() == 0 || image.getWidth() == 0) {
-								alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
-							} else {
-								//エラーなし
-								MarkLayer layer = MarkLayer.createImageLayer(image, imageFile.getName());
-								Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
-								urManager.execute(command);
-								layerListView.getSelectionModel().selectLast();
-								draw();
-							}
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-							alert.showError("選択されたファイルを開くことができませんでした。");
-						}
-				});
-			});
-		});
+		imageLayerAddButton.setOnAction(event -> addImageLayer());
 
 		// レイヤーリスト
 		layerListView.setCellFactory(listView -> new MarkLayerCell());
@@ -389,6 +319,106 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 楕円レイヤーを追加します。
+	 */
+	private void addOvalLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createOvalLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			draw();
+		});
+	}
+
+	/**
+	 * 矩形レイヤーを追加します。
+	 */
+	private void addRectangleLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createRectangleLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			draw();
+		});
+	}
+
+	/**
+	 * 直線レイヤーを追加します。
+	 */
+	private void addLineLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createLineLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			draw();
+		});
+	}
+
+	/**
+	 * 円弧レイヤーを追加します。
+	 */
+	private void addArcLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createArcLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			draw();
+		});
+	}
+
+	/**
+	 * 文字列レイヤーを追加します。
+	 */
+	private void addTextLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createTextLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			draw();
+		});
+	}
+
+	/**
+	 * 画像レイヤーを追加します。
+	 */
+	private void addImageLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
+				.ifPresent(r -> {
+					File imageFile = r.getFile();
+					config.setImageFileDir(imageFile.getParent());
+
+					try {
+						Image image = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
+						if (image.isError()) {
+							//イメージのロード中にエラーが検出されたことを示す。
+							image.getException().printStackTrace();
+							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
+						} else if (image.getHeight() == 0 || image.getWidth() == 0) {
+							alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
+						} else {
+							//エラーなし
+							MarkLayer layer = MarkLayer.createImageLayer(image, imageFile.getName());
+							Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+							urManager.execute(command);
+							layerListView.getSelectionModel().selectLast();
+							draw();
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						alert.showError("選択されたファイルを開くことができませんでした。");
+					}
+				});
+		});
 	}
 
 	/**
