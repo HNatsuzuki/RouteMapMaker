@@ -99,7 +99,7 @@ public class CustomMarkDrawer {
             case MarkLayer.STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(params[4]);
-                gc.fillOval(params[0], params[1], params[2], params[3]);
+                gc.strokeOval(params[0], params[1], params[2], params[3]);
                 break;
             default:
                 throw new IllegalArgumentException("不正なレイヤーです。");
@@ -127,7 +127,7 @@ public class CustomMarkDrawer {
             case MarkLayer.STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(params[6]);
-                gc.fillRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
+                gc.strokeRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
                 break;
             default:
                 throw new IllegalArgumentException("不正なレイヤーです。");
@@ -193,7 +193,7 @@ public class CustomMarkDrawer {
             case MarkLayer.STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(lineWidth);
-                gc.strokeArc(x, y, width, lineWidth, startAngle, extent, arcType);
+                gc.strokeArc(x, y, width, height, startAngle, extent, arcType);
                 break;
             default:
                 throw new IllegalArgumentException("不正なレイヤーです。");
