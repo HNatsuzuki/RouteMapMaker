@@ -176,28 +176,24 @@ public class CustomMarkController implements Initializable{
 			previewBackground.setFill(previewBackgroundColorPicker.getValue());
 		});
 		layerColorPicker.setOnAction((ActionEvent) ->{
-			MarkLayer markLayer = selectedLayer.get();
-
-			if (markLayer != null) {
+			getSelectedMarkLayer().ifPresent(markLayer -> {
 				Command command = new ValueSetCommand<>(markLayer.getColorProperty(), layerColorPicker.getValue());
 				urManager.execute(command);
-			}
-			draw();
+				draw();
+			});
 		});
 		
 		ObservableList<PaintMode> paintModes = FXCollections.observableArrayList(PaintMode.values());
 		paintModeChoiceBox.setItems(paintModes);
 		paintModeChoiceBox.valueProperty().addListener((obs, oldValue, newValue) -> {
-			MarkLayer markLayer = selectedLayer.get();
-
-			if (markLayer != null) {
+			getSelectedMarkLayer().ifPresent(markLayer -> {
 				if (markLayer.getPaintMode() != newValue) {
 					Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
 					urManager.execute(command);
 				}
 
 				draw();
-			}
+			});
 		});
 
 		//スピナーについての設定は配列で一気に処理する
@@ -239,9 +235,7 @@ public class CustomMarkController implements Initializable{
 			}
 		});
 		fontSelectButton.setOnAction((ActionEvent) ->{
-			MarkLayer markLayer = selectedLayer.get();
-
-			if (markLayer != null) {
+			getSelectedMarkLayer().ifPresent(markLayer -> {
 				String current = markLayer.getFontName();
 				var dialog = new FontSelectDialogService(current, selectFontFactory);
 				dialog.showDialog().ifPresent(newFont -> {
@@ -250,19 +244,18 @@ public class CustomMarkController implements Initializable{
 						urManager.execute(command);
 					}
 				});
-			}
-			draw();
+
+				draw();
+			});
 		});
 		paramText.setOnAction((ActionEvent) ->{
-			MarkLayer markLayer = selectedLayer.get();
-
-			if (markLayer != null) {
+			getSelectedMarkLayer().ifPresent(markLayer -> {
 				if (markLayer.getText() != paramText.getText()) {
 					Command command = new ValueSetCommand<>(markLayer.getTextProperty(), paramText.getText());
 					urManager.execute(command);
 				}
 				draw();
-			}
+			});
 		});
 
 		// マーク未選択状態とのバインド
@@ -657,31 +650,32 @@ public class CustomMarkController implements Initializable{
 	}
 
 	private void parameterChanged(int index, Integer oldValue, Integer newValue) {
-		MarkLayer markLayer = selectedLayer.get();
-
-		if (markLayer == null) {
-			return;
-		}
-
-		if (markLayer.getParamsProportion()[index]) {
-			if (oldValue == markLayer.getParam(index) * PREVIEW_SIZE) {
-				Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
-						oldValue.doubleValue() / PREVIEW_SIZE, newValue.doubleValue() / PREVIEW_SIZE);
-				urManager.execute(command);
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (markLayer.getParamsProportion()[index]) {
+				if (oldValue == markLayer.getParam(index) * PREVIEW_SIZE) {
+					Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
+							oldValue.doubleValue() / PREVIEW_SIZE, newValue.doubleValue() / PREVIEW_SIZE);
+					urManager.execute(command);
+				}
+			} else {
+				if (oldValue == markLayer.getParam(index)) {
+					Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
+							oldValue.doubleValue(), newValue.doubleValue());
+					urManager.execute(command);
+				}
 			}
-		} else {
-			if (oldValue == markLayer.getParam(index)) {
-				Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
-						oldValue.doubleValue(), newValue.doubleValue());
-				urManager.execute(command);
-			}
-		}
 
-		draw();
+			draw();
+		});
 	}
 
 	/** 現在選択されている StopMark を Optional で返します。 */
 	private Optional<StopMark> getSelectedStopMark() {
 		return Optional.ofNullable(selectedMark.get());
+	}
+
+	/** 現在選択されている MarkLayer を Optional で返します。 */
+	private Optional<MarkLayer> getSelectedMarkLayer() {
+		return Optional.ofNullable(selectedLayer.get());
 	}
 }
