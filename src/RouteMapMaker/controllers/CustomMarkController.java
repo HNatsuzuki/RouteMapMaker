@@ -26,9 +26,12 @@ import RouteMapMaker.services.CustomMarkDrawer;
 import RouteMapMaker.services.FileOpenDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -54,6 +57,7 @@ public class CustomMarkController implements Initializable{
 	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
+	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private GraphicsContext gc;
 	private URElements urManager = new URElements();//undoとredoを管理する。
 	private final SelectFontFactory selectFontFactory;
@@ -124,18 +128,20 @@ public class CustomMarkController implements Initializable{
 		selectedMark.addListener((observable, oldValue, newValue) -> {
 			draw();
 
+			if (oldValue != null) {
+				isRotated.unbindBidirectional(oldValue.getRotateProperty());
+			}
+
 			if (newValue == null) {
 				layerListView.setItems(null);
 			} else {
 				StopMark mark = newValue;
 				layerListView.setItems(mark.getLayers());
+				isRotated.bindBidirectional(mark.getRotateProperty());
 
 				if (mark.getLayers().size() != 0) {
 					layerListView.getSelectionModel().selectFirst();
 				}
-
-				rotateMark.setDisable(false);
-				rotateMark.setSelected(mark.isRotated());
 			}
 		});
 		markListView.setItems(customMarks);
@@ -399,15 +405,13 @@ public class CustomMarkController implements Initializable{
 				draw();
 			}
 		});
-		rotateMark.setOnAction((ActionEvent)->{
-			StopMark stopMark = selectedMark.get();
 
-			if (stopMark != null) {
-				BooleanProperty property = stopMark.getRotateProperty();
-				Command command = new ValueSetCommand<>(property, rotateMark.isSelected());
-				urManager.execute(command);
-			}
-		});
+		// マーク回転チェックボックス
+		rotateMark.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedMark.get() == null, selectedMark));
+
+		// マーク回転チェック状態
+		isRotated.bindBidirectional(rotateMark.selectedProperty());
+		isRotated.addListener(this::isRotatedChanged);
 
 		// 元に戻す処理
 		undoMenuItem.setOnAction(event -> undo());
@@ -416,6 +420,26 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * マーク回転変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void isRotatedChanged(ObservableValue<?> observable, Boolean oldValue, Boolean newValue) {
+		StopMark stopMark = selectedMark.get();
+
+		if (stopMark != null) {
+			BooleanProperty property = stopMark.getRotateProperty();
+
+			if (property.get() != newValue) {
+				Command command = new ValueSetCommand<>(property, newValue);
+				urManager.execute(command);
+			}
+		}
 	}
 
 	/**
