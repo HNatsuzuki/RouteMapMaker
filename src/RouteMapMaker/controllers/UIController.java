@@ -75,7 +75,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -90,8 +89,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import RouteMapMaker.factories.FileChooserFactory;
 
 import RouteMapMaker.converters.BackgroundPropertiesConverter;
 import RouteMapMaker.converters.FreeItemListPropertiesConverter;
@@ -137,8 +134,11 @@ import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
+import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.FileOpenDialogService;
+import RouteMapMaker.services.FileSaveDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
@@ -185,7 +185,8 @@ public class UIController implements Initializable{
 	private boolean changeAllWindowOpened = false;
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
-	private final FileChooserFactory fileChooserFactory;
+	private final FileOpenDialogService fileOpenDialog;
+	private final FileSaveDialogService fileSaveDialog;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private final SelectFontFactory selectFontFactory;
@@ -297,11 +298,12 @@ public class UIController implements Initializable{
 	@FXML Spinner<Integer> re_staLAY_SP;
 	@FXML Spinner<Integer> staSize;
 
-	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory) {
+	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory, FileOpenDialogService fileOpenDialog, FileSaveDialogService fileSaveDialog) {
 		this.config = config;
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
-		this.fileChooserFactory = fileChooserFactory;
+		this.fileOpenDialog = fileOpenDialog;
+		this.fileSaveDialog = fileSaveDialog;
 		selectFontFactory = new SelectFontFactory(sceneFactory);
 		alert = new AlertService(alertFactory);
 	}
@@ -363,30 +365,31 @@ public class UIController implements Initializable{
 		});
 		RouteLoad.setOnAction((ActionEvent) ->{
 			// 駅名が書かれたファイルを選択
-			FileChooser fc = fileChooserFactory.createTextFileChooser();
-			fc.setTitle("ファイルを開く");
-			File selectedFile = fc.showOpenDialog(null);
 			ArrayList<String> staNames = new ArrayList<String>();
-			try{
-				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getTxtFilter()){
-					config.setTextFileDir(selectedFile.getParent());
-					BufferedReader br = new BufferedReader(new FileReader(selectedFile));
-					String line = br.readLine();
-					while(line != null) {
-						staNames.add(line);
-						line = br.readLine();
+
+			fileOpenDialog.showDialog("ファイルを開く", config.getTextFileDir(), FileType.TXT)
+				.filter(r -> r.getFileType() == FileType.TXT)
+				.ifPresent(r -> {
+					try {
+						var selectedFile = r.getFile();
+						config.setTextFileDir(selectedFile.getParent());
+						BufferedReader br = new BufferedReader(new FileReader(selectedFile));
+						String line = br.readLine();
+						while(line != null) {
+							staNames.add(line);
+							line = br.readLine();
+						}
+						br.close();
+						createNewLine(staNames);
+						lineDraw();
+					} catch (IOException e) {
+						alert.showError("エラーが発生しました。ファイルを読み込めません。");
+					} catch (Exception e) {
+						e.printStackTrace();
+						alert.showError("エラーが発生しました。\n"
+								+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
 					}
-					br.close();
-					createNewLine(staNames);
-					lineDraw();
-				}
-			}catch(IOException e){
-				alert.showError("エラーが発生しました。ファイルを読み込めません。");
-			}catch(Exception e){
-				e.printStackTrace();
-				alert.showError("エラーが発生しました。\n"
-						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
-			}
+			});
 		});
 		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
 		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
@@ -868,26 +871,28 @@ public class UIController implements Initializable{
 		});
 		
 		setBgImage.setOnAction((ActionEvent) -> {
-			FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
-			File imageFile = fileChooser.showOpenDialog(null);
-			if(imageFile == null) { return; } //画像が選択されなかった
-			try {
-				config.setImageFileDir(imageFile.getParent());
-				Image im = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
-				if(im.isError()) { //イメージのロード中にエラーが検出されたことを示す。
-					alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-					return;
-				}
-				Background prev_bg = background.clone();
-				background.setImage(im);
-				Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
-				urManager.push(command);
-				updateBackgroundComponents();
-				lineDraw();
-			} catch (Exception e) {
-				e.printStackTrace();
-				alert.showError("選択されたファイルを開くことができませんでした。");
-			}
+			fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
+				.ifPresent(r -> {
+					File imageFile = r.getFile();
+					config.setImageFileDir(imageFile.getParent());
+
+					try {
+						Image im = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
+						if (im.isError()) { //イメージのロード中にエラーが検出されたことを示す。
+							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
+							return;
+						}
+						Background prev_bg = background.clone();
+						background.setImage(im);
+						Command command = new SetBackgroundCommand(prev_bg, background.clone(), background);
+						urManager.push(command);
+						updateBackgroundComponents();
+						lineDraw();
+					} catch (Exception e) {
+						e.printStackTrace();
+						alert.showError("選択されたファイルを開くことができませんでした。");
+					}
+				});
 		});
 		
 		bgImageX.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE,Integer.MAX_VALUE,0));
@@ -1093,44 +1098,44 @@ public class UIController implements Initializable{
 			lineDraw();
 		});
 		mb_open.setOnAction((ActionEvent) ->{
-			FileChooser fc = fileChooserFactory.createSaveFileChooser();
-			fc.setTitle("ファイルを開く");
-			File selectedFile = fc.showOpenDialog(null);
-			try{
-				if (selectedFile == null) {
-					return;
-				}
+			fileOpenDialog.showDialog("ファイルを開く", config.getSaveFileDir(), FileType.RMM, FileType.ERM)
+				.ifPresent(r -> {
+					File selectedFile = r.getFile();
+					FileType fileType = r.getFileType();
+					config.setSaveFileDir(selectedFile.getParent());
 
-				config.setSaveFileDir(selectedFile.getParent());
-				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getErmFilter()){
-					urManager.clear();
-					dataFile = selectedFile;
-					readERMFile(dataFile);
-				}
-				if(fc.getSelectedExtensionFilter() == fileChooserFactory.getRmmFilter()){
-					urManager.clear();
-					dataFile = selectedFile;
-					readRMMFile(dataFile);
-				}
-			}catch(IOException e){
-				alert.showError("エラーが発生しました。ファイルを読み込めません。");
-				dataFile = null;
-			}catch(Exception e){
-				e.printStackTrace();
-				alert.showError("エラーが発生しました。データファイルに不備があります。\n"
-						+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
-				dataFile = null;
-			}
+					try {
+						if (fileType == FileType.ERM) {
+							urManager.clear();
+							dataFile = selectedFile;
+							readERMFile(dataFile);
+						} else if (fileType == FileType.RMM) {
+							urManager.clear();
+							dataFile = selectedFile;
+							readRMMFile(dataFile);
+						}
+					} catch (IOException e) {
+						alert.showError("エラーが発生しました。ファイルを読み込めません。");
+						dataFile = null;
+					} catch(Exception e) {
+						e.printStackTrace();
+						alert.showError("エラーが発生しました。データファイルに不備があります。\n"
+								+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
+						dataFile = null;
+					}
+				});
+
 		});
 		mb_save.setOnAction((ActionEvent) ->{
 			if(dataFile == null){
-				FileChooser fc = fileChooserFactory.createSaveFileChooser();
-				fc.setTitle("ファイルの保存");
-				dataFile = fc.showSaveDialog(null);
+				fileSaveDialog.showDialog("ファイルの保存", config.getSaveFileDir(), FileType.RMM, FileType.ERM)
+					.ifPresent(r -> {
+						dataFile = r.getFile();
+						config.setSaveFileDir(dataFile.getParent());
+					});
 			}
 			if(dataFile != null){
 				try{
-					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
@@ -1140,12 +1145,13 @@ public class UIController implements Initializable{
 			}
 		});
 		mb_saveAs.setOnAction((ActionEvent) ->{
-			FileChooser fc = fileChooserFactory.createSaveFileChooser();
-			fc.setTitle("ファイルの保存");
-			dataFile = fc.showSaveDialog(null);
+			fileSaveDialog.showDialog("ファイルの保存", config.getSaveFileDir(), FileType.RMM, FileType.ERM)
+				.ifPresent(r -> {
+					dataFile = r.getFile();
+					config.setSaveFileDir(dataFile.getParent());
+				});
 			if(dataFile != null){
 				try{
-					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
@@ -1258,7 +1264,7 @@ public class UIController implements Initializable{
 				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
 				editLoader.setControllerFactory(param -> {
 					if (param == CustomMarkController.class) {
-						return new CustomMarkController(selectFontFactory, alert, fileChooserFactory, config);
+						return new CustomMarkController(selectFontFactory, alert, fileOpenDialog, config);
 					} else {
 						throw new RuntimeException();
 					}
@@ -1298,7 +1304,7 @@ public class UIController implements Initializable{
 			//運転経路編集モードなら再描画
 			if(esGroup.getSelectedToggle() == leftEditButton) mapDraw();
 		});
-		fic = new FreeItemsController(freeItems, this, alert, fileChooserFactory, config);//コントローラーの初期化
+		fic = new FreeItemsController(freeItems, this, alert, fileOpenDialog, config);//コントローラーの初期化
 		mb_freeItem.setOnAction((ActionEvent e) ->{
 			//ショートカットキーを使って起動するとウィンドウを閉じてももう一度開く問題がある。
 			if(fiWindowOpened){
@@ -2664,36 +2670,30 @@ public class UIController implements Initializable{
 				WritableImage wi = canvas.snapshot(ssp, null);
 				drawer.setZoomRatio(1);;
 				mapDraw();
-				FileChooser fc = fileChooserFactory.createExportImageFileChooser();
-				fc.setTitle("画像の書き出し");
-				FileChooser.ExtensionFilter[] fcef = fileChooserFactory.getExportImageFilters();
-				File imageFile = fc.showSaveDialog(null);
-				int format = 0;//書き出し形式特定用
-				for(int k = 0; k < 4; k++){
-					if(fc.getSelectedExtensionFilter() == fcef[k]) format = k;
-				}
-				if(imageFile != null){
-					try{
+				fileSaveDialog.showDialog("画像の書き出し", config.getImageFileDir(), FileType.PNG)
+					.ifPresent(r -> {
+						File imageFile = r.getFile();
 						config.setImageFileDir(imageFile.getParent());
 
-						switch(format){
-						case 0:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "png", imageFile);
-							break;
-						case 1:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "jpg", imageFile);
-							break;
-						case 2:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "bmp", imageFile);
-							break;
-						case 3:
-							//PDFBoxを使って実装する
-							break;
+						try {
+							switch (r.getFileType()) {
+								case PNG:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "png", imageFile);
+									break;
+								case JPG:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "jpg", imageFile);
+									break;
+								case BMP:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "bmp", imageFile);
+									break;
+								default:
+									break;
+							}
+						} catch (IOException e) {
+							alert.showError("保存中にエラーが発生しました。");
 						}
-					}catch(IOException e){
-						alert.showError("保存中にエラーが発生しました。");
-					}
-				}
+				});
+
 				expStage.close();
 			}catch(RuntimeException e){
 				e.printStackTrace();

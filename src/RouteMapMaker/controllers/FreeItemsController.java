@@ -6,11 +6,12 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.FileChooserFactory;
 import RouteMapMaker.listcells.FreeItemCell;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.FreeItem;
+import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.services.AlertService;
+import RouteMapMaker.services.FileOpenDialogService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -24,13 +25,12 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.stage.FileChooser;
 
 public class FreeItemsController implements Initializable{
 	ObservableList<FreeItem> freeItems;
 	UIController uic;
 	private final AlertService alert;
-	private final FileChooserFactory fileChooserFactory;
+	private final FileOpenDialogService fileOpenDialog;
 	private final Configuration config;
 	
 	@FXML Button addImage;
@@ -52,11 +52,11 @@ public class FreeItemsController implements Initializable{
 	@FXML ChoiceBox<String> p_style;
 	@FXML Button selectFont;
 	
-	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertService alert, FileChooserFactory fileChooserFactory, Configuration config) {
+	public FreeItemsController(ObservableList<FreeItem> freeItems, UIController uic, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
 		this.freeItems = freeItems;
 		this.uic = uic;
 		this.alert = alert;
-		this.fileChooserFactory = fileChooserFactory;
+		this.fileOpenDialog = fileOpenDialog;
 		this.config = config;
 	}
 	@Override
@@ -66,33 +66,34 @@ public class FreeItemsController implements Initializable{
 		itemList.setItems(this.freeItems);
 		addImage.setOnAction((ActionEvent) ->{
 			FreeItem fi = new FreeItem(FreeItem.IMAGE);
-			FileChooser fileChooser = fileChooserFactory.createImportImageFileChooser();
-			File imageFile = fileChooser.showOpenDialog(null);
-			if(imageFile != null){
-				try {
-					config.setImageFileDir(imageFile.getParent());
-					fi.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
-					fi.setText(imageFile.getName());
-					if(fi.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
-						fi.getImage().getException().printStackTrace();
-						alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-					}else{//エラーなし
-						//初期値設定
-						fi.getParams()[0].set(100);//X座標
-						fi.getParams()[1].set(100);//Y座標
-						fi.getParams()[2].set(fi.getImage().getWidth());
-						fi.getParams()[3].set(fi.getImage().getHeight());
-						fi.getParams()[4].set(0);//回転角度
-						freeItems.add(0,fi);
-						itemList.getSelectionModel().select(0);
-						uic.ReDraw();
+			fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
+				.ifPresent(r -> {
+					File imageFile = r.getFile();
+
+					try {
+						config.setImageFileDir(imageFile.getParent());
+						fi.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
+						fi.setText(imageFile.getName());
+						if(fi.getImage().isError()){//イメージのロード中にエラーが検出されたことを示す。
+							fi.getImage().getException().printStackTrace();
+							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
+						}else{//エラーなし
+							//初期値設定
+							fi.getParams()[0].set(100);//X座標
+							fi.getParams()[1].set(100);//Y座標
+							fi.getParams()[2].set(fi.getImage().getWidth());
+							fi.getParams()[3].set(fi.getImage().getHeight());
+							fi.getParams()[4].set(0);//回転角度
+							freeItems.add(0,fi);
+							itemList.getSelectionModel().select(0);
+							uic.ReDraw();
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						alert.showError("選択されたファイルを開くことができませんでした。");
 					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					alert.showError("選択されたファイルを開くことができませんでした。");
-				}
-			}
+				});
 		});
 		addText.setOnAction((ActionEvent) ->{
 			FreeItem fi = new FreeItem(FreeItem.TEXT);
