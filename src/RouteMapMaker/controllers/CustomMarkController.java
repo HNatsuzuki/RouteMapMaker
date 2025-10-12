@@ -28,6 +28,7 @@ import RouteMapMaker.services.FileOpenDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -264,23 +265,32 @@ public class CustomMarkController implements Initializable{
 			}
 		});
 
+		// マーク未選択状態とのバインド
+		BooleanBinding markNotSelectedBinding = Bindings.isNull(selectedMark);
+
 		// 楕円レイヤー作成ボタン
 		ovalLayerAddButton.setOnAction(event -> addOvalLayer());
+		ovalLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// 矩形レイヤー作成ボタン
 		rectangleLayerAddButton.setOnAction(event -> addRectangleLayer());
+		rectangleLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// 直線レイヤー作成ボタン
 		lineLayerAddButton.setOnAction(event -> addLineLayer());
+		lineLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// 円弧レイヤー作成ボタン
 		arcLayerAddButton.setOnAction(event -> addArcLayer());
+		arcLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// 文字列レイヤー作成ボタン
 		textLayerAddButton.setOnAction(event -> addTextLayer());
+		textLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// 画像レイヤー
 		imageLayerAddButton.setOnAction(event -> addImageLayer());
+		imageLayerAddButton.disableProperty().bind(markNotSelectedBinding);
 
 		// レイヤーリスト
 		layerListView.setCellFactory(listView -> new MarkLayerCell());
@@ -306,7 +316,7 @@ public class CustomMarkController implements Initializable{
 		layerDownButton.setOnAction(event -> moveDownSelectedLayer());
 
 		// マーク回転チェックボックス
-		rotateMark.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedMark.get() == null, selectedMark));
+		rotateMark.disableProperty().bind(markNotSelectedBinding);
 
 		// マーク回転チェック状態
 		isRotated.bindBidirectional(rotateMark.selectedProperty());
