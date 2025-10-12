@@ -7,6 +7,7 @@ import RouteMapMaker.factories.AlertFactory;
 import RouteMapMaker.factories.SceneFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.FileSaveDialogService;
 import RouteMapMaker.services.MainURManager;
 import RouteMapMaker.factories.FileChooserFactory;
 import javafx.application.Application;
@@ -24,6 +25,7 @@ public class Main extends Application {
 	private final SceneFactory sceneFactory = new SceneFactory(config);
 	private final AlertFactory alertFactory = new AlertFactory(config);
 	private final FileChooserFactory fileChooserFactory = new FileChooserFactory(config);
+	private final FileSaveDialogService fileSaveDialogService = new FileSaveDialogService();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -32,7 +34,7 @@ public class Main extends Application {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/UIController.fxml"));
 			loader.setControllerFactory(param -> {
 				if (param == UIController.class) {
-					return new UIController(config, sceneFactory, alertFactory, fileChooserFactory);
+					return new UIController(config, sceneFactory, alertFactory, fileChooserFactory, fileSaveDialogService);
 				} else {
 					throw new RuntimeException();
 				}

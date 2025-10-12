@@ -137,8 +137,10 @@ import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
+import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.ErrorReporter;
+import RouteMapMaker.services.FileSaveDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.IntegerSpinnerEventHandler;
 import RouteMapMaker.services.MainURManager;
@@ -186,6 +188,7 @@ public class UIController implements Initializable{
 	private boolean shortCutKeyPressed = false;//コマンドorCtrlキーが押されてるか否か
 	private boolean isLoading = false; //読み込み処理でUIのlistenerが反応するため，それの処理
 	private final FileChooserFactory fileChooserFactory;
+	private final FileSaveDialogService fileSaveDialog;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
 	private final SelectFontFactory selectFontFactory;
@@ -297,11 +300,12 @@ public class UIController implements Initializable{
 	@FXML Spinner<Integer> re_staLAY_SP;
 	@FXML Spinner<Integer> staSize;
 
-	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory) {
+	public UIController(Configuration config, SceneFactory sceneFactory, AlertFactory alertFactory, FileChooserFactory fileChooserFactory, FileSaveDialogService fileSaveDialog) {
 		this.config = config;
 		this.sceneFactory = sceneFactory;
 		this.alertFactory = alertFactory;
 		this.fileChooserFactory = fileChooserFactory;
+		this.fileSaveDialog = fileSaveDialog;
 		selectFontFactory = new SelectFontFactory(sceneFactory);
 		alert = new AlertService(alertFactory);
 	}
@@ -1124,13 +1128,14 @@ public class UIController implements Initializable{
 		});
 		mb_save.setOnAction((ActionEvent) ->{
 			if(dataFile == null){
-				FileChooser fc = fileChooserFactory.createSaveFileChooser();
-				fc.setTitle("ファイルの保存");
-				dataFile = fc.showSaveDialog(null);
+				fileSaveDialog.showDialog("ファイルの保存", config.getSaveFileDir(), FileType.RMM, FileType.ERM)
+					.ifPresent(r -> {
+						dataFile = r.getFile();
+						config.setSaveFileDir(dataFile.getParent());
+					});
 			}
 			if(dataFile != null){
 				try{
-					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
@@ -1140,12 +1145,13 @@ public class UIController implements Initializable{
 			}
 		});
 		mb_saveAs.setOnAction((ActionEvent) ->{
-			FileChooser fc = fileChooserFactory.createSaveFileChooser();
-			fc.setTitle("ファイルの保存");
-			dataFile = fc.showSaveDialog(null);
+			fileSaveDialog.showDialog("ファイルの保存", config.getSaveFileDir(), FileType.RMM, FileType.ERM)
+				.ifPresent(r -> {
+					dataFile = r.getFile();
+					config.setSaveFileDir(dataFile.getParent());
+				});
 			if(dataFile != null){
 				try{
-					config.setSaveFileDir(dataFile.getParent());
 					saveRMMFile(dataFile);
 					alert.showInformationAsync("保存しました。\n\n※このダイアログはenterキーで閉じます");
 				}catch(IOException e){
@@ -2664,36 +2670,30 @@ public class UIController implements Initializable{
 				WritableImage wi = canvas.snapshot(ssp, null);
 				drawer.setZoomRatio(1);;
 				mapDraw();
-				FileChooser fc = fileChooserFactory.createExportImageFileChooser();
-				fc.setTitle("画像の書き出し");
-				FileChooser.ExtensionFilter[] fcef = fileChooserFactory.getExportImageFilters();
-				File imageFile = fc.showSaveDialog(null);
-				int format = 0;//書き出し形式特定用
-				for(int k = 0; k < 4; k++){
-					if(fc.getSelectedExtensionFilter() == fcef[k]) format = k;
-				}
-				if(imageFile != null){
-					try{
+				fileSaveDialog.showDialog("画像の書き出し", config.getImageFileDir(), FileType.PNG)
+					.ifPresent(r -> {
+						File imageFile = r.getFile();
 						config.setImageFileDir(imageFile.getParent());
 
-						switch(format){
-						case 0:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "png", imageFile);
-							break;
-						case 1:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "jpg", imageFile);
-							break;
-						case 2:
-							ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "bmp", imageFile);
-							break;
-						case 3:
-							//PDFBoxを使って実装する
-							break;
+						try {
+							switch (r.getFileType()) {
+								case PNG:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "png", imageFile);
+									break;
+								case JPG:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "jpg", imageFile);
+									break;
+								case BMP:
+									ImageIO.write(SwingFXUtils.fromFXImage(wi,null), "bmp", imageFile);
+									break;
+								default:
+									break;
+							}
+						} catch (IOException e) {
+							alert.showError("保存中にエラーが発生しました。");
 						}
-					}catch(IOException e){
-						alert.showError("保存中にエラーが発生しました。");
-					}
-				}
+				});
+
 				expStage.close();
 			}catch(RuntimeException e){
 				e.printStackTrace();

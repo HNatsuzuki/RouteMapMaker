@@ -4,7 +4,9 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+import RouteMapMaker.converters.FileTypeConverter;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.enums.FileType;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 
@@ -46,22 +48,29 @@ public class FileChooserFactory {
         this.config = config;
     }
 
-    /**
-     * 画像出力用の FileChooser を作成します。
-     *
-     * @return 画像出力用の FileChooser
-     */
-    public FileChooser createExportImageFileChooser() {
+    public static FileChooser create(String title, String initialDirectory, FileType... fileTypes) {
         FileChooser chooser = new FileChooser();
-        chooser.getExtensionFilters().add(exportImageFilters.get(0));
-        // chooser.getExtensionFilters().add(exportImageFilters.get(1));
-        // chooser.getExtensionFilters().add(exportImageFilters.get(2));
-        // chooser.getExtensionFilters().add(exportImageFilters.get(3));
-        File dir = new File(config.getImageFileDir());
 
-        if (dir.exists()) {
-            chooser.setInitialDirectory(dir);
+        if (title != null) {
+            chooser.setTitle(title);
         }
+
+        if (initialDirectory != null) {
+            File dir = new File(initialDirectory);
+    
+            if (dir.exists()) {
+                chooser.setInitialDirectory(dir);
+            }
+        }
+
+        if (fileTypes == null || fileTypes.length == 0) {
+            chooser.getExtensionFilters().add(FileTypeConverter.toExtensionFilter(FileType.ALL));
+        } else {
+            for (FileType filetype : fileTypes) {
+                chooser.getExtensionFilters().add(FileTypeConverter.toExtensionFilter(filetype));
+            }
+        }
+
 
         return chooser;
     }
