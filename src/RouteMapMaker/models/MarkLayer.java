@@ -290,6 +290,23 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public void setText(String text){
 		this.text.set(text);
 	}
+
+	/** テキストを保持するかどうか */
+	public boolean hasText() {
+		switch (getType()) {
+			case TEXT:
+				return true;
+			case OVAL:
+			case ARC:
+			case RECT:
+			case LINE:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
 	public String getFontName(){
 		return this.fontName.get();
 	}

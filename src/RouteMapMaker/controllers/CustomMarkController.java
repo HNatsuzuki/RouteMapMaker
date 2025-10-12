@@ -35,6 +35,8 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -63,6 +65,7 @@ public class CustomMarkController implements Initializable{
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
 	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
+	private final StringProperty textParameter = new SimpleStringProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private GraphicsContext gc;
 	private URElements urManager = new URElements();//undoとredoを管理する。
@@ -231,29 +234,20 @@ public class CustomMarkController implements Initializable{
 				draw();
 			}
 		});
-		fontSelectButton.setOnAction((ActionEvent) ->{
-			getSelectedMarkLayer().ifPresent(markLayer -> {
-				String current = markLayer.getFontName();
-				var dialog = new FontSelectDialogService(current, selectFontFactory);
-				dialog.showDialog().ifPresent(newFont -> {
-					if (!current.equals(newFont)) {
-						Command command = new ValueSetCommand<>(markLayer.getFontNameProperty(), current, newFont);
-						urManager.execute(command);
-					}
-				});
 
-				draw();
-			});
-		});
-		paramText.setOnAction((ActionEvent) ->{
-			getSelectedMarkLayer().ifPresent(markLayer -> {
-				if (markLayer.getText() != paramText.getText()) {
-					Command command = new ValueSetCommand<>(markLayer.getTextProperty(), paramText.getText());
-					urManager.execute(command);
-				}
-				draw();
-			});
-		});
+		// テキストデータを保持するか
+		BooleanBinding hasTextBinding = Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasText(), selectedLayer);
+
+		// フォント選択ボタン
+		fontSelectButton.disableProperty().bind(hasTextBinding.not());
+		fontSelectButton.setOnAction(event -> selectFont());
+
+		// テキストパラメータ
+		paramText.disableProperty().bind(hasTextBinding.not());
+
+		// テキストパラメータ入力値
+		textParameter.bindBidirectional(paramText.textProperty());
+		textParameter.addListener(this::textParameterChanged);
 
 		// マーク未選択状態とのバインド
 		BooleanBinding markNotSelectedBinding = Bindings.isNull(selectedMark);
@@ -328,6 +322,40 @@ public class CustomMarkController implements Initializable{
 		getSelectedMarkLayer().ifPresent(markLayer -> {
 			if (markLayer.getPaintMode() != newValue) {
 				Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
+				urManager.execute(command);
+				draw();
+			}
+		});
+	}
+
+	/**
+	 * フォント選択を行います。
+	 */
+	private void selectFont() {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			String current = markLayer.getFontName();
+			var dialog = new FontSelectDialogService(current, selectFontFactory);
+			dialog.showDialog().ifPresent(newFont -> {
+				if (!current.equals(newFont)) {
+					Command command = new ValueSetCommand<>(markLayer.getFontNameProperty(), current, newFont);
+					urManager.execute(command);
+					draw();
+				}
+			});
+		});
+	}
+
+	/**
+	 * テキストパラメータ変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void textParameterChanged(ObservableValue<?> observable, String oldValue, String newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (!markLayer.getText().equals(newValue)) {
+				Command command = new ValueSetCommand<>(markLayer.getTextProperty(), newValue);
 				urManager.execute(command);
 				draw();
 			}
@@ -446,12 +474,20 @@ public class CustomMarkController implements Initializable{
 			if (oldValue.hasPaintMode()) {
 				selectedPaintMode.unbindBidirectional(oldValue.paintModeProperty());
 			}
+
+			if (oldValue.hasText()) {
+				textParameter.unbindBidirectional(oldValue.getTextProperty());
+			}
 		}
 		if (newValue != null) {
 			setParameters(newValue);
 
 			if (newValue.hasPaintMode()) {
 				selectedPaintMode.bindBidirectional(newValue.paintModeProperty());
+			}
+
+			if (newValue.hasText()) {
+				textParameter.bindBidirectional(newValue.getTextProperty());
 			}
 		}
 	}
@@ -584,10 +620,6 @@ public class CustomMarkController implements Initializable{
 	}
 
 	void setParameters(MarkLayer l){//各種パラメーターを設定していく。
-		if(l.getType() != MarkLayer.TEXT){
-			paramText.setDisable(true);
-			fontSelectButton.setDisable(true);
-		}
 		//↑パラメータごとに設定した方が早いゾーン。↓図形ごとに設定するゾーン
 		if(l.getType() == MarkLayer.OVAL){
 			layerColorPicker.setDisable(false);
@@ -636,9 +668,6 @@ public class CustomMarkController implements Initializable{
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("REGULAR","BOLD","ITALIC","BOLD_ITALIC");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(4));
-			fontSelectButton.setDisable(false);
-			paramText.setDisable(false);
-			paramText.setText(l.getText());
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){
