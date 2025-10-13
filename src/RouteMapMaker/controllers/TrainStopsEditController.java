@@ -27,17 +27,17 @@ public class TrainStopsEditController implements Initializable{
 	
 	private Line line;
 	private Train train;
-	private ObservableList<String> olB = FXCollections.observableArrayList();
-	private ObservableList<String> olC = FXCollections.observableArrayList();
+	private ObservableList<String> stationList = FXCollections.observableArrayList();
+	private ObservableList<String> trainStopList = FXCollections.observableArrayList();
 	private final AlertService alert;
 	
-	@FXML ToggleButton Insert;
-	@FXML ToggleButton Delete;
-	@FXML ToggleButton InsertAll;
-	@FXML ToggleButton DeleteAll;
-	@FXML Button Close;
-	@FXML ListView listB;
-	@FXML ListView listC;
+	@FXML ToggleButton insertButton;
+	@FXML ToggleButton deleteButton;
+	@FXML ToggleButton insertAllButton;
+	@FXML ToggleButton deleteAllButton;
+	@FXML Button closeButton;
+	@FXML ListView stationListView;
+	@FXML ListView trainStopListView;
 	@FXML Label infoLabel;
 
 	public TrainStopsEditController(AlertService alert) {
@@ -56,16 +56,16 @@ public class TrainStopsEditController implements Initializable{
 				+ "別の駅を選択してみてください\n\n"
 				+ "削除：削除ボタンを押してから\n"
 				+ "右枠で削除する駅を選択する。");
-		listB.setItems(olB);
-		listC.setItems(olC);
+		stationListView.setItems(stationList);
+		trainStopListView.setItems(trainStopList);
 		ToggleGroup group = new ToggleGroup();
-		Insert.setToggleGroup(group);
-		Delete.setToggleGroup(group);
-		InsertAll.setToggleGroup(group);
-		DeleteAll.setToggleGroup(group);
+		insertButton.setToggleGroup(group);
+		deleteButton.setToggleGroup(group);
+		insertAllButton.setToggleGroup(group);
+		deleteAllButton.setToggleGroup(group);
 		group.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
-					if(group.getSelectedToggle() == InsertAll){
+					if(group.getSelectedToggle() == insertAllButton){
 						Optional<ButtonType> result = alert.showConfirmation("全ての駅を停車駅として追加してよろしいですか？", "選択路線駅全追加の確認");
 						if(result.get() == ButtonType.OK){
 							//全削除してから再度追加だと既存駅の属性が失われるので足りない分を追加する。
@@ -77,31 +77,31 @@ public class TrainStopsEditController implements Initializable{
 								}
 								count++;
 							}
-							olC.clear();
+							trainStopList.clear();
 							for(int i = 0; i < train.getStops().size(); i++){
-								olC.add(train.getStops().get(i).getSta().getName());
+								trainStopList.add(train.getStops().get(i).getSta().getName());
 							}
-							olC.add("<最後に追加>");
-							listC.getSelectionModel().select(0);
+							trainStopList.add("<最後に追加>");
+							trainStopListView.getSelectionModel().select(0);
 						}
-						InsertAll.setSelected(false);
+						insertAllButton.setSelected(false);
 					}
-					if(group.getSelectedToggle() == DeleteAll){
+					if(group.getSelectedToggle() == deleteAllButton){
 						Optional<ButtonType> result = alert.showConfirmation("全ての停車駅を削除してよろしいですか？", "選択駅全消去の確認");
 						if(result.get() == ButtonType.OK){
 							//全消去処理
 							train.getStops().clear();
-							olC.clear();
-							olC.add("<最後に追加>");
-							listC.getSelectionModel().select(train.getStops().size());
+							trainStopList.clear();
+							trainStopList.add("<最後に追加>");
+							trainStopListView.getSelectionModel().select(train.getStops().size());
 						}
-						DeleteAll.setSelected(false);
+						deleteAllButton.setSelected(false);
 					}
 				});
-		listB.setOnMouseClicked((MouseEvent) ->{
-			if(group.getSelectedToggle() == Insert){
-				int indexB = listB.getSelectionModel().getSelectedIndex();
-				int indexC = listC.getSelectionModel().getSelectedIndex();
+		stationListView.setOnMouseClicked((MouseEvent) ->{
+			if(group.getSelectedToggle() == insertButton){
+				int indexB = stationListView.getSelectionModel().getSelectedIndex();
+				int indexC = trainStopListView.getSelectionModel().getSelectedIndex();
 				if(indexC == -1){
 					alert.showError("停車駅を追加する位置を選んでください。");
 				}else if(indexB != -1){
@@ -134,31 +134,31 @@ public class TrainStopsEditController implements Initializable{
 					}else{
 						alert.showWarning("停車駅は駅一覧の上から順である必要があります。");
 					}
-					olC.clear();
+					trainStopList.clear();
 					for(int i = 0; i < train.getStops().size(); i++){
-						olC.add(train.getStops().get(i).getSta().getName());
+						trainStopList.add(train.getStops().get(i).getSta().getName());
 					}
-					olC.add("<最後に追加>");
-					listC.getSelectionModel().select(indexC + 1);
+					trainStopList.add("<最後に追加>");
+					trainStopListView.getSelectionModel().select(indexC + 1);
 				}
 			}
 		});
-		listC.setOnMouseClicked((MouseEvent) ->{
+		trainStopListView.setOnMouseClicked((MouseEvent) ->{
 			//動作に不具合は見られないけどIndexOutOfBoundsExceptionが出てくる
-			if(group.getSelectedToggle() == Delete){
-				int indexC = listC.getSelectionModel().getSelectedIndex();
+			if(group.getSelectedToggle() == deleteButton){
+				int indexC = trainStopListView.getSelectionModel().getSelectedIndex();
 				if(indexC != -1 && indexC < train.getStops().size()){
 					train.getStops().remove(indexC);
-					olC.clear();
+					trainStopList.clear();
 					for(int i = 0; i < train.getStops().size(); i++){
-						olC.add(train.getStops().get(i).getSta().getName());
+						trainStopList.add(train.getStops().get(i).getSta().getName());
 					}
-					olC.add("<最後に追加>");
-					listC.getSelectionModel().select(train.getStops().size());
+					trainStopList.add("<最後に追加>");
+					trainStopListView.getSelectionModel().select(train.getStops().size());
 				}
 			}
 		});
-		Close.setOnAction(event -> {
+		closeButton.setOnAction(event -> {
 			((Stage)((Node)event.getSource()).getScene().getWindow()).close();
 		});
 	}
@@ -167,17 +167,17 @@ public class TrainStopsEditController implements Initializable{
 		this.line = line;
 		this.train = train;
 		//listBの初期設定
-		olB.clear();
+		stationList.clear();
 		for(int i = 0; i < line.getStations().size(); i++){
-			olB.add(line.getStations().get(i).getName());
+			stationList.add(line.getStations().get(i).getName());
 		}
 		//listCの初期設定
-		olC.clear();
+		trainStopList.clear();
 		for(int i = 0; i < train.getStops().size(); i++){
-			olC.add(train.getStops().get(i).getSta().getName());
+			trainStopList.add(train.getStops().get(i).getSta().getName());
 		}
-		olC.add("<最後に追加>");
-		listC.getSelectionModel().select(train.getStops().size());
+		trainStopList.add("<最後に追加>");
+		trainStopListView.getSelectionModel().select(train.getStops().size());
 	}
 
 }
