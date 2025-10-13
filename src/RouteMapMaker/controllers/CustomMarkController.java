@@ -63,6 +63,7 @@ public class CustomMarkController implements Initializable{
 	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
 	private final ObjectProperty<ObservableList<MarkLayer>> layers = new SimpleObjectProperty<>(FXCollections.observableArrayList());
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedMarkIndex = new SimpleIntegerProperty();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
 	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
@@ -135,6 +136,7 @@ public class CustomMarkController implements Initializable{
 		drawer = new CustomMarkDrawer(gc);
 		StopMarkCell cellFactory = new StopMarkCell();
 		markListView.setCellFactory(cellFactory);
+		selectedMarkIndex.bind(markListView.getSelectionModel().selectedIndexProperty());
 		selectedMark.bind(markListView.getSelectionModel().selectedItemProperty());
 		selectedMark.addListener((observable, oldValue, newValue) -> {
 			draw();
@@ -156,27 +158,15 @@ public class CustomMarkController implements Initializable{
 			}
 		});
 		markListView.setItems(customMarks);
-		markAddButton.setOnAction((ActionEvent) ->{//空のマークを追加する。
-			System.out.println("add called.");
-			StopMark newMark = new StopMark();
-			Command command = new AddListItemCommand<>(customMarks, newMark);
-			urManager.execute(command);
-			markListView.getSelectionModel().selectLast();
-		});
-		markCopyButton.setOnAction((ActionEvent) ->{//マークをコピー
-			getSelectedStopMark().ifPresent(stopMark -> {
-				StopMark cloneMark = stopMark.clone();
-				Command command = new AddListItemCommand<>(customMarks, cloneMark);
-				urManager.execute(command);
-			});
-		});
-		markDeleteButton.setOnAction((ActionEvent) ->{
-			int index = markListView.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Command command = new RemoveListItemCommand<>(customMarks, index);
-				urManager.execute(command);
-			}
-		});
+
+		// マーク追加ボタン
+		markAddButton.setOnAction(event -> addNewMark());
+
+		// マーク複製
+		markCopyButton.setOnAction(event -> copySelectedMark());
+
+		// マーク削除
+		markDeleteButton.setOnAction(event -> deleteSelectedMark());
 
 		// プレビューの背景色選択
 		previewBackgroundColorPicker.setValue(Color.BLACK);//初期値は黒。
@@ -312,6 +302,37 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 新しくマークを追加します。
+	 */
+	private void addNewMark() {
+		StopMark newMark = new StopMark();
+		Command command = new AddListItemCommand<>(customMarks, newMark);
+		urManager.execute(command);
+		markListView.getSelectionModel().selectLast();
+	}
+
+	/**
+	 * 選択中のマークを複製します。
+	 */
+	private void copySelectedMark() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			StopMark cloneMark = stopMark.clone();
+			Command command = new AddListItemCommand<>(customMarks, cloneMark);
+			urManager.execute(command);
+		});
+	}
+
+	/**
+	 * 選択中のマークを削除します。
+	 */
+	private void deleteSelectedMark() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			Command command = new RemoveListItemCommand<>(customMarks, stopMark);
+			urManager.execute(command);
+		});
 	}
 
 	/**

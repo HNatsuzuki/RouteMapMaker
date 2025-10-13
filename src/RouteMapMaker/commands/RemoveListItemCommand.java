@@ -24,6 +24,16 @@ public class RemoveListItemCommand<T> implements Command {
      * コンストラクタ
      *
      * @param list 削除するリスト
+     * @param item 削除する値
+     */
+    public RemoveListItemCommand(List<T> list, T item) {
+        this(list, list.indexOf(item), item);
+    }
+
+    /**
+     * コンストラクタ
+     *
+     * @param list 削除するリスト
      * @param index 削除するリストのインデックス
      * @param item 削除する値
      */
