@@ -38,8 +38,8 @@ public class TrainStopsEditController implements Initializable{
 	@FXML ToggleButton insertAllButton;
 	@FXML ToggleButton deleteAllButton;
 	@FXML Button closeButton;
-	@FXML ListView stationListView;
-	@FXML ListView trainStopListView;
+	@FXML ListView<String> stationListView;
+	@FXML ListView<String> trainStopListView;
 	@FXML Label infoLabel;
 
 	public TrainStopsEditController(Line line, Train train, AlertService alert) {
