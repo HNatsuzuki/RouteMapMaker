@@ -61,6 +61,7 @@ import javafx.scene.shape.Rectangle;
 public class CustomMarkController implements Initializable{
 	private static final int PREVIEW_SIZE = 40;
 	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
+	private final ObjectProperty<ObservableList<MarkLayer>> layers = new SimpleObjectProperty<>(FXCollections.observableArrayList());
 	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
@@ -142,10 +143,10 @@ public class CustomMarkController implements Initializable{
 			}
 
 			if (newValue == null) {
-				layerListView.setItems(null);
+				layers.set(FXCollections.observableArrayList());
 			} else {
 				StopMark mark = newValue;
-				layerListView.setItems(mark.getLayers());
+				layers.set(mark.getLayers());
 				isRotated.bindBidirectional(mark.getRotateProperty());
 
 				if (mark.getLayers().size() != 0) {
@@ -278,6 +279,7 @@ public class CustomMarkController implements Initializable{
 
 		// レイヤーリスト
 		layerListView.setCellFactory(listView -> new MarkLayerCell());
+		layerListView.itemsProperty().bind(layers);
 
 		// 選択中レイヤーのインデックス
 		selectedLayerIndex.bind(layerListView.getSelectionModel().selectedIndexProperty());
