@@ -4,11 +4,14 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
+import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
+import RouteMapMaker.models.PaintMode;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.commands.AddListItemCommand;
@@ -17,19 +20,29 @@ import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.ValueSetCommand;
 import RouteMapMaker.commands.SwapListItemDownCommand;
 import RouteMapMaker.commands.SwapListItemUpCommand;
+import RouteMapMaker.listcells.MarkLayerCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.services.AlertService;
 import RouteMapMaker.services.CustomMarkDrawer;
 import RouteMapMaker.services.FileOpenDialogService;
 import RouteMapMaker.services.FontSelectDialogService;
 import RouteMapMaker.services.URElements;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
@@ -41,18 +54,22 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Stage;
 
 public class CustomMarkController implements Initializable{
-	final int prevSize = 40;
-	private Stage stage;//このstageを保持する。
-	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタムマークの集合
-	private GraphicsContext gc;
-	private ObservableList<String> LayerListOb = FXCollections.observableArrayList();
-	private ObservableList<String> paramDrawOb = FXCollections.observableArrayList();//fill(0)かStroke(1)かのパラメーターにセット
+	private static final int PREVIEW_SIZE = 40;
+	private final ObservableList<StopMark> customMarks;//カスタムマークの集合
+	private final ObjectProperty<ObservableList<MarkLayer>> layers = new SimpleObjectProperty<>(FXCollections.observableArrayList());
+	private final ObjectProperty<StopMark> selectedMark = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedMarkIndex = new SimpleIntegerProperty();
+	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
+	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
+	private final ObjectProperty<Color> selectedLayerColor = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedStyleIndex = new SimpleIntegerProperty();
+	private final StringProperty textParameter = new SimpleStringProperty();
+	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private URElements urManager = new URElements();//undoとredoを管理する。
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
@@ -60,51 +77,51 @@ public class CustomMarkController implements Initializable{
 	private final FileOpenDialogService fileOpenDialog;
 	private final Configuration config;
 	
-	@FXML Canvas markCanvas;
-	@FXML Pane prevPane;
-	@FXML Rectangle bgRect;
-	@FXML ColorPicker prevbgSetter;
-	@FXML ColorPicker paramColor;
-	@FXML ChoiceBox<String> paramDraw;
-	@FXML CheckBox rotateMark;
-	@FXML TextField paramText;
-	@FXML Label paramL1;
-	@FXML Label paramL2;
-	@FXML Label paramL3;
-	@FXML Label paramL4;
-	@FXML Label paramL5;
-	@FXML Label paramL6;
-	@FXML Label paramL7;
-	@FXML Label paramL8;
-	@FXML Label paramLT;
-	@FXML Spinner<Integer> paramS1;
-	@FXML Spinner<Integer> paramS2;
-	@FXML Spinner<Integer> paramS3;
-	@FXML Spinner<Integer> paramS4;
-	@FXML Spinner<Integer> paramS5;
-	@FXML Spinner<Integer> paramS6;
-	@FXML Spinner<Integer> paramS7;
-	@FXML Spinner<Integer> paramS8;
-	@FXML ChoiceBox<String> paramST;
-	@FXML Button addOval;
-	@FXML Button addRect;
-	@FXML Button addLine;
-	@FXML Button addArc;
-	@FXML Button addText;
-	@FXML Button addImage;
-	@FXML Button selectFont;
-	@FXML ListView<StopMark> MarkList;
-	@FXML ListView<String> LayerList;
-	@FXML Button MarkAdd;
-	@FXML Button MarkCopy;
-	@FXML Button MarkDelete;
-	@FXML Button LayerDelete;
-	@FXML Button Layer_UP;
-	@FXML Button Layer_DOWN;
-	@FXML MenuItem Undo;
-	@FXML MenuItem Redo;
+	@FXML private Canvas markCanvas;
+	@FXML private Rectangle previewBackground;
+	@FXML private ColorPicker previewBackgroundColorPicker;
+	@FXML private ColorPicker layerColorPicker;
+	@FXML private ChoiceBox<PaintMode> paintModeChoiceBox;
+	@FXML private CheckBox rotateMark;
+	@FXML private TextField paramText;
+	@FXML private Label paramL1;
+	@FXML private Label paramL2;
+	@FXML private Label paramL3;
+	@FXML private Label paramL4;
+	@FXML private Label paramL5;
+	@FXML private Label paramL6;
+	@FXML private Label paramL7;
+	@FXML private Label paramL8;
+	@FXML private Label paramLT;
+	@FXML private Spinner<Integer> paramS1;
+	@FXML private Spinner<Integer> paramS2;
+	@FXML private Spinner<Integer> paramS3;
+	@FXML private Spinner<Integer> paramS4;
+	@FXML private Spinner<Integer> paramS5;
+	@FXML private Spinner<Integer> paramS6;
+	@FXML private Spinner<Integer> paramS7;
+	@FXML private Spinner<Integer> paramS8;
+	@FXML private ChoiceBox<String> paramST;
+	@FXML private Button ovalLayerAddButton;
+	@FXML private Button rectangleLayerAddButton;
+	@FXML private Button lineLayerAddButton;
+	@FXML private Button arcLayerAddButton;
+	@FXML private Button textLayerAddButton;
+	@FXML private Button imageLayerAddButton;
+	@FXML private Button fontSelectButton;
+	@FXML private ListView<StopMark> markListView;
+	@FXML private ListView<MarkLayer> layerListView;
+	@FXML private Button markAddButton;
+	@FXML private Button markCopyButton;
+	@FXML private Button markDeleteButton;
+	@FXML private Button layerDeleteButton;
+	@FXML private Button layerUpButton;
+	@FXML private Button layerDownButton;
+	@FXML private MenuItem undoMenuItem;
+	@FXML private MenuItem redoMenuItem;
 
-	public CustomMarkController(SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
+	public CustomMarkController(ObservableList<StopMark> customMarks, SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
+		this.customMarks = customMarks;
 		this.selectFontFactory = selectFontFactory;
 		this.alert = alert;
 		this.fileOpenDialog = fileOpenDialog;
@@ -113,411 +130,549 @@ public class CustomMarkController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
-		gc = markCanvas.getGraphicsContext2D();
-		drawer = new CustomMarkDrawer(gc);
-		MarkList.setItems(customMarks);
-		StopMarkCell cellFactory = new StopMarkCell();
-		MarkList.setCellFactory(cellFactory);
-		MarkList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-			draw();//まずは描画。
-			if(MarkList.getSelectionModel().getSelectedIndex() != -1){
-				setLayerList(customMarks.get(MarkList.getSelectionModel().getSelectedIndex()));
-				StopMark mark = customMarks.get(MarkList.getSelectionModel().getSelectedIndex());
-				if(mark.getLayers().size() != 0){
-					LayerList.getSelectionModel().select(0);
-				}
-				rotateMark.setDisable(false);
-				rotateMark.setSelected(mark.isRotated());
-			}
+		// プレビュー描画用サービス
+		drawer = new CustomMarkDrawer(markCanvas.getGraphicsContext2D());
+
+		// 選択中マークのインデックス
+		selectedMarkIndex.bind(markListView.getSelectionModel().selectedIndexProperty());
+
+		// 選択中マーク
+		selectedMark.bind(markListView.getSelectionModel().selectedItemProperty());
+		selectedMark.addListener(this::selectedMarkChanged);
+
+		// マークリスト
+		markListView.setCellFactory(new StopMarkCell());
+		markListView.setItems(customMarks);
+
+		// マーク追加ボタン
+		markAddButton.setOnAction(event -> addNewMark());
+
+		// マーク複製
+		markCopyButton.setOnAction(event -> copySelectedMark());
+
+		// マーク削除
+		markDeleteButton.setOnAction(event -> deleteSelectedMark());
+
+		// プレビューの背景色選択
+		previewBackgroundColorPicker.setValue(Color.BLACK);//初期値は黒。
+		previewBackgroundColorPicker.setOnAction((ActionEvent) ->{
+			previewBackground.setFill(previewBackgroundColorPicker.getValue());
 		});
-		MarkAdd.setOnAction((ActionEvent) ->{//空のマークを追加する。
-			System.out.println("add called.");
-			StopMark newMark = new StopMark();
-			Command command = new AddListItemCommand<>(customMarks, newMark);
-			urManager.execute(command);
-			MarkList.getSelectionModel().selectLast();
-		});
-		MarkCopy.setOnAction((ActionEvent) ->{//マークをコピー
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				StopMark cloneMark = customMarks.get(index).clone();
-				Command command = new AddListItemCommand<>(customMarks, cloneMark);
-				urManager.execute(command);
-			}
-		});
-		MarkDelete.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Command command = new RemoveListItemCommand<>(customMarks, index);
-				urManager.execute(command);
-			}
-		});
-		prevbgSetter.setValue(Color.BLACK);//初期値は黒。
-		prevbgSetter.setOnAction((ActionEvent) ->{
-			bgRect.setFill(prevbgSetter.getValue());
-		});
-		paramColor.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				Command command = new ValueSetCommand<>(customMarks.get(indexM).getLayers().get(indexL).getColorProperty(), paramColor.getValue());
-				urManager.execute(command);
-			}
-			draw();
-		});
-		paramDrawOb.add("fill");
-		paramDrawOb.add("stroke");
-		paramDraw.setItems(paramDrawOb);
-		paramDraw.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
-				if(paramDraw.getSelectionModel().getSelectedIndex() == 0){
-					if (l.getPaint() == MarkLayer.STROKE) {
-						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.STROKE, MarkLayer.FILL);
-						urManager.execute(command);
-					}
-				}
-				if(paramDraw.getSelectionModel().getSelectedIndex() == 1){
-					if (l.getPaint() == MarkLayer.FILL) {
-						Command command = new ValueSetCommand<>(l.getPaintProperty(), MarkLayer.FILL, MarkLayer.STROKE);
-						urManager.execute(command);
-					}
-				}
-				//レイヤーリスト更新
-				setLayerList(MarkList.getSelectionModel().getSelectedItem());
-				LayerList.getSelectionModel().select(indexL);
-				draw();
-			}
-		});
+
+		// レイヤーの色選択
+		layerColorPicker.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasColor(), selectedLayer).not());
+		selectedLayerColor.bindBidirectional(layerColorPicker.valueProperty());
+		selectedLayerColor.addListener(this::selectedLayerColorChanged);
+
+		// 描画モードの ChoiceBox
+		ObservableList<PaintMode> paintModes = FXCollections.observableArrayList(PaintMode.values());
+		paintModeChoiceBox.setItems(paintModes);
+		paintModeChoiceBox.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasPaintMode(), selectedLayer).not());
+
+		// 選択中描画モード
+		selectedPaintMode.bindBidirectional(paintModeChoiceBox.valueProperty());
+		selectedPaintMode.addListener(this::selectedPaintModeChanged);
+
 		//スピナーについての設定は配列で一気に処理する
-		Spinner[] paramSs = {paramS1,paramS2,paramS3,paramS4,paramS5,paramS6,paramS7,paramS8};
-		for(int i = 0; i < 8; i++){
-			paramSs[i].setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE));
+		List<Spinner<Integer>> paramSs = List.of(paramS1, paramS2, paramS3, paramS4, paramS5, paramS6, paramS7, paramS8);
+		for (int i = 0; i < paramSs.size(); i++) {
+			Spinner<Integer> spinner = paramSs.get(i);
+			int spinnerId = i;
+			spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE, Integer.MAX_VALUE));
+			spinner.valueProperty().addListener((obs, oldValue, newValue) -> {
+				parameterChanged(spinnerId, oldValue, newValue);
+			});
 		}
-		setParamsReactions();//action定義が頭悪い方法でしかできないので隔離
-		paramST.valueProperty().addListener((obs, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			//コレに関しては他のレイヤーからの切替時にselectIndex-1が送られる不具合がある。とりあえずif文条件で応急処置
-			int selectedIndex = paramST.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1 && selectedIndex != -1){
-				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
-				if(l.getType() == MarkLayer.ARC){
-					if((int)l.getParam(7) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(l.getParamProperty().get(7), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				if(l.getType() == MarkLayer.TEXT){
-					if((int)l.getParam(4) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(l.getParamProperty().get(4), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				if(l.getType() == MarkLayer.LINE){
-					if((int)l.getParam(5) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(l.getParamProperty().get(5), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				draw();
-			}
-		});
-		selectFont.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				MarkLayer l = customMarks.get(indexM).getLayers().get(indexL);
-				String current = l.getFontName();
-				var dialog = new FontSelectDialogService(current, selectFontFactory);
-				dialog.showDialog().ifPresent(newFont -> {
-					if (!current.equals(newFont)) {
-						Command command = new ValueSetCommand<>(l.getFontNameProperty(), current, newFont);
-						urManager.execute(command);
-					}
-				});
-			}
-			draw();
-		});
-		paramText.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				MarkLayer layer = customMarks.get(indexM).getLayers().get(indexL);
 
-				if (layer.getText() != paramText.getText()) {
-					Command command = new ValueSetCommand<>(layer.getTextProperty(), paramText.getText());
+		// 種類ごとに異なるスタイル設定
+		var hasStyleBinding = Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasStyle(), selectedLayer);
+		paramST.disableProperty().bind(hasStyleBinding.not());
+		paramLT.disableProperty().bind(hasStyleBinding.not());
+
+		// スタイルの選択状態
+		selectedStyleIndex.bind(paramST.getSelectionModel().selectedIndexProperty());
+		selectedStyleIndex.addListener(this::selectedStyleIndexChanged);
+
+		// テキストデータを保持するか
+		BooleanBinding hasTextBinding = Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasText(), selectedLayer);
+
+		// フォント選択ボタン
+		fontSelectButton.disableProperty().bind(hasTextBinding.not());
+		fontSelectButton.setOnAction(event -> selectFont());
+
+		// テキストパラメータ
+		paramText.disableProperty().bind(hasTextBinding.not());
+
+		// テキストパラメータ入力値
+		textParameter.bindBidirectional(paramText.textProperty());
+		textParameter.addListener(this::textParameterChanged);
+
+		// マーク未選択状態とのバインド
+		BooleanBinding markNotSelectedBinding = Bindings.isNull(selectedMark);
+
+		// 楕円レイヤー作成ボタン
+		ovalLayerAddButton.setOnAction(event -> addOvalLayer());
+		ovalLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// 矩形レイヤー作成ボタン
+		rectangleLayerAddButton.setOnAction(event -> addRectangleLayer());
+		rectangleLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// 直線レイヤー作成ボタン
+		lineLayerAddButton.setOnAction(event -> addLineLayer());
+		lineLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// 円弧レイヤー作成ボタン
+		arcLayerAddButton.setOnAction(event -> addArcLayer());
+		arcLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// 文字列レイヤー作成ボタン
+		textLayerAddButton.setOnAction(event -> addTextLayer());
+		textLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// 画像レイヤー
+		imageLayerAddButton.setOnAction(event -> addImageLayer());
+		imageLayerAddButton.disableProperty().bind(markNotSelectedBinding);
+
+		// レイヤーリスト
+		layerListView.setCellFactory(listView -> new MarkLayerCell());
+		layerListView.itemsProperty().bind(layers);
+
+		// 選択中レイヤーのインデックス
+		selectedLayerIndex.bind(layerListView.getSelectionModel().selectedIndexProperty());
+
+		// 選択中レイヤー
+		selectedLayer.bind(layerListView.getSelectionModel().selectedItemProperty());
+		selectedLayer.addListener(this::selectedLayerChanged);
+
+		// レイヤー削除ボタン
+		layerDeleteButton.setOnAction(event -> deleteSelectedLayer());
+
+		// レイヤー上へ移動ボタン
+		layerUpButton.setOnAction(event -> moveUpSelectedLayer());
+
+		// レイヤー下へ移動ボタン
+		layerDownButton.setOnAction(event -> moveDownSelectedLayer());
+
+		// マーク回転チェックボックス
+		rotateMark.disableProperty().bind(markNotSelectedBinding);
+
+		// マーク回転チェック状態
+		isRotated.bindBidirectional(rotateMark.selectedProperty());
+		isRotated.addListener(this::isRotatedChanged);
+
+		// 元に戻す処理
+		undoMenuItem.setOnAction(event -> undo());
+		undoMenuItem.disableProperty().bind(urManager.getUndoableProperty().not());
+
+		// やり直し処理
+		redoMenuItem.setOnAction(event -> redo());
+		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 選択中マーク変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedMarkChanged(ObservableValue<?> observable, StopMark oldValue, StopMark newValue) {
+		drawPreview();
+
+		if (oldValue != null) {
+			isRotated.unbindBidirectional(oldValue.getRotateProperty());
+		}
+
+		if (newValue == null) {
+			layers.set(FXCollections.observableArrayList());
+		} else {
+			StopMark mark = newValue;
+			layers.set(mark.getLayers());
+			isRotated.bindBidirectional(mark.getRotateProperty());
+
+			if (mark.getLayers().size() != 0) {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+	}
+	/**
+	 * 新しくマークを追加します。
+	 */
+	private void addNewMark() {
+		StopMark newMark = new StopMark();
+		Command command = new AddListItemCommand<>(customMarks, newMark);
+		urManager.execute(command);
+		markListView.getSelectionModel().selectLast();
+	}
+
+	/**
+	 * 選択中のマークを複製します。
+	 */
+	private void copySelectedMark() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			StopMark cloneMark = stopMark.clone();
+			Command command = new AddListItemCommand<>(customMarks, cloneMark);
+			urManager.execute(command);
+		});
+	}
+
+	/**
+	 * 選択中のマークを削除します。
+	 */
+	private void deleteSelectedMark() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			Command command = new RemoveListItemCommand<>(customMarks, stopMark);
+			urManager.execute(command);
+		});
+	}
+
+	/**
+	 * 選択中レイヤー色変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedLayerColorChanged(ObservableValue<?> observable, Color oldValue, Color newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (!markLayer.getColor().equals(newValue)) {
+				Command command = new ValueSetCommand<>(markLayer.getColorProperty(), newValue);
+				urManager.execute(command);
+				drawPreview();
+			}
+		});
+	}
+
+	/**
+	 * 選択中描画モード変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedPaintModeChanged(ObservableValue<?> observable, PaintMode oldValue, PaintMode newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (markLayer.getPaintMode() != newValue) {
+				Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
+				urManager.execute(command);
+				drawPreview();
+			}
+		});
+	}
+
+	/**
+	 * 選択中のスタイルのインデックス変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedStyleIndexChanged(ObservableValue<?> observable, Number oldValue, Number newValue) {
+		MarkLayer markLayer = selectedLayer.get();
+
+		//コレに関しては他のレイヤーからの切替時にselectIndex-1が送られる不具合がある。とりあえずif文条件で応急処置
+		int selectedIndex = newValue.intValue();
+
+		if (markLayer != null && selectedIndex != -1 && markLayer.hasStyle()) {
+			var styleProperty = markLayer.getStyleProperty();
+
+			if (styleProperty.intValue() != selectedIndex) {
+				Command command = new ValueSetCommand<>(styleProperty, selectedIndex);
+				urManager.execute(command);
+				drawPreview();
+			}
+		}
+	}
+
+	/**
+	 * フォント選択を行います。
+	 */
+	private void selectFont() {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			String current = markLayer.getFontName();
+			var dialog = new FontSelectDialogService(current, selectFontFactory);
+			dialog.showDialog().ifPresent(newFont -> {
+				if (!current.equals(newFont)) {
+					Command command = new ValueSetCommand<>(markLayer.getFontNameProperty(), current, newFont);
 					urManager.execute(command);
+					drawPreview();
 				}
-				draw();
-			}
+			});
 		});
-		addOval.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newOval = new MarkLayer(MarkLayer.OVAL);
-				//初期値投入
-				newOval.addParam(0.0);//左上X
-				newOval.addParam(0.0);//左上Y
-				newOval.addParam(1.0);//横直径
-				newOval.addParam(1.0);//縦直径
-				newOval.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
-				newOval.setPaint(MarkLayer.FILL);
-				newOval.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newOval);
-				urManager.execute(command);
-				setLayerList(customMarks.get(index));
-				LayerList.getSelectionModel().selectLast();
-				draw();
-			}
-		});
-		addRect.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newRect = new MarkLayer(MarkLayer.RECT);
-				//初期値投入
-				newRect.addParam(0.0);//左上X
-				newRect.addParam(0.0);//左上Y
-				newRect.addParam(1.0);//幅
-				newRect.addParam(1.0);//高さ
-				newRect.addParam(0.0);//円弧幅
-				newRect.addParam(0.0);//円弧高さ
-				newRect.addParam(0.05);//lineWidth
-				newRect.setPaint(MarkLayer.FILL);
-				newRect.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newRect);
-				urManager.execute(command);
-				setLayerList(customMarks.get(index));
-				LayerList.getSelectionModel().selectLast();
-				draw();
-			}
-		});
-		addLine.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newLine = new MarkLayer(MarkLayer.LINE);
-				newLine.addParam(0.0);//始点X
-				newLine.addParam(0.0);//始点Y
-				newLine.addParam(1.0);//終点X
-				newLine.addParam(1.0);//終点Y
-				newLine.addParam(0.05);//lineWidth
-				newLine.addParam(0);//端はSQUARE
-				newLine.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newLine);
-				urManager.execute(command);
-				setLayerList(customMarks.get(index));
-				LayerList.getSelectionModel().selectLast();
-				draw();
-			}
-		});
-		addArc.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newArc = new MarkLayer(MarkLayer.ARC);
-				//初期値投入
-				newArc.addParam(0.0);//X
-				newArc.addParam(0.0);//Y
-				newArc.addParam(1.0);//幅
-				newArc.addParam(1.0);//高さ
-				newArc.addParam(0.0);//始角
-				newArc.addParam(120.0);//角の大きさ
-				newArc.addParam(0.05);//lineWidth
-				newArc.addParam(2.0);//closure
-				newArc.setPaint(MarkLayer.FILL);
-				newArc.setColor(Color.WHITE);
-				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newArc);
-				urManager.execute(command);
-				setLayerList(customMarks.get(index));
-				LayerList.getSelectionModel().selectLast();
-				draw();
-			}
-		});
-		addText.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newText = new MarkLayer(MarkLayer.TEXT);
-				//初期値投入
-				newText.addParam(0.0);//X
-				newText.addParam(1.0);//Y
-				newText.addParam(1.0);//size
-				newText.addParam(0.05);//lineWidth
-				newText.addParam(0.0);//type
-				newText.setPaint(MarkLayer.FILL);
-				newText.setColor(Color.WHITE);
-				newText.setText("※");
-				newText.setFontName("system");
-				Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newText);
-				urManager.execute(command);
-				setLayerList(customMarks.get(index));
-				LayerList.getSelectionModel().selectLast();
-				draw();
-			}
-		});
-		addImage.setOnAction((ActionEvent) ->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				MarkLayer newImage = new MarkLayer(MarkLayer.IMAGE);
-				fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
-					.ifPresent(r -> {
-						File imageFile = r.getFile();
-						config.setImageFileDir(imageFile.getParent());
+	}
 
-						try {
-							newImage.setImage(new Image(new BufferedInputStream(new FileInputStream(imageFile))));
-							newImage.setText(imageFile.getName());
-							if (newImage.getImage().isError()) {//イメージのロード中にエラーが検出されたことを示す。
-								newImage.getImage().getException().printStackTrace();
-								alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
-							} else if (newImage.getImage().getHeight() == 0 || newImage.getImage().getWidth() == 0) {
-								alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
-							} else {//エラーなし
-								//初期値設定
-								double h = newImage.getImage().getHeight();
-								double w = newImage.getImage().getWidth();
-								if (w < h) {//縦長
-									newImage.addParam((1-w/h)/2);//X
-									newImage.addParam(0.0);//Y
-									newImage.addParam(w/h);//幅
-									newImage.addParam(1.0);//高さ
-								} else {//横長
-									newImage.addParam(0.0);//X
-									newImage.addParam((1-h/w)/2);//Y
-									newImage.addParam(1.0);//幅
-									newImage.addParam(h/w);//高さ
-								}
-								Command command = new AddListItemCommand<>(customMarks.get(index).getLayers(), newImage);
-								urManager.execute(command);
-								setLayerList(customMarks.get(index));
-								LayerList.getSelectionModel().selectLast();
-								draw();
-							}
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-							alert.showError("選択されたファイルを開くことができませんでした。");
+	/**
+	 * テキストパラメータ変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void textParameterChanged(ObservableValue<?> observable, String oldValue, String newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (!markLayer.getText().equals(newValue)) {
+				Command command = new ValueSetCommand<>(markLayer.getTextProperty(), newValue);
+				urManager.execute(command);
+				drawPreview();
+			}
+		});
+	}
+
+	/**
+	 * 楕円レイヤーを追加します。
+	 */
+	private void addOvalLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createOvalLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			drawPreview();
+		});
+	}
+
+	/**
+	 * 矩形レイヤーを追加します。
+	 */
+	private void addRectangleLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createRectangleLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			drawPreview();
+		});
+	}
+
+	/**
+	 * 直線レイヤーを追加します。
+	 */
+	private void addLineLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createLineLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			drawPreview();
+		});
+	}
+
+	/**
+	 * 円弧レイヤーを追加します。
+	 */
+	private void addArcLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createArcLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			drawPreview();
+		});
+	}
+
+	/**
+	 * 文字列レイヤーを追加します。
+	 */
+	private void addTextLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			MarkLayer layer = MarkLayer.createTextLayer();
+			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+			urManager.execute(command);
+			layerListView.getSelectionModel().selectLast();
+			drawPreview();
+		});
+	}
+
+	/**
+	 * 画像レイヤーを追加します。
+	 */
+	private void addImageLayer() {
+		getSelectedStopMark().ifPresent(stopMark -> {
+			fileOpenDialog.showDialog("画像ファイルを選択してください。", config.getImageFileDir(), FileType.IMAGE)
+				.ifPresent(r -> {
+					File imageFile = r.getFile();
+					config.setImageFileDir(imageFile.getParent());
+
+					try {
+						Image image = new Image(new BufferedInputStream(new FileInputStream(imageFile)));
+						if (image.isError()) {
+							//イメージのロード中にエラーが検出されたことを示す。
+							image.getException().printStackTrace();
+							alert.showError("画像の読み込みでエラーが発生しました。画像ファイルでない可能性があります。");
+						} else if (image.getHeight() == 0 || image.getWidth() == 0) {
+							alert.showError("読み込まれた画像のサイズが0です。画像ファイルでない可能性があります。");
+						} else {
+							//エラーなし
+							MarkLayer layer = MarkLayer.createImageLayer(image, imageFile.getName());
+							Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
+							urManager.execute(command);
+							layerListView.getSelectionModel().selectLast();
+							drawPreview();
 						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						alert.showError("選択されたファイルを開くことができませんでした。");
+					}
 				});
-			}
-		});
-		LayerList.setItems(LayerListOb);
-		LayerList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			System.out.println("LayerList selected "+indexL);
-			if(indexM != -1 && indexL != -1){
-				setParameters(customMarks.get(indexM).getLayers().get(indexL));
-			}
-		});
-		LayerList.setOnMouseClicked((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			System.out.println("LayerList selected on mouse"+indexL);
-			if(indexM != -1 && indexL != -1){
-				setParameters(customMarks.get(indexM).getLayers().get(indexL));
-			}
-		});
-		LayerDelete.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1){
-				Command command = new RemoveListItemCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				urManager.execute(command);
-				setLayerList(customMarks.get(indexM));
-				if(customMarks.get(indexM).getLayers().size() == 0){
-					paramColor.setDisable(true);
-					paramDraw.setDisable(true);
-					setNumericParams(null, new String[0]);
-				}else if(customMarks.get(indexM).getLayers().size() == indexL){
-					LayerList.getSelectionModel().selectLast();
-				}else{
-					LayerList.getSelectionModel().select(indexL);
-				}
-			}
-		});
-		Layer_UP.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL > 0){//indexLが0だとコレは意味を持たない
-				Command command = new SwapListItemUpCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				urManager.execute(command);
-				setLayerList(customMarks.get(indexM));
-				LayerList.getSelectionModel().select(indexL - 1);
-				draw();
-			}
-		});
-		Layer_DOWN.setOnAction((ActionEvent) ->{
-			int indexM = MarkList.getSelectionModel().getSelectedIndex();
-			int indexL = LayerList.getSelectionModel().getSelectedIndex();
-			if(indexM != -1 && indexL != -1 && indexL != customMarks.get(indexM).getLayers().size() - 1){
-				//indexLが最後だとコレは意味を持たない
-				Command command = new SwapListItemDownCommand<>(customMarks.get(indexM).getLayers(), indexL);
-				urManager.execute(command);
-				setLayerList(customMarks.get(indexM));
-				LayerList.getSelectionModel().select(indexL + 1);
-				draw();
-			}
-		});
-		rotateMark.setOnAction((ActionEvent)->{
-			int index = MarkList.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				BooleanProperty property = customMarks.get(index).getRotateProperty();
-				Command command = new ValueSetCommand<>(property, rotateMark.isSelected());
-				urManager.execute(command);
-			}
-		});
-		Undo.setOnAction((ActionEvent)->{
-			int layerListSelectedIndex = LayerList.getSelectionModel().getSelectedIndex();
-			urManager.undo();
-			if(MarkList.getSelectionModel().getSelectedItem() == null){
-				MarkList.getSelectionModel().selectFirst();
-			}else{
-				setLayerList(MarkList.getSelectionModel().getSelectedItem());
-				if(layerListSelectedIndex != -1 && layerListSelectedIndex < 
-						MarkList.getSelectionModel().getSelectedItem().getLayers().size()){
-					LayerList.getSelectionModel().select(layerListSelectedIndex);
-				}else{
-					LayerList.getSelectionModel().selectFirst();
-				}
-			}
-			draw();
-		});
-		Redo.setOnAction((ActionEvent)->{
-			int layerListSelectedIndex = LayerList.getSelectionModel().getSelectedIndex();
-			urManager.redo();
-			if(MarkList.getSelectionModel().getSelectedItem() == null){
-				MarkList.getSelectionModel().selectFirst();
-			}else{
-				setLayerList(MarkList.getSelectionModel().getSelectedItem());
-				if(layerListSelectedIndex != -1 && layerListSelectedIndex < 
-						MarkList.getSelectionModel().getSelectedItem().getLayers().size()){
-					LayerList.getSelectionModel().select(layerListSelectedIndex);
-				}else{
-					LayerList.getSelectionModel().selectFirst();
-				}
-			}
-			draw();
-		});
-		urManager.getUndoableProperty().addListener((observable, oldValue, newValue) -> {
-			Undo.setDisable(! urManager.getUndoableProperty().get());
-		});
-		urManager.getRedoableProperty().addListener((observable, oldValue, newValue) -> {
-			Redo.setDisable(! urManager.getRedoableProperty().get());
 		});
 	}
-	
-	public void setObject(Stage stage,ObservableList<StopMark> mm){
-		this.customMarks = mm;
-		MarkList.setItems(customMarks);//これをしないとObservableListからListViewに変更通知が行きません。
-		this.stage = stage;
+
+	/**
+	 * 選択中レイヤー変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedLayerChanged(ObservableValue<?> observable, MarkLayer oldValue, MarkLayer newValue) {
+		if (oldValue != null) {
+			if (oldValue.hasPaintMode()) {
+				selectedPaintMode.unbindBidirectional(oldValue.paintModeProperty());
+			}
+
+			if (oldValue.hasText()) {
+				textParameter.unbindBidirectional(oldValue.getTextProperty());
+			}
+
+			if (oldValue.hasColor()) {
+				selectedLayerColor.unbindBidirectional(oldValue.getColorProperty());
+			}
+		}
+		if (newValue != null) {
+			setParameters(newValue);
+
+			if (newValue.hasPaintMode()) {
+				selectedPaintMode.bindBidirectional(newValue.paintModeProperty());
+			}
+
+			if (newValue.hasText()) {
+				textParameter.bindBidirectional(newValue.getTextProperty());
+			}
+
+			if (newValue.hasColor()) {
+				selectedLayerColor.bindBidirectional(newValue.getColorProperty());
+			}
+		}
 	}
-	
-	void draw(){//プレビューを描画するメソッド。背景処理はやりません。
-		int markIndex = MarkList.getSelectionModel().getSelectedIndex();
-		if(markIndex != -1){
-			drawer.drawCustomMarkPreview(customMarks.get(markIndex), this.prevSize);
+
+	/**
+	 * 選択中のレイヤーを削除します。
+	 */
+	private void deleteSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex != -1) {
+			Command command = new RemoveListItemCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+
+			if (stopMark.getLayers().size() == 0) {
+				setNumericParams(null, new String[0]);
+			} else if (layerIndex < stopMark.getLayers().size()) {
+				// 削除前のインデックスが範囲内だった場合は同じ場所を再選択する
+				// ListView は要素を削除した場合直前の要素が選択状態になる
+				layerListView.getSelectionModel().select(layerIndex);
+			}
+		}
+	}
+
+	/**
+	 * 選択中のレイヤーを上へ移動します。
+	 */
+	private void moveUpSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex > 0) {
+			// 最初のレイヤー以外の時に移動する
+			Command command = new SwapListItemUpCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+			layerListView.getSelectionModel().select(layerIndex - 1);
+			drawPreview();
+		}
+	}
+
+	/**
+	 * 選択中のレイヤーを下へ移動します。
+	 */
+	private void moveDownSelectedLayer() {
+		StopMark stopMark = selectedMark.get();
+		int layerIndex = selectedLayerIndex.get();
+
+		if (stopMark != null && layerIndex != -1 && layerIndex != stopMark.getLayers().size() - 1) {
+			// 最後のレイヤー以外の時に移動する
+			Command command = new SwapListItemDownCommand<>(stopMark.getLayers(), layerIndex);
+			urManager.execute(command);
+			layerListView.getSelectionModel().select(layerIndex + 1);
+			drawPreview();
+		}
+	}
+
+	/**
+	 * マーク回転変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void isRotatedChanged(ObservableValue<?> observable, Boolean oldValue, Boolean newValue) {
+		StopMark stopMark = selectedMark.get();
+
+		if (stopMark != null) {
+			BooleanProperty property = stopMark.getRotateProperty();
+
+			if (property.get() != newValue) {
+				Command command = new ValueSetCommand<>(property, newValue);
+				urManager.execute(command);
+			}
+		}
+	}
+
+	/**
+	 * 元に戻す処理
+	 */
+	private void undo() {
+		StopMark stopMark = selectedMark.get();
+		int selectedLayerIndex = this.selectedLayerIndex.get();
+		urManager.undo();
+
+		if (stopMark == null) {
+			markListView.getSelectionModel().selectFirst();
+		} else {
+			if (selectedLayerIndex != -1 && selectedLayerIndex < stopMark.getLayers().size()){
+				layerListView.getSelectionModel().select(selectedLayerIndex);
+			} else {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+		drawPreview();
+	}
+
+	/**
+	 * やり直し処理
+	 */
+	private void redo() {
+		StopMark stopMark = selectedMark.get();
+		int selectedLayerIndex = this.selectedLayerIndex.get();
+		urManager.redo();
+
+		if (stopMark == null) {
+			markListView.getSelectionModel().selectFirst();
+		} else {
+			if (selectedLayerIndex != -1 && selectedLayerIndex < stopMark.getLayers().size()) {
+				layerListView.getSelectionModel().select(selectedLayerIndex);
+			} else {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+		drawPreview();
+	}
+
+	private void drawPreview() {//プレビューを描画するメソッド。背景処理はやりません。
+		getSelectedStopMark().ifPresent(stopMark -> {
+			drawer.drawCustomMarkPreview(stopMark, PREVIEW_SIZE);
 			//リストも更新・・・この処理は不具合を引き起こすのであとで対策
 			/*
 			customMarks.add(new StopMark());
@@ -525,171 +680,90 @@ public class CustomMarkController implements Initializable{
 			customMarks.remove(customMarks.size() - 1);
 			MarkList.getSelectionModel().select(markIndex);
 			*/
-		}
+		});
 	}
-	void setLayerList(StopMark s){//LayerListを更新する
-		LayerListOb.clear();
-		for(MarkLayer l: s.getLayers()){//各MarkLayerに対して
-			String fs = null;
-			if(l.getPaint() == MarkLayer.FILL) fs = "Fill";
-			if(l.getPaint() == MarkLayer.STROKE) fs = "Stroke";
-			if(l.getType() == MarkLayer.OVAL) LayerListOb.add("円・楕円["+fs+"]");
-			if(l.getType() == MarkLayer.ARC) LayerListOb.add("円弧["+fs+"]");
-			if(l.getType() == MarkLayer.RECT) LayerListOb.add("長方形["+fs+"]");
-			if(l.getType() == MarkLayer.POLYGON) LayerListOb.add("多角形["+fs+"]");
-			if(l.getType() == MarkLayer.LINE) LayerListOb.add("直線["+fs+"]");
-			if(l.getType() == MarkLayer.TEXT) LayerListOb.add("文字列["+fs+"]");
-			if(l.getType() == MarkLayer.IMAGE) LayerListOb.add("画像["+l.getText()+"]");
-		}
-	}
+
 	void setParameters(MarkLayer l){//各種パラメーターを設定していく。
-		if(l.getType() != MarkLayer.TEXT){
-			paramText.setDisable(true);
-			selectFont.setDisable(true);
-		}
 		//↑パラメータごとに設定した方が早いゾーン。↓図形ごとに設定するゾーン
 		if(l.getType() == MarkLayer.OVAL){
-			paramColor.setDisable(false);
-			paramColor.setValue(l.getColor());
-			paramDraw.setDisable(false);
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
-			if(l.getPaint() == MarkLayer.FILL) paramDraw.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paramDraw.getSelectionModel().select(1);
 			String[] texts = {"左上X","左上Y","直径X","直径Y","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.RECT){
-			paramColor.setDisable(false);
-			paramColor.setValue(l.getColor());
-			paramDraw.setDisable(false);
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
-			if(l.getPaint() == MarkLayer.FILL) paramDraw.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paramDraw.getSelectionModel().select(1);
 			String[] texts = {"左上X","左上Y","幅","高さ","角円幅","角円高さ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.LINE){
-			paramColor.setDisable(false);
-			paramColor.setValue(l.getColor());
-			paramDraw.setDisable(false);
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
-			paramDraw.setDisable(true);
 			String[] texts = {"始点X","始点Y","終点X","終点Y","線の太さ"};
 			setNumericParams(l,texts);
-			paramLT.setDisable(false);
 			paramLT.setText("閉じタイプ");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("SQUARE","ROUND");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(5));
 		}else if(l.getType() == MarkLayer.ARC){
-			paramColor.setDisable(false);
-			paramColor.setValue(l.getColor());
-			paramDraw.setDisable(false);
-			if(l.getPaint() == MarkLayer.FILL) paramDraw.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paramDraw.getSelectionModel().select(1);
 			String[] texts = {"X","Y","幅","高さ","始角(°)","角大きさ","線の太さ"};
 			setNumericParams(l,texts);
-			paramLT.setDisable(false);
 			paramLT.setText("閉じタイプ");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("CHORD","OPEN","ROUND");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(7));
 		}else if(l.getType() == MarkLayer.TEXT){
-			paramColor.setDisable(false);
-			paramColor.setValue(l.getColor());
-			paramDraw.setDisable(false);
-			paramLT.setDisable(false);
 			paramLT.setText("スタイル");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("REGULAR","BOLD","ITALIC","BOLD_ITALIC");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(4));
-			selectFont.setDisable(false);
-			paramText.setDisable(false);
-			paramText.setText(l.getText());
-			if(l.getPaint() == MarkLayer.FILL) paramDraw.getSelectionModel().select(0);
-			if(l.getPaint() == MarkLayer.STROKE) paramDraw.getSelectionModel().select(1);
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){
-			paramColor.setDisable(true);
-			paramDraw.setDisable(true);
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","画像幅","画像高さ"};
 			setNumericParams(l,texts);
 		}
 	}
 	void setNumericParams(MarkLayer l, String[] texts){//下のパラメーターたちのdisableパラメタを一斉に切り替え、各種代入する
 		Label[] paramLs = {paramL1,paramL2,paramL3,paramL4,paramL5,paramL6,paramL7,paramL8};
-		Spinner[] paramSs = {paramS1,paramS2,paramS3,paramS4,paramS5,paramS6,paramS7,paramS8};
+		List<Spinner<Integer>> paramSs = List.of(paramS1, paramS2, paramS3, paramS4, paramS5, paramS6, paramS7, paramS8);
 		int i = texts.length;//定義文字配列の長さが有効パラメーターの個数と一致する。
 		for(int h = 0; h < i; h++){//iまでは全てfalse
 			paramLs[h].setDisable(false);
 			paramLs[h].setText(texts[h]);
-			paramSs[h].setDisable(false);
-			if(l.getParamsProportion()[h] == true)paramSs[h].getValueFactory().setValue((int)(l.getParam(h) * prevSize));
-			if(l.getParamsProportion()[h] == false)paramSs[h].getValueFactory().setValue((int)l.getParam(h));
+			paramSs.get(h).setDisable(false);
+			if (l.getParamsProportion()[h]) {
+				paramSs.get(h).getValueFactory().setValue((int)(l.getParam(h) * PREVIEW_SIZE));
+			} else {
+				paramSs.get(h).getValueFactory().setValue((int)l.getParam(h));
+			}
 		}
 		for(int h = i; h < 8; h++){
 			paramLs[h].setDisable(true);
-			paramSs[h].setDisable(true);
+			paramSs.get(h).setDisable(true);
 		}
-	}
-	void setParamsReactions(){//Spinnerのジェネリクス縛り等の関係で全部手書きという頭悪いことしかうまくいかないのでここに隔離します。
-		paramS1.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(0, oldValue, newValue);
-		});
-		paramS2.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(1, oldValue, newValue);
-		});
-		paramS3.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(2, oldValue, newValue);
-		});
-		paramS4.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(3, oldValue, newValue);
-		});
-		paramS5.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(4, oldValue, newValue);
-		});
-		paramS6.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(5, oldValue, newValue);
-		});
-		paramS7.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(6, oldValue, newValue);
-		});
-		paramS8.valueProperty().addListener((obs, oldValue, newValue) -> {
-			parameterChanged(7, oldValue, newValue);
-		});
 	}
 
 	private void parameterChanged(int index, Integer oldValue, Integer newValue) {
-		int markIndex = MarkList.getSelectionModel().getSelectedIndex();
-		int layerIndex = LayerList.getSelectionModel().getSelectedIndex();
-
-		if (markIndex == -1 || layerIndex == -1) {
-			return;
-		}
-
-		MarkLayer layer = customMarks.get(markIndex).getLayers().get(layerIndex);
-
-		if (layer.getParamsProportion()[index]) {
-			if (oldValue == layer.getParam(index) * prevSize) {
-				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
-						oldValue.doubleValue() / prevSize, newValue.doubleValue() / prevSize);
-				urManager.execute(command);
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (markLayer.getParamsProportion()[index]) {
+				if (oldValue == markLayer.getParam(index) * PREVIEW_SIZE) {
+					Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
+							oldValue.doubleValue() / PREVIEW_SIZE, newValue.doubleValue() / PREVIEW_SIZE);
+					urManager.execute(command);
+				}
+			} else {
+				if (oldValue == markLayer.getParam(index)) {
+					Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(index),
+							oldValue.doubleValue(), newValue.doubleValue());
+					urManager.execute(command);
+				}
 			}
-		} else {
-			if (oldValue == layer.getParam(index)) {
-				Command command = new ValueSetCommand<>(layer.getParamProperty().get(index),
-						oldValue.doubleValue(), newValue.doubleValue());
-				urManager.execute(command);
-			}
-		}
 
-		draw();
+			drawPreview();
+		});
+	}
+
+	/** 現在選択されている StopMark を Optional で返します。 */
+	private Optional<StopMark> getSelectedStopMark() {
+		return Optional.ofNullable(selectedMark.get());
+	}
+
+	/** 現在選択されている MarkLayer を Optional で返します。 */
+	private Optional<MarkLayer> getSelectedMarkLayer() {
+		return Optional.ofNullable(selectedLayer.get());
 	}
 }

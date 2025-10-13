@@ -91,12 +91,12 @@ public class CustomMarkDrawer {
 
         double[] params = layer.getParamProperty().stream().limit(5).mapToDouble(p -> p.get() * size).toArray();
 
-        switch (layer.getPaint()) {
-            case MarkLayer.FILL:
+        switch (layer.getPaintMode()) {
+            case FILL:
                 gc.setFill(layer.getColor());
                 gc.fillOval(params[0], params[1], params[2], params[3]);
                 break;
-            case MarkLayer.STROKE:
+            case STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(params[4]);
                 gc.strokeOval(params[0], params[1], params[2], params[3]);
@@ -119,12 +119,12 @@ public class CustomMarkDrawer {
 
         double[] params = layer.getParamProperty().stream().limit(7).mapToDouble(p -> p.get() * size).toArray();
 
-        switch (layer.getPaint()) {
-            case MarkLayer.FILL:
+        switch (layer.getPaintMode()) {
+            case FILL:
                 gc.setFill(layer.getColor());
                 gc.fillRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
                 break;
-            case MarkLayer.STROKE:
+            case STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(params[6]);
                 gc.strokeRoundRect(params[0], params[1], params[2], params[3], params[4], params[5]);
@@ -185,12 +185,12 @@ public class CustomMarkDrawer {
                 break;
         }
 
-        switch (layer.getPaint()) {
-            case MarkLayer.FILL:
+        switch (layer.getPaintMode()) {
+            case FILL:
                 gc.setFill(layer.getColor());
                 gc.fillArc(x, y, width, height, startAngle, extent, arcType);
                 break;
-            case MarkLayer.STROKE:
+            case STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(lineWidth);
                 gc.strokeArc(x, y, width, height, startAngle, extent, arcType);
@@ -237,13 +237,13 @@ public class CustomMarkDrawer {
                 break;
         }
 
-        switch (layer.getPaint()) {
-            case MarkLayer.FILL:
+        switch (layer.getPaintMode()) {
+            case FILL:
                 gc.setFill(layer.getColor());
                 gc.setFont(font);
                 gc.fillText(layer.getText(), params[0], params[1]);
                 break;
-            case MarkLayer.STROKE:
+            case STROKE:
                 gc.setStroke(layer.getColor());
                 gc.setLineWidth(params[3]);
                 gc.setFont(font);

@@ -26,12 +26,12 @@
         <menus>
           <Menu mnemonicParsing="false" text="Edit">
             <items>
-              <MenuItem fx:id="Undo" disable="true" mnemonicParsing="false" text="Undo">
+              <MenuItem fx:id="undoMenuItem" disable="true" mnemonicParsing="false" text="Undo">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="Z" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
                      </accelerator>
                   </MenuItem>
-                  <MenuItem fx:id="Redo" disable="true" mnemonicParsing="false" text="Redo">
+                  <MenuItem fx:id="redoMenuItem" disable="true" mnemonicParsing="false" text="Redo">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="Z" control="UP" meta="UP" shift="DOWN" shortcut="DOWN" />
                      </accelerator>
@@ -42,14 +42,14 @@
       </MenuBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
          <children>
-            <ListView fx:id="MarkList" layoutX="14.0" layoutY="60.0" prefHeight="330.0" prefWidth="157.0" />
+            <ListView fx:id="markListView" layoutX="14.0" layoutY="60.0" prefHeight="330.0" prefWidth="157.0" />
             <Label layoutX="14.0" layoutY="14.0" text="カスタムマーク一覧" />
-            <Button fx:id="MarkCopy" layoutX="61.0" layoutY="31.0" mnemonicParsing="false" text="複製" />
-            <Button fx:id="MarkAdd" layoutX="14.0" layoutY="31.0" mnemonicParsing="false" text="追加" />
-            <Button fx:id="MarkDelete" layoutX="109.0" layoutY="31.0" mnemonicParsing="false" text="削除" />
+            <Button fx:id="markCopyButton" layoutX="61.0" layoutY="31.0" mnemonicParsing="false" text="複製" />
+            <Button fx:id="markAddButton" layoutX="14.0" layoutY="31.0" mnemonicParsing="false" text="追加" />
+            <Button fx:id="markDeleteButton" layoutX="109.0" layoutY="31.0" mnemonicParsing="false" text="削除" />
             <Pane fx:id="prevPane" layoutX="240.0" layoutY="60.0" prefHeight="40.0" prefWidth="40.0">
                <children>
-                  <Rectangle fx:id="bgRect" arcHeight="5.0" arcWidth="5.0" height="40.0" stroke="#a4a4a4" strokeType="INSIDE" width="40.0" />
+                  <Rectangle fx:id="previewBackground" arcHeight="5.0" arcWidth="5.0" height="40.0" stroke="#a4a4a4" strokeType="INSIDE" width="40.0" />
                   <Canvas fx:id="markCanvas" height="40.0" width="40.0" />
                </children>
             </Pane>
@@ -61,11 +61,11 @@
             </Label>
             <Label layoutX="423.0" layoutY="36.0" text="プレビュー背景色" />
             <Label layoutX="423.0" layoutY="50.0" text="（マークには反映されません）" />
-            <ColorPicker fx:id="prevbgSetter" layoutX="423.0" layoutY="73.0" />
+            <ColorPicker fx:id="previewBackgroundColorPicker" layoutX="423.0" layoutY="73.0" />
             <Label layoutX="173.0" layoutY="149.0" text="レイヤー追加" />
-            <Button fx:id="addOval" layoutX="183.0" layoutY="173.0" mnemonicParsing="false" text="円・楕円" />
-            <Button fx:id="addRect" layoutX="357.0" layoutY="173.0" mnemonicParsing="false" text="長方形" />
-            <ListView fx:id="LayerList" layoutX="629.0" layoutY="69.0" prefHeight="264.0" prefWidth="157.0" />
+            <Button fx:id="ovalLayerAddButton" layoutX="183.0" layoutY="173.0" mnemonicParsing="false" text="円・楕円" />
+            <Button fx:id="rectangleLayerAddButton" layoutX="357.0" layoutY="173.0" mnemonicParsing="false" text="長方形" />
+            <ListView fx:id="layerListView" layoutX="629.0" layoutY="69.0" prefHeight="264.0" prefWidth="157.0" />
             <Label layoutX="176.0" layoutY="38.0" text="※実際の大きさは路線等での設定によります">
                <font>
                   <Font size="11.0" />
@@ -75,9 +75,9 @@
             <AnchorPane layoutX="173.0" layoutY="201.0" prefHeight="208.0" prefWidth="450.0">
                <children>
                   <Label layoutX="7.0" layoutY="11.0" text="パラメーター" />
-                  <ColorPicker fx:id="paramColor" disable="true" layoutX="30.0" layoutY="28.0" prefHeight="27.0" prefWidth="117.0" />
+                  <ColorPicker fx:id="layerColorPicker" disable="true" layoutX="30.0" layoutY="28.0" prefHeight="27.0" prefWidth="117.0" />
                   <Label layoutX="3.0" layoutY="33.0" text="色" />
-                  <ChoiceBox fx:id="paramDraw" disable="true" layoutX="30.0" layoutY="55.0" prefWidth="150.0" />
+                  <ChoiceBox fx:id="paintModeChoiceBox" disable="true" layoutX="30.0" layoutY="55.0" prefWidth="150.0" />
                   <Label layoutX="3.0" layoutY="60.0" text="描画" />
                   <Label fx:id="paramL1" disable="true" layoutX="4.0" layoutY="91.0" text="param1" />
                   <Spinner fx:id="paramS1" disable="true" editable="true" layoutX="61.0" layoutY="86.0" prefHeight="27.0" prefWidth="78.0" />
@@ -101,25 +101,25 @@
                   <Label layoutX="187.0" layoutY="60.0" text="text" />
                   <TextField fx:id="paramText" disable="true" layoutX="217.0" layoutY="55.0" prefHeight="27.0" prefWidth="150.0" />
                   <Label layoutX="291.0" layoutY="91.0" text="フォント" />
-                  <Button fx:id="selectFont" disable="true" layoutX="343.0" layoutY="86.0" mnemonicParsing="false" text="選択" />
+                  <Button fx:id="fontSelectButton" disable="true" layoutX="343.0" layoutY="86.0" mnemonicParsing="false" text="選択" />
                </children>
             </AnchorPane>
-            <Button fx:id="LayerDelete" layoutX="724.0" layoutY="40.0" mnemonicParsing="false" text="削除" />
-            <Button fx:id="Layer_UP" layoutX="602.0" layoutY="87.0" mnemonicParsing="false" text="▲">
+            <Button fx:id="layerDeleteButton" layoutX="724.0" layoutY="40.0" mnemonicParsing="false" text="削除" />
+            <Button fx:id="layerUpButton" layoutX="602.0" layoutY="87.0" mnemonicParsing="false" text="▲">
                <font>
                   <Font name="System Bold" size="13.0" />
                </font>
             </Button>
-            <Button fx:id="Layer_DOWN" layoutX="602.0" layoutY="136.0" mnemonicParsing="false" text="▼">
+            <Button fx:id="layerDownButton" layoutX="602.0" layoutY="136.0" mnemonicParsing="false" text="▼">
                <font>
                   <Font name="System Bold" size="13.0" />
                </font>
             </Button>
-            <Button fx:id="addArc" layoutX="258.0" layoutY="173.0" mnemonicParsing="false" text="円弧" />
-            <Button fx:id="addText" layoutX="420.0" layoutY="173.0" mnemonicParsing="false" text="文字列" />
-            <Button fx:id="addImage" layoutX="482.0" layoutY="173.0" mnemonicParsing="false" text="画像" />
+            <Button fx:id="arcLayerAddButton" layoutX="258.0" layoutY="173.0" mnemonicParsing="false" text="円弧" />
+            <Button fx:id="textLayerAddButton" layoutX="420.0" layoutY="173.0" mnemonicParsing="false" text="文字列" />
+            <Button fx:id="imageLayerAddButton" layoutX="482.0" layoutY="173.0" mnemonicParsing="false" text="画像" />
             <CheckBox fx:id="rotateMark" disable="true" layoutX="630.0" layoutY="346.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="157.0" text="マークを回転させる" />
-            <Button fx:id="addLine" layoutX="308.0" layoutY="173.0" mnemonicParsing="false" text="直線" />
+            <Button fx:id="lineLayerAddButton" layoutX="308.0" layoutY="173.0" mnemonicParsing="false" text="直線" />
          </children></AnchorPane>
   </children>
 </VBox>

@@ -1,10 +1,8 @@
 package RouteMapMaker.models;
 
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -36,7 +34,8 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	 * IMAGE：image,text,{左上X,左上Y,描画幅,描画高さ}
 	 */
 	private int type;
-	private IntegerProperty paint = new SimpleIntegerProperty(FILL);//fillかstrokeか。デフォルトはfill。
+	//fillかstrokeか。デフォルトはfill。
+	private final ObjectProperty<PaintMode> paintModeProperty = new SimpleObjectProperty<>(PaintMode.FILL);
 	private ObservableList<DoubleProperty> params = FXCollections.observableArrayList();//パラメーターを保持
 	private final boolean[] paramsProportion;//格納されているパラメーターはマークの大きさに依存するか。
 	private StringProperty text = new SimpleStringProperty();//文字列だった場合にはtextを保持。IMAGEの場合は画像名
@@ -76,21 +75,200 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			paramsProportion = null;
 		}
 	}
+
+	/**
+	 * 楕円レイヤーを作成します。
+	 *
+	 * @return 楕円レイヤー
+	 */
+	public static MarkLayer createOvalLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.OVAL);
+		//初期値投入
+		layer.addParam(0.0);//左上X
+		layer.addParam(0.0);//左上Y
+		layer.addParam(1.0);//横直径
+		layer.addParam(1.0);//縦直径
+		layer.addParam(0.05);//デフォの線の太さ2/40（あくまでも相対比なのでprevSizeが変わってもここは問題ない）
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 矩形レイヤーを作成します。
+	 *
+	 * @return 矩形レイヤー
+	 */
+	public static MarkLayer createRectangleLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.RECT);
+		//初期値投入
+		layer.addParam(0.0);//左上X
+		layer.addParam(0.0);//左上Y
+		layer.addParam(1.0);//幅
+		layer.addParam(1.0);//高さ
+		layer.addParam(0.0);//円弧幅
+		layer.addParam(0.0);//円弧高さ
+		layer.addParam(0.05);//lineWidth
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 直線レイヤーを作成します。
+	 *
+	 * @return 直線レイヤー
+	 */
+	public static MarkLayer createLineLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.LINE);
+		layer.addParam(0.0);//始点X
+		layer.addParam(0.0);//始点Y
+		layer.addParam(1.0);//終点X
+		layer.addParam(1.0);//終点Y
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(0);//端はSQUARE
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 円弧レイヤーを作成します。
+	 *
+	 * @return 円弧レイヤー
+	 */
+	public static MarkLayer createArcLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.ARC);
+		//初期値投入
+		layer.addParam(0.0);//X
+		layer.addParam(0.0);//Y
+		layer.addParam(1.0);//幅
+		layer.addParam(1.0);//高さ
+		layer.addParam(0.0);//始角
+		layer.addParam(120.0);//角の大きさ
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(2.0);//closure
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+
+		return layer;
+	}
+
+	/**
+	 * 文字列レイヤーを作成します。
+	 *
+	 * @return 文字列レイヤー
+	 */
+	public static MarkLayer createTextLayer() {
+		MarkLayer layer = new MarkLayer(MarkLayer.TEXT);
+		//初期値投入
+		layer.addParam(0.0);//X
+		layer.addParam(1.0);//Y
+		layer.addParam(1.0);//size
+		layer.addParam(0.05);//lineWidth
+		layer.addParam(0.0);//type
+		layer.setPaintMode(PaintMode.FILL);
+		layer.setColor(Color.WHITE);
+		layer.setText("※");
+		layer.setFontName("System");
+
+		return layer;
+	}
+
+	/**
+	 * 画像レイヤーを作成します。
+	 *
+	 * @param image 画像
+	 * @param name 画像の名称
+	 * @return 画像レイヤー
+	 */
+	public static MarkLayer createImageLayer(Image image, String name) {
+		MarkLayer layer = new MarkLayer(MarkLayer.IMAGE);
+		layer.setImage(image);
+		layer.setText(name);
+		//初期値設定
+		double h = layer.getImage().getHeight();
+		double w = layer.getImage().getWidth();
+		if (w < h) {//縦長
+			layer.addParam((1 - w / h) / 2);//X
+			layer.addParam(0.0);//Y
+			layer.addParam(w / h);//幅
+			layer.addParam(1.0);//高さ
+		} else {//横長
+			layer.addParam(0.0);//X
+			layer.addParam((1 - h / w) / 2);//Y
+			layer.addParam(1.0);//幅
+			layer.addParam(h / w);//高さ
+		}
+
+		return layer;
+	}
+
 	public int getType(){
 		return this.type;
 	}
 	public boolean[] getParamsProportion(){
 		return this.paramsProportion;
 	}
-	public int getPaint(){
-		return this.paint.get();
+
+	/** レイヤーの図形描画方法を取得します。これは従来との互換性のために残されています。 */
+	public int getPaint() {
+		switch (paintModeProperty.get()) {
+			case FILL:
+				return FILL;
+			case STROKE:
+				return STROKE;
+			default:
+				throw new UnsupportedOperationException("内部状態が不正です。");
+		}
 	}
-	public IntegerProperty getPaintProperty(){
-		return this.paint;
+
+	/** レイヤーの図形描画方法を設定します。これは従来との互換性のために残されています。 */
+	public void setPaint(int paint) {
+		switch (paint) {
+			case FILL:
+				paintModeProperty.set(PaintMode.FILL);
+				break;
+			case STROKE:
+				paintModeProperty.set(PaintMode.STROKE);
+				break;
+			default:
+				throw new IllegalArgumentException("不正なパラメータです。");
+		}
 	}
-	public void setPaint(int p){
-		this.paint.set(p);
+
+	/** レイヤーの図形描画方法を取得します。 */
+	public PaintMode getPaintMode() {
+		return paintModeProperty.get();
 	}
+
+	/** レイヤーの図形描画方法を設定します。 */
+	public void setPaintMode(PaintMode paintMode) {
+		this.paintModeProperty.set(paintMode);
+	}
+
+	public ObjectProperty<PaintMode> paintModeProperty() {
+		return paintModeProperty;
+	}
+
+	/** 図形描画方法を保持するかどうか */
+	public boolean hasPaintMode() {
+		switch (getType()) {
+			case OVAL:
+			case RECT:
+			case ARC:
+			case TEXT:
+				return true;
+			case LINE:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
 	public ObservableList<DoubleProperty> getParamProperty(){
 		return this.params;
 	}
@@ -112,6 +290,23 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public void setText(String text){
 		this.text.set(text);
 	}
+
+	/** テキストを保持するかどうか */
+	public boolean hasText() {
+		switch (getType()) {
+			case TEXT:
+				return true;
+			case OVAL:
+			case ARC:
+			case RECT:
+			case LINE:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
 	public String getFontName(){
 		return this.fontName.get();
 	}
@@ -130,6 +325,52 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public void setColor(Color c){
 		this.color.set(c);
 	}
+
+	 /** 色を保持するかどうか */
+	public boolean hasColor() {
+		switch (getType()) {
+			case OVAL:
+			case ARC:
+			case RECT:
+			case LINE:
+			case TEXT:
+				return true;
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
+	/** 種類ごとに異なるスタイルを保持するかどうか */
+	public boolean hasStyle() {
+		switch (getType()) {
+			case ARC:
+			case LINE:
+			case TEXT:
+				return true;
+			case OVAL:
+			case RECT:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
+	public DoubleProperty getStyleProperty() {
+		switch (getType()) {
+			case ARC:
+				return params.get(7);
+			case LINE:
+				return params.get(5);
+			case TEXT:
+				return params.get(4);
+			default:
+				throw new UnsupportedOperationException("スタイルを持つレイヤー以外では取得できません。");
+		}
+	}
+
 	public Image getImage(){
 		return this.imageWrapper.get();
 	}
@@ -147,7 +388,7 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 			//参照型の変数は全てクローンしてください。
 			t.params = FXCollections.observableArrayList();
 			for(int i = 0;i < this.params.size(); i++) t.params.add(new SimpleDoubleProperty(this.params.get(i).get()));
-			t.paint = new SimpleIntegerProperty(this.paint.get());
+			t.paintModeProperty.set(paintModeProperty.get());
 			t.text = new SimpleStringProperty(this.text.get());
 			t.fontName = new SimpleStringProperty(this.fontName.get());
 			t.color = new SimpleObjectProperty<>(this.color.get());
