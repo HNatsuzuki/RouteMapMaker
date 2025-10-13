@@ -2601,7 +2601,7 @@ public class UIController implements Initializable{
 			e1.printStackTrace();
 		}
 		euc = (TrainStopsEditController)editLoader.getController();
-		euc.setObjects(l, t, editStage);
+		euc.setObjects(l, t);
 		Scene sc = sceneFactory.createScene(ap, 600, 300);
 		editStage.setScene(sc);
 		editStage.setTitle("駅編集ウィンドウ");

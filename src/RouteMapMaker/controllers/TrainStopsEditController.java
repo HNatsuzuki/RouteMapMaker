@@ -13,6 +13,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -26,7 +27,6 @@ public class TrainStopsEditController implements Initializable{
 	
 	private Line line;
 	private Train train;
-	private Stage stage;
 	private ObservableList<String> olB = FXCollections.observableArrayList();
 	private ObservableList<String> olC = FXCollections.observableArrayList();
 	private final AlertService alert;
@@ -158,15 +158,14 @@ public class TrainStopsEditController implements Initializable{
 				}
 			}
 		});
-		Close.setOnAction((ActionEvent) -> {
-			stage.close();
+		Close.setOnAction(event -> {
+			((Stage)((Node)event.getSource()).getScene().getWindow()).close();
 		});
 	}
 	
-	public void setObjects(Line line, Train train, Stage stage){
+	public void setObjects(Line line, Train train) {
 		this.line = line;
 		this.train = train;
-		this.stage = stage;
 		//listBの初期設定
 		olB.clear();
 		for(int i = 0; i < line.getStations().size(); i++){
