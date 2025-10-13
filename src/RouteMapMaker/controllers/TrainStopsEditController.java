@@ -151,23 +151,31 @@ public class TrainStopsEditController implements Initializable{
 				}
 			}
 		});
+
+		// 系統の駅リスト
 		trainStopListView.setOnMouseClicked((MouseEvent) ->{
 			//動作に不具合は見られないけどIndexOutOfBoundsExceptionが出てくる
 			if(group.getSelectedToggle() == deleteButton){
-				int indexC = trainStopListView.getSelectionModel().getSelectedIndex();
-				if(indexC != -1 && indexC < train.getStops().size()){
-					train.getStops().remove(indexC);
-					trainStopList.clear();
-					for(int i = 0; i < train.getStops().size(); i++){
-						trainStopList.add(train.getStops().get(i).getSta().getName());
-					}
-					trainStopList.add("<最後に追加>");
-					trainStopListView.getSelectionModel().select(train.getStops().size());
-				}
+				deleteStation();
 			}
 		});
+
+		// 閉じるボタン
 		closeButton.setOnAction(event -> {
 			((Stage)((Node)event.getSource()).getScene().getWindow()).close();
 		});
+	}
+
+	/**
+	 * 系統から選択した駅を削除します。
+	 */
+	private void deleteStation() {
+		int selectedTrainStopIndex = trainStopListView.getSelectionModel().getSelectedIndex();
+
+		if (selectedTrainStopIndex != -1 && selectedTrainStopIndex < train.getStops().size()) {
+			train.getStops().remove(selectedTrainStopIndex);
+			trainStopList.remove(selectedTrainStopIndex);
+			trainStopListView.getSelectionModel().select(selectedTrainStopIndex);
+		}
 	}
 }
