@@ -136,6 +136,7 @@ import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
 import RouteMapMaker.models.enums.FileType;
 import RouteMapMaker.services.AlertService;
+import RouteMapMaker.services.CustomMarkEditDialogService;
 import RouteMapMaker.services.ErrorReporter;
 import RouteMapMaker.services.FileOpenDialogService;
 import RouteMapMaker.services.FileSaveDialogService;
@@ -1254,30 +1255,13 @@ public class UIController implements Initializable{
 				changeAllStage.toFront();
 			}
 		});
-		mb_editCustomMark.setOnAction((ActionEvent) ->{
-			FXMLLoader editLoader = null;
-			Stage editStage = new Stage();
-			editStage.initModality(Modality.APPLICATION_MODAL);
-			VBox ap = null;
-			try {
-				editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/CustomMarkController.fxml"));
-				editLoader.setControllerFactory(param -> {
-					if (param == CustomMarkController.class) {
-						return new CustomMarkController(customMarks, selectFontFactory, alert, fileOpenDialog, config);
-					} else {
-						throw new RuntimeException();
-					}
-				});
-				ap= (VBox)editLoader.load();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			Scene sc = sceneFactory.createScene(ap);
-			editStage.setScene(sc);
-			editStage.setTitle("カスタム停車マークの編集");
-			editStage.showAndWait();
-			setMarkList();//マークリストを更新
+
+		// カスタム停車マーク編集メニュー
+		mb_editCustomMark.setOnAction(actionEvent -> {
+			var dialog = new CustomMarkEditDialogService(customMarks, sceneFactory, selectFontFactory, alert, fileOpenDialog, config);
+			dialog.showDialog();
+			//マークリストを更新
+			setMarkList();
 		});
 		mb_setCustomMark.setOnAction((ActionEvent) ->{
 			SetMarkController euc = null;
