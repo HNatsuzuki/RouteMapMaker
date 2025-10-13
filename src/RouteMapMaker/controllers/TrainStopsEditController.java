@@ -32,6 +32,7 @@ public class TrainStopsEditController implements Initializable{
 	private ObservableList<String> trainStopList = FXCollections.observableArrayList();
 	private final AlertService alert;
 	
+	@FXML ToggleGroup group;
 	@FXML ToggleButton insertButton;
 	@FXML ToggleButton deleteButton;
 	@FXML ToggleButton insertAllButton;
@@ -70,11 +71,6 @@ public class TrainStopsEditController implements Initializable{
 		trainStopListView.setItems(trainStopList);
 		trainStopListView.getSelectionModel().selectLast();
 
-		ToggleGroup group = new ToggleGroup();
-		insertButton.setToggleGroup(group);
-		deleteButton.setToggleGroup(group);
-		insertAllButton.setToggleGroup(group);
-		deleteAllButton.setToggleGroup(group);
 		group.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
 					if(group.getSelectedToggle() == insertAllButton){
