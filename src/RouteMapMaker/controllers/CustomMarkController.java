@@ -43,7 +43,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
@@ -70,7 +69,6 @@ public class CustomMarkController implements Initializable{
 	private final ObjectProperty<Color> selectedLayerColor = new SimpleObjectProperty<>();
 	private final StringProperty textParameter = new SimpleStringProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
-	private GraphicsContext gc;
 	private URElements urManager = new URElements();//undoとredoを管理する。
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
@@ -131,32 +129,18 @@ public class CustomMarkController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
-		gc = markCanvas.getGraphicsContext2D();
-		drawer = new CustomMarkDrawer(gc);
-		StopMarkCell cellFactory = new StopMarkCell();
-		markListView.setCellFactory(cellFactory);
+		// プレビュー描画用サービス
+		drawer = new CustomMarkDrawer(markCanvas.getGraphicsContext2D());
+
+		// 選択中マークのインデックス
 		selectedMarkIndex.bind(markListView.getSelectionModel().selectedIndexProperty());
+
+		// 選択中マーク
 		selectedMark.bind(markListView.getSelectionModel().selectedItemProperty());
-		selectedMark.addListener((observable, oldValue, newValue) -> {
-			draw();
+		selectedMark.addListener(this::selectedMarkChanged);
 
-			if (oldValue != null) {
-				isRotated.unbindBidirectional(oldValue.getRotateProperty());
-			}
-
-			if (newValue == null) {
-				layers.set(FXCollections.observableArrayList());
-			} else {
-				StopMark mark = newValue;
-				layers.set(mark.getLayers());
-				isRotated.bindBidirectional(mark.getRotateProperty());
-
-				if (mark.getLayers().size() != 0) {
-					layerListView.getSelectionModel().selectFirst();
-				}
-			}
-		});
+		// マークリスト
+		markListView.setCellFactory(new StopMarkCell());
 		markListView.setItems(customMarks);
 
 		// マーク追加ボタン
@@ -223,7 +207,7 @@ public class CustomMarkController implements Initializable{
 						urManager.execute(command);
 					}
 				}
-				draw();
+				drawPreview();
 			}
 		});
 
@@ -305,6 +289,32 @@ public class CustomMarkController implements Initializable{
 	}
 
 	/**
+	 * 選択中マーク変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedMarkChanged(ObservableValue<?> observable, StopMark oldValue, StopMark newValue) {
+		drawPreview();
+
+		if (oldValue != null) {
+			isRotated.unbindBidirectional(oldValue.getRotateProperty());
+		}
+
+		if (newValue == null) {
+			layers.set(FXCollections.observableArrayList());
+		} else {
+			StopMark mark = newValue;
+			layers.set(mark.getLayers());
+			isRotated.bindBidirectional(mark.getRotateProperty());
+
+			if (mark.getLayers().size() != 0) {
+				layerListView.getSelectionModel().selectFirst();
+			}
+		}
+	}
+	/**
 	 * 新しくマークを追加します。
 	 */
 	private void addNewMark() {
@@ -347,7 +357,7 @@ public class CustomMarkController implements Initializable{
 			if (!markLayer.getColor().equals(newValue)) {
 				Command command = new ValueSetCommand<>(markLayer.getColorProperty(), newValue);
 				urManager.execute(command);
-				draw();
+				drawPreview();
 			}
 		});
 	}
@@ -364,7 +374,7 @@ public class CustomMarkController implements Initializable{
 			if (markLayer.getPaintMode() != newValue) {
 				Command command = new ValueSetCommand<>(markLayer.paintModeProperty(), newValue);
 				urManager.execute(command);
-				draw();
+				drawPreview();
 			}
 		});
 	}
@@ -380,7 +390,7 @@ public class CustomMarkController implements Initializable{
 				if (!current.equals(newFont)) {
 					Command command = new ValueSetCommand<>(markLayer.getFontNameProperty(), current, newFont);
 					urManager.execute(command);
-					draw();
+					drawPreview();
 				}
 			});
 		});
@@ -398,7 +408,7 @@ public class CustomMarkController implements Initializable{
 			if (!markLayer.getText().equals(newValue)) {
 				Command command = new ValueSetCommand<>(markLayer.getTextProperty(), newValue);
 				urManager.execute(command);
-				draw();
+				drawPreview();
 			}
 		});
 	}
@@ -412,7 +422,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 			urManager.execute(command);
 			layerListView.getSelectionModel().selectLast();
-			draw();
+			drawPreview();
 		});
 	}
 
@@ -425,7 +435,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 			urManager.execute(command);
 			layerListView.getSelectionModel().selectLast();
-			draw();
+			drawPreview();
 		});
 	}
 
@@ -438,7 +448,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 			urManager.execute(command);
 			layerListView.getSelectionModel().selectLast();
-			draw();
+			drawPreview();
 		});
 	}
 
@@ -451,7 +461,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 			urManager.execute(command);
 			layerListView.getSelectionModel().selectLast();
-			draw();
+			drawPreview();
 		});
 	}
 
@@ -464,7 +474,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 			urManager.execute(command);
 			layerListView.getSelectionModel().selectLast();
-			draw();
+			drawPreview();
 		});
 	}
 
@@ -492,7 +502,7 @@ public class CustomMarkController implements Initializable{
 							Command command = new AddListItemCommand<>(stopMark.getLayers(), layer);
 							urManager.execute(command);
 							layerListView.getSelectionModel().selectLast();
-							draw();
+							drawPreview();
 						}
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -574,7 +584,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new SwapListItemUpCommand<>(stopMark.getLayers(), layerIndex);
 			urManager.execute(command);
 			layerListView.getSelectionModel().select(layerIndex - 1);
-			draw();
+			drawPreview();
 		}
 	}
 
@@ -590,7 +600,7 @@ public class CustomMarkController implements Initializable{
 			Command command = new SwapListItemDownCommand<>(stopMark.getLayers(), layerIndex);
 			urManager.execute(command);
 			layerListView.getSelectionModel().select(layerIndex + 1);
-			draw();
+			drawPreview();
 		}
 	}
 
@@ -631,7 +641,7 @@ public class CustomMarkController implements Initializable{
 				layerListView.getSelectionModel().selectFirst();
 			}
 		}
-		draw();
+		drawPreview();
 	}
 
 	/**
@@ -651,10 +661,10 @@ public class CustomMarkController implements Initializable{
 				layerListView.getSelectionModel().selectFirst();
 			}
 		}
-		draw();
+		drawPreview();
 	}
 
-	void draw(){//プレビューを描画するメソッド。背景処理はやりません。
+	private void drawPreview() {//プレビューを描画するメソッド。背景処理はやりません。
 		getSelectedStopMark().ifPresent(stopMark -> {
 			drawer.drawCustomMarkPreview(stopMark, PREVIEW_SIZE);
 			//リストも更新・・・この処理は不具合を引き起こすのであとで対策
@@ -751,7 +761,7 @@ public class CustomMarkController implements Initializable{
 				}
 			}
 
-			draw();
+			drawPreview();
 		});
 	}
 
