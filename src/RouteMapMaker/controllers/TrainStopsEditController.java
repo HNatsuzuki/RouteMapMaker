@@ -3,6 +3,7 @@ package RouteMapMaker.controllers;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Train;
@@ -25,8 +26,8 @@ import javafx.stage.Stage;
 
 public class TrainStopsEditController implements Initializable{
 	
-	private Line line;
-	private Train train;
+	private final Line line;
+	private final Train train;
 	private ObservableList<String> stationList = FXCollections.observableArrayList();
 	private ObservableList<String> trainStopList = FXCollections.observableArrayList();
 	private final AlertService alert;
@@ -40,7 +41,9 @@ public class TrainStopsEditController implements Initializable{
 	@FXML ListView trainStopListView;
 	@FXML Label infoLabel;
 
-	public TrainStopsEditController(AlertService alert) {
+	public TrainStopsEditController(Line line, Train train, AlertService alert) {
+		this.line = line;
+		this.train = train;
 		this.alert = alert;
 	}
 
@@ -56,8 +59,17 @@ public class TrainStopsEditController implements Initializable{
 				+ "別の駅を選択してみてください\n\n"
 				+ "削除：削除ボタンを押してから\n"
 				+ "右枠で削除する駅を選択する。");
+		
+		// 路線の駅リスト
+		stationList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
 		stationListView.setItems(stationList);
+
+		// 系統の駅リスト
+		trainStopList.setAll(train.getStops().stream().map(s -> s.getSta().getName()).collect(Collectors.toList()));
+		trainStopList.add("<最後に追加>");
 		trainStopListView.setItems(trainStopList);
+		trainStopListView.getSelectionModel().selectLast();
+
 		ToggleGroup group = new ToggleGroup();
 		insertButton.setToggleGroup(group);
 		deleteButton.setToggleGroup(group);
@@ -162,22 +174,4 @@ public class TrainStopsEditController implements Initializable{
 			((Stage)((Node)event.getSource()).getScene().getWindow()).close();
 		});
 	}
-	
-	public void setObjects(Line line, Train train) {
-		this.line = line;
-		this.train = train;
-		//listBの初期設定
-		stationList.clear();
-		for(int i = 0; i < line.getStations().size(); i++){
-			stationList.add(line.getStations().get(i).getName());
-		}
-		//listCの初期設定
-		trainStopList.clear();
-		for(int i = 0; i < train.getStops().size(); i++){
-			trainStopList.add(train.getStops().get(i).getSta().getName());
-		}
-		trainStopList.add("<最後に追加>");
-		trainStopListView.getSelectionModel().select(train.getStops().size());
-	}
-
 }
