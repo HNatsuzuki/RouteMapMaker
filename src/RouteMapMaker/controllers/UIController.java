@@ -2580,17 +2580,17 @@ public class UIController implements Initializable{
 		}
 	}
 	void editTrainStops(Line l, Train t){//系統の停車駅編集は処理が長く色んな所で使うのでメソッド化
-		EditUIController euc = null;
+		TrainStopsEditController euc = null;
 		FXMLLoader editLoader = null;
 		Stage editStage = new Stage();
 		editStage.initModality(Modality.APPLICATION_MODAL);
 		editStage.initStyle(StageStyle.UNDECORATED);
 		AnchorPane ap = null;
 		try {
-			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/editUIController.fxml"));
+			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/TrainStopsEditView.fxml"));
 			editLoader.setControllerFactory(param -> {
-				if (param == EditUIController.class) {
-					return new EditUIController(alert);
+				if (param == TrainStopsEditController.class) {
+					return new TrainStopsEditController(alert);
 				} else {
 					throw new RuntimeException();
 				}
@@ -2600,7 +2600,7 @@ public class UIController implements Initializable{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		euc = (EditUIController)editLoader.getController();
+		euc = (TrainStopsEditController)editLoader.getController();
 		euc.setObjects(l, t, editStage);
 		Scene sc = sceneFactory.createScene(ap, 600, 300);
 		editStage.setScene(sc);

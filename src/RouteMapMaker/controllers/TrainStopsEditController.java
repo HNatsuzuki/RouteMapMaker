@@ -22,7 +22,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 
-public class EditUIController implements Initializable{
+public class TrainStopsEditController implements Initializable{
 	
 	private Line line;
 	private Train train;
@@ -40,7 +40,7 @@ public class EditUIController implements Initializable{
 	@FXML ListView listC;
 	@FXML Label infoLabel;
 
-	public EditUIController(AlertService alert) {
+	public TrainStopsEditController(AlertService alert) {
 		this.alert = alert;
 	}
 
