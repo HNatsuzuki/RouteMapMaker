@@ -325,6 +325,23 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 	public void setColor(Color c){
 		this.color.set(c);
 	}
+
+	 /** 色を保持するかどうか */
+	public boolean hasColor() {
+		switch (getType()) {
+			case OVAL:
+			case ARC:
+			case RECT:
+			case LINE:
+			case TEXT:
+				return true;
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
 	public Image getImage(){
 		return this.imageWrapper.get();
 	}

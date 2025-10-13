@@ -66,6 +66,7 @@ public class CustomMarkController implements Initializable{
 	private final ObjectProperty<MarkLayer> selectedLayer = new SimpleObjectProperty<>();
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
 	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
+	private final ObjectProperty<Color> selectedLayerColor = new SimpleObjectProperty<>();
 	private final StringProperty textParameter = new SimpleStringProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private GraphicsContext gc;
@@ -176,17 +177,17 @@ public class CustomMarkController implements Initializable{
 				urManager.execute(command);
 			}
 		});
+
+		// プレビューの背景色選択
 		previewBackgroundColorPicker.setValue(Color.BLACK);//初期値は黒。
 		previewBackgroundColorPicker.setOnAction((ActionEvent) ->{
 			previewBackground.setFill(previewBackgroundColorPicker.getValue());
 		});
-		layerColorPicker.setOnAction((ActionEvent) ->{
-			getSelectedMarkLayer().ifPresent(markLayer -> {
-				Command command = new ValueSetCommand<>(markLayer.getColorProperty(), layerColorPicker.getValue());
-				urManager.execute(command);
-				draw();
-			});
-		});
+
+		// レイヤーの色選択
+		layerColorPicker.disableProperty().bind(Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasColor(), selectedLayer).not());
+		selectedLayerColor.bindBidirectional(layerColorPicker.valueProperty());
+		selectedLayerColor.addListener(this::selectedLayerColorChanged);
 
 		// 描画モードの ChoiceBox
 		ObservableList<PaintMode> paintModes = FXCollections.observableArrayList(PaintMode.values());
@@ -311,6 +312,23 @@ public class CustomMarkController implements Initializable{
 		// やり直し処理
 		redoMenuItem.setOnAction(event -> redo());
 		redoMenuItem.disableProperty().bind(urManager.getRedoableProperty().not());
+	}
+
+	/**
+	 * 選択中レイヤー色変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedLayerColorChanged(ObservableValue<?> observable, Color oldValue, Color newValue) {
+		getSelectedMarkLayer().ifPresent(markLayer -> {
+			if (!markLayer.getColor().equals(newValue)) {
+				Command command = new ValueSetCommand<>(markLayer.getColorProperty(), newValue);
+				urManager.execute(command);
+				draw();
+			}
+		});
 	}
 
 	/**
@@ -480,6 +498,10 @@ public class CustomMarkController implements Initializable{
 			if (oldValue.hasText()) {
 				textParameter.unbindBidirectional(oldValue.getTextProperty());
 			}
+
+			if (oldValue.hasColor()) {
+				selectedLayerColor.unbindBidirectional(oldValue.getColorProperty());
+			}
 		}
 		if (newValue != null) {
 			setParameters(newValue);
@@ -490,6 +512,10 @@ public class CustomMarkController implements Initializable{
 
 			if (newValue.hasText()) {
 				textParameter.bindBidirectional(newValue.getTextProperty());
+			}
+
+			if (newValue.hasColor()) {
+				selectedLayerColor.bindBidirectional(newValue.getColorProperty());
 			}
 		}
 	}
@@ -506,7 +532,6 @@ public class CustomMarkController implements Initializable{
 			urManager.execute(command);
 
 			if (stopMark.getLayers().size() == 0) {
-				layerColorPicker.setDisable(true);
 				setNumericParams(null, new String[0]);
 			} else if (layerIndex < stopMark.getLayers().size()) {
 				// 削除前のインデックスが範囲内だった場合は同じ場所を再選択する
@@ -624,22 +649,16 @@ public class CustomMarkController implements Initializable{
 	void setParameters(MarkLayer l){//各種パラメーターを設定していく。
 		//↑パラメータごとに設定した方が早いゾーン。↓図形ごとに設定するゾーン
 		if(l.getType() == MarkLayer.OVAL){
-			layerColorPicker.setDisable(false);
-			layerColorPicker.setValue(l.getColor());
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","直径X","直径Y","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.RECT){
-			layerColorPicker.setDisable(false);
-			layerColorPicker.setValue(l.getColor());
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","幅","高さ","角円幅","角円高さ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.LINE){
-			layerColorPicker.setDisable(false);
-			layerColorPicker.setValue(l.getColor());
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
 			String[] texts = {"始点X","始点Y","終点X","終点Y","線の太さ"};
@@ -651,8 +670,6 @@ public class CustomMarkController implements Initializable{
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(5));
 		}else if(l.getType() == MarkLayer.ARC){
-			layerColorPicker.setDisable(false);
-			layerColorPicker.setValue(l.getColor());
 			String[] texts = {"X","Y","幅","高さ","始角(°)","角大きさ","線の太さ"};
 			setNumericParams(l,texts);
 			paramLT.setDisable(false);
@@ -662,8 +679,6 @@ public class CustomMarkController implements Initializable{
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(7));
 		}else if(l.getType() == MarkLayer.TEXT){
-			layerColorPicker.setDisable(false);
-			layerColorPicker.setValue(l.getColor());
 			paramLT.setDisable(false);
 			paramLT.setText("スタイル");
 			paramST.setDisable(false);
@@ -673,7 +688,6 @@ public class CustomMarkController implements Initializable{
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){
-			layerColorPicker.setDisable(true);
 			paramLT.setDisable(true);
 			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","画像幅","画像高さ"};
