@@ -2589,7 +2589,7 @@ public class UIController implements Initializable{
 			editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/TrainStopsEditView.fxml"));
 			editLoader.setControllerFactory(param -> {
 				if (param == TrainStopsEditController.class) {
-					return new TrainStopsEditController(l, t, alert);
+					return new TrainStopsEditController(l.getStations(), t, alert);
 				} else {
 					throw new RuntimeException();
 				}

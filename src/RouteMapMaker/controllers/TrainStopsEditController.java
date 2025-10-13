@@ -1,11 +1,12 @@
 package RouteMapMaker.controllers;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Station;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.AlertService;
@@ -26,10 +27,10 @@ import javafx.stage.Stage;
 
 public class TrainStopsEditController implements Initializable{
 	
-	private final Line line;
+	private final List<Station> stations;
 	private final Train train;
-	private ObservableList<String> stationList = FXCollections.observableArrayList();
-	private ObservableList<String> trainStopList = FXCollections.observableArrayList();
+	private ObservableList<String> stationNameList = FXCollections.observableArrayList();
+	private ObservableList<String> trainStopNameList = FXCollections.observableArrayList();
 	private final AlertService alert;
 	
 	@FXML ToggleGroup group;
@@ -42,8 +43,8 @@ public class TrainStopsEditController implements Initializable{
 	@FXML ListView<String> trainStopListView;
 	@FXML Label infoLabel;
 
-	public TrainStopsEditController(Line line, Train train, AlertService alert) {
-		this.line = line;
+	public TrainStopsEditController(List<Station> stations, Train train, AlertService alert) {
+		this.stations = stations;
 		this.train = train;
 		this.alert = alert;
 	}
@@ -62,13 +63,13 @@ public class TrainStopsEditController implements Initializable{
 				+ "右枠で削除する駅を選択する。");
 		
 		// 路線の駅リスト
-		stationList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
-		stationListView.setItems(stationList);
+		stationNameList.setAll(stations.stream().map(s -> s.getName()).collect(Collectors.toList()));
+		stationListView.setItems(stationNameList);
 
 		// 系統の駅リスト
-		trainStopList.setAll(train.getStops().stream().map(s -> s.getSta().getName()).collect(Collectors.toList()));
-		trainStopList.add("<最後に追加>");
-		trainStopListView.setItems(trainStopList);
+		trainStopNameList.setAll(train.getStops().stream().map(s -> s.getSta().getName()).collect(Collectors.toList()));
+		trainStopNameList.add("<最後に追加>");
+		trainStopListView.setItems(trainStopNameList);
 		trainStopListView.getSelectionModel().selectLast();
 
 		group.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
@@ -78,18 +79,18 @@ public class TrainStopsEditController implements Initializable{
 						if(result.get() == ButtonType.OK){
 							//全削除してから再度追加だと既存駅の属性が失われるので足りない分を追加する。
 							int count = 0;
-							for(int i = 0; i < line.getStations().size(); i++){
-								if(train.getStops().size()==count||!train.getStops().get(count).getSta().getName().equals(line.getStations().get(i).getName())){
+							for(int i = 0; i < stations.size(); i++){
+								if(train.getStops().size()==count||!train.getStops().get(count).getSta().getName().equals(stations.get(i).getName())){
 									//駅が存在しない
-									train.getStops().add(count, new TrainStop(line.getStations().get(i)));
+									train.getStops().add(count, new TrainStop(stations.get(i)));
 								}
 								count++;
 							}
-							trainStopList.clear();
+							trainStopNameList.clear();
 							for(int i = 0; i < train.getStops().size(); i++){
-								trainStopList.add(train.getStops().get(i).getSta().getName());
+								trainStopNameList.add(train.getStops().get(i).getSta().getName());
 							}
-							trainStopList.add("<最後に追加>");
+							trainStopNameList.add("<最後に追加>");
 							trainStopListView.getSelectionModel().select(0);
 						}
 						insertAllButton.setSelected(false);
@@ -99,8 +100,8 @@ public class TrainStopsEditController implements Initializable{
 						if(result.get() == ButtonType.OK){
 							//全消去処理
 							train.getStops().clear();
-							trainStopList.clear();
-							trainStopList.add("<最後に追加>");
+							trainStopNameList.clear();
+							trainStopNameList.add("<最後に追加>");
 							trainStopListView.getSelectionModel().select(train.getStops().size());
 						}
 						deleteAllButton.setSelected(false);
@@ -117,36 +118,36 @@ public class TrainStopsEditController implements Initializable{
 					int pre;//前の停車駅の路線でのindex
 					int next;//後の停車駅の路線でのindex
 					try{
-						pre = line.getStations().indexOf(train.getStops().get(indexC - 1).getSta());
+						pre = stations.indexOf(train.getStops().get(indexC - 1).getSta());
 					}catch(IndexOutOfBoundsException e){
 						pre = -1;//系統の先頭に追加要求があった場合。
 					}
 					try{
-						next = line.getStations().lastIndexOf(train.getStops().get(indexC).getSta());
+						next = stations.lastIndexOf(train.getStops().get(indexC).getSta());
 					}catch(IndexOutOfBoundsException e){
-						next = line.getStations().size();//系統の最後に追加要求があった場合
+						next = stations.size();//系統の最後に追加要求があった場合
 					}
 					if(pre < indexB && indexB < next){
 						boolean adjon = false;//連続して同じ駅が登録されていると都合が悪い。
 						try{
-							if(line.getStations().get(indexB) == train.getStops().get(indexC -1).getSta()) adjon = true;
-							if(line.getStations().get(indexB) == train.getStops().get(indexC).getSta()) adjon = true;
+							if(stations.get(indexB) == train.getStops().get(indexC -1).getSta()) adjon = true;
+							if(stations.get(indexB) == train.getStops().get(indexC).getSta()) adjon = true;
 						}catch(Exception e){
 							//indexエラーはここでは無視していいので何もしない
 						}
 						if(adjon){
 							alert.showWarning("同じ駅を隣接して追加することはできません。");
 						}else{//順番検査と隣接検査をクリアしたら追加する。
-							train.getStops().add(indexC, new TrainStop(line.getStations().get(indexB)));
+							train.getStops().add(indexC, new TrainStop(stations.get(indexB)));
 						}
 					}else{
 						alert.showWarning("停車駅は駅一覧の上から順である必要があります。");
 					}
-					trainStopList.clear();
+					trainStopNameList.clear();
 					for(int i = 0; i < train.getStops().size(); i++){
-						trainStopList.add(train.getStops().get(i).getSta().getName());
+						trainStopNameList.add(train.getStops().get(i).getSta().getName());
 					}
-					trainStopList.add("<最後に追加>");
+					trainStopNameList.add("<最後に追加>");
 					trainStopListView.getSelectionModel().select(indexC + 1);
 				}
 			}
@@ -174,7 +175,7 @@ public class TrainStopsEditController implements Initializable{
 
 		if (selectedTrainStopIndex != -1 && selectedTrainStopIndex < train.getStops().size()) {
 			train.getStops().remove(selectedTrainStopIndex);
-			trainStopList.remove(selectedTrainStopIndex);
+			trainStopNameList.remove(selectedTrainStopIndex);
 			trainStopListView.getSelectionModel().select(selectedTrainStopIndex);
 		}
 	}
