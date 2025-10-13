@@ -342,6 +342,35 @@ public class MarkLayer implements Cloneable{//マーク編集における各レ�
 		}
 	}
 
+	/** 種類ごとに異なるスタイルを保持するかどうか */
+	public boolean hasStyle() {
+		switch (getType()) {
+			case ARC:
+			case LINE:
+			case TEXT:
+				return true;
+			case OVAL:
+			case RECT:
+			case IMAGE:
+				return false;		
+			default:
+				throw new UnsupportedOperationException(getType() + " に対して未実装です。");
+		}
+	}
+
+	public DoubleProperty getStyleProperty() {
+		switch (getType()) {
+			case ARC:
+				return params.get(7);
+			case LINE:
+				return params.get(5);
+			case TEXT:
+				return params.get(4);
+			default:
+				throw new UnsupportedOperationException("スタイルを持つレイヤー以外では取得できません。");
+		}
+	}
+
 	public Image getImage(){
 		return this.imageWrapper.get();
 	}

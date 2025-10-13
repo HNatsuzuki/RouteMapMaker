@@ -67,6 +67,7 @@ public class CustomMarkController implements Initializable{
 	private final IntegerProperty selectedLayerIndex = new SimpleIntegerProperty();
 	private final ObjectProperty<PaintMode> selectedPaintMode = new SimpleObjectProperty<>();
 	private final ObjectProperty<Color> selectedLayerColor = new SimpleObjectProperty<>();
+	private final IntegerProperty selectedStyleIndex = new SimpleIntegerProperty();
 	private final StringProperty textParameter = new SimpleStringProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private URElements urManager = new URElements();//undoとredoを管理する。
@@ -183,33 +184,14 @@ public class CustomMarkController implements Initializable{
 			});
 		}
 
-		paramST.valueProperty().addListener((obs, oldValue, newValue) -> {
-			MarkLayer markLayer = selectedLayer.get();
+		// 種類ごとに異なるスタイル設定
+		var hasStyleBinding = Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasStyle(), selectedLayer);
+		paramST.disableProperty().bind(hasStyleBinding.not());
+		paramLT.disableProperty().bind(hasStyleBinding.not());
 
-			//コレに関しては他のレイヤーからの切替時にselectIndex-1が送られる不具合がある。とりあえずif文条件で応急処置
-			int selectedIndex = paramST.getSelectionModel().getSelectedIndex();
-			if (markLayer != null && selectedIndex != -1) {
-				if (markLayer.getType() == MarkLayer.ARC) {
-					if((int)markLayer.getParam(7) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(7), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				if (markLayer.getType() == MarkLayer.TEXT) {
-					if((int)markLayer.getParam(4) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(4), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				if (markLayer.getType() == MarkLayer.LINE) {
-					if((int)markLayer.getParam(5) != paramST.getSelectionModel().getSelectedIndex()) {
-						Command command = new ValueSetCommand<>(markLayer.getParamProperty().get(5), (double)selectedIndex);
-						urManager.execute(command);
-					}
-				}
-				drawPreview();
-			}
-		});
+		// スタイルの選択状態
+		selectedStyleIndex.bind(paramST.getSelectionModel().selectedIndexProperty());
+		selectedStyleIndex.addListener(this::selectedStyleIndexChanged);
 
 		// テキストデータを保持するか
 		BooleanBinding hasTextBinding = Bindings.createBooleanBinding(() -> selectedLayer.get() != null && selectedLayer.get().hasText(), selectedLayer);
@@ -377,6 +359,30 @@ public class CustomMarkController implements Initializable{
 				drawPreview();
 			}
 		});
+	}
+
+	/**
+	 * 選択中のスタイルのインデックス変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void selectedStyleIndexChanged(ObservableValue<?> observable, Number oldValue, Number newValue) {
+		MarkLayer markLayer = selectedLayer.get();
+
+		//コレに関しては他のレイヤーからの切替時にselectIndex-1が送られる不具合がある。とりあえずif文条件で応急処置
+		int selectedIndex = newValue.intValue();
+
+		if (markLayer != null && selectedIndex != -1 && markLayer.hasStyle()) {
+			var styleProperty = markLayer.getStyleProperty();
+
+			if (styleProperty.intValue() != selectedIndex) {
+				Command command = new ValueSetCommand<>(styleProperty, selectedIndex);
+				urManager.execute(command);
+				drawPreview();
+			}
+		}
 	}
 
 	/**
@@ -680,47 +686,33 @@ public class CustomMarkController implements Initializable{
 	void setParameters(MarkLayer l){//各種パラメーターを設定していく。
 		//↑パラメータごとに設定した方が早いゾーン。↓図形ごとに設定するゾーン
 		if(l.getType() == MarkLayer.OVAL){
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","直径X","直径Y","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.RECT){
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","幅","高さ","角円幅","角円高さ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.LINE){
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
 			String[] texts = {"始点X","始点Y","終点X","終点Y","線の太さ"};
 			setNumericParams(l,texts);
-			paramLT.setDisable(false);
 			paramLT.setText("閉じタイプ");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("SQUARE","ROUND");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(5));
 		}else if(l.getType() == MarkLayer.ARC){
 			String[] texts = {"X","Y","幅","高さ","始角(°)","角大きさ","線の太さ"};
 			setNumericParams(l,texts);
-			paramLT.setDisable(false);
 			paramLT.setText("閉じタイプ");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("CHORD","OPEN","ROUND");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(7));
 		}else if(l.getType() == MarkLayer.TEXT){
-			paramLT.setDisable(false);
 			paramLT.setText("スタイル");
-			paramST.setDisable(false);
 			ObservableList<String> paramSTOb = FXCollections.observableArrayList("REGULAR","BOLD","ITALIC","BOLD_ITALIC");
 			paramST.setItems(paramSTOb);
 			paramST.getSelectionModel().select((int)l.getParam(4));
 			String[] texts = {"X","Y","文字サイズ","線の太さ"};
 			setNumericParams(l,texts);
 		}else if(l.getType() == MarkLayer.IMAGE){
-			paramLT.setDisable(true);
-			paramST.setDisable(true);
 			String[] texts = {"左上X","左上Y","画像幅","画像高さ"};
 			setNumericParams(l,texts);
 		}
