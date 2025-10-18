@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
@@ -158,7 +159,7 @@ public class UIController implements Initializable{
 	private final LineList lineList = new LineList();
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
-	private ObservableList<MvSta> movingStList = FXCollections.observableArrayList();
+	private List<MvSta> movingStList = new ArrayList<>();
 	private FreeItem movingItem = null;
 	private GraphicsContext gc;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
@@ -1032,8 +1033,12 @@ public class UIController implements Initializable{
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
-						movingStList = searchStation(draggedRect.getX()/drawer.getZoomRatio(), draggedRect.getY()/drawer.getZoomRatio(),
-								draggedRect.getWidth()/drawer.getZoomRatio(), draggedRect.getHeight()/drawer.getZoomRatio());
+						movingStList = lineList.findStationsByArea(
+							draggedRect.getX() / drawer.getZoomRatio(),
+							draggedRect.getY() / drawer.getZoomRatio(),
+							draggedRect.getWidth() / drawer.getZoomRatio(),
+							draggedRect.getHeight()/drawer.getZoomRatio()
+							).stream().map(s -> new MvSta(s)).collect(Collectors.toList());
 						lineDraw();
 					}
 				}else{
@@ -2343,27 +2348,7 @@ public class UIController implements Initializable{
 		}
 		return null;
 	}
-	
-	ObservableList<MvSta> searchStation(double x, double y, double w, double h){
-		//ドラッグで生成された四角形の中に存在する駅をリストで返す。座標固定駅のみ。
-		ObservableList<MvSta> staList = FXCollections.observableArrayList();
-		for(Line l: lineList){
-			for(Station sta: l.getStations()){
-				if(sta.isSet()){
-					double[] p = sta.getPoint();
-					if(x <= p[0] && p[0] <= x + w && y <= p[1] && p[1] <= y + h){
-						boolean contain = false;
-						for(MvSta ms: staList){
-							if(ms.getStation() == sta) contain = true;
-						}
-						if(! contain) staList.add(new MvSta(sta));//重複対策
-					}
-				}
-			}
-		}
-		return staList;
-	}
-	
+
 	void readERMFile(File file) throws IOException {
 		try (ErmFileReader ermFileReader = new ErmFileReader(file)) {
 			SaveData saveData = ermFileReader.read();

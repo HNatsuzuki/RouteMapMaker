@@ -92,6 +92,36 @@ public class LineList implements List<Line> {
     }
 
     /**
+     * 指定した範囲内にある駅を探します。
+     *
+     * @param x 左上のx座標
+     * @param y 左上のy座標
+     * @param width エリアの幅
+     * @param height エリアの高さ
+     * @return 範囲内に含まれる駅のリスト
+     */
+    public List<Station> findStationsByArea(double x, double y, double width, double height) {
+        double right = x + width;
+        double bottom = y + height;
+
+        return getStations().stream()
+            .filter(s -> s.isSet())
+            .filter(s -> {
+                var p = s.getPoint2D();
+                return p.getX() >= x && p.getX() <= right && p.getY() >= y && p.getY() <= bottom;
+            }).collect(Collectors.toList());
+    }
+
+    /**
+     * すべての駅を取得します。
+     *
+     * @return 駅のリスト
+     */
+    public List<Station> getStations() {
+        return lines.stream().flatMap(l -> l.getStations().stream()).distinct().collect(Collectors.toList());
+    }
+
+    /**
      * 全路線に含まれる駅の最大の座標を取得します。
      *
      * @return 最大の座標。一つも存在しない場合は (0, 0) を返します。
