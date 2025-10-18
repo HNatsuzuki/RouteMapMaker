@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
@@ -2303,7 +2302,7 @@ public class UIController implements Initializable{
 				}
 				if(!c.getStation().isSet()){//座標非設置点だった場合
 					//接続点は座標を固定。
-					c.getStation().setPoint(c.getStation().getInterPoint2D());
+					c.getStation().setPoint(c.getStation().getInterPoint());
 				}
 				//駅オブジェクト自体を置き換えて共通化してしまう。
 				//すべての路線のConnectionとTrainStopを走査し，すべての当該駅を置き換える
@@ -2337,7 +2336,7 @@ public class UIController implements Initializable{
 				Station station = line.getStation(j);
 				Point2D stationPoint = station.isSet()
 					? station.getPoint()
-					: station.getInterPoint2D();
+					: station.getInterPoint();
 
 				if (stationPoint.distance(point) <= 6) {
 					RouteTable.getSelectionModel().select(i);//選択処理をする

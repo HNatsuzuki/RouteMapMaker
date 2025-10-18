@@ -24,8 +24,8 @@ public class StationPropertiesConverter {
             properties.setProperty(prefix + "x", String.valueOf(station.getPoint().getX()));
             properties.setProperty(prefix + "y", String.valueOf(station.getPoint().getY()));
         } else {
-            properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint()[0]));
-            properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint()[1]));
+            properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint().getX()));
+            properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint().getY()));
         }
         properties.setProperty(prefix + "stationConnection", String.valueOf(station.getConnection()));
         properties.setProperty(prefix + "textLocation", String.valueOf(station.getTextLocation()));

@@ -113,18 +113,7 @@ public class Station {//駅に関する情報を保持するクラス
 		y.set(point.getY());
 	}
 
-	public double[] getInterPoint(){
-		if(pointSet.get()){
-			throw new IllegalArgumentException();
-		}else{
-			double[] p = new double[2];
-			p[0] = x.get();
-			p[1] = y.get();
-			return p;
-		}
-	}
-
-	public Point2D getInterPoint2D() {
+	public Point2D getInterPoint() {
 		if (pointSet.get()) {
 			throw new IllegalArgumentException("座標固定駅の座標は取得できません。");
 		} else {
