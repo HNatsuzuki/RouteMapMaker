@@ -65,7 +65,7 @@ public class TrainPathCalculator {
             if (currentStation == stops.get(stopCount).getSta()) {
                 //駅毎位置補正を加え、運転系統の駅座標・角度を更新する
                 TrainStop trainStop = stops.get(stopCount);
-                Point2D stationOffset = trainStop.getOffset();
+                Point2D stationOffset = trainStop.getShift();
                 point = point.add(stationOffset);
                 trainStop.setPosition(point);
 

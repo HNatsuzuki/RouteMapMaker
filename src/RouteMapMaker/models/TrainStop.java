@@ -31,11 +31,7 @@ public class TrainStop {//系統毎に保持する必要がある駅に関する
 	public IntegerProperty getShiftYProperty(){
 		return this.shiftY;
 	}
-	public int[] getShift(){
-		int s[] = {shiftX.get(), shiftY.get()};
-		return s;
-	}
-	public Point2D getOffset() {
+	public Point2D getShift() {
 		return new Point2D(shiftX.get(), shiftY.get());
 	}
 	public Station getSta(){

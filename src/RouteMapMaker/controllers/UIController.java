@@ -1669,8 +1669,8 @@ public class UIController implements Initializable{
 				re_staPShift_TB.setSelected(stop.getSta().shiftBasedOnStation());
 				re_staPX_SP.getValueFactory().setValue((int)stop.getSta().getNameOffset().getX());
 				re_staPY_SP.getValueFactory().setValue((int)stop.getSta().getNameOffset().getY());
-				re_staLAX_SP.getValueFactory().setValue(stop.getShift()[0]);
-				re_staLAY_SP.getValueFactory().setValue(stop.getShift()[1]);
+				re_staLAX_SP.getValueFactory().setValue((int)stop.getShift().getX());
+				re_staLAY_SP.getValueFactory().setValue((int)stop.getShift().getY());
 				re_staMark_CB.setValue(stop.getMark());
 			}
 		});
@@ -1773,7 +1773,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
-				if(oldVal == stop.getShift()[0]) {
+				if(oldVal == (int)stop.getShift().getX()) {
 					Command command = new ValueSetCommand<>(stop.getShiftXProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1789,7 +1789,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
-				if(oldVal == stop.getShift()[1]) {
+				if(oldVal == (int)stop.getShift().getY()) {
 					Command command = new ValueSetCommand<>(stop.getShiftYProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
