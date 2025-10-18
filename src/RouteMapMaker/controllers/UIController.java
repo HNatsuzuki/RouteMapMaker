@@ -160,6 +160,9 @@ public class UIController implements Initializable{
 	/** 路線編集モードで選択中の路線 */
 	private Optional<Line> selectedEditLine = Optional.empty();
 
+	/** 路線編集モードで選択中の駅 */
+	private Optional<Station> selectedLineStation = Optional.empty();
+
 	/** 現在選択中の路線？（RouteTableのlistenerでセットされている） */
 	@Deprecated
 	private Line line;
@@ -777,38 +780,7 @@ public class UIController implements Initializable{
 				}
 			}
 		});
-		StationList.getSelectionModel().selectedItemProperty().addListener( (ObservableValue<? extends String> ov, 
-			String old_val, String new_val) -> {
-				int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-				int indexS = StationList.getSelectionModel().getSelectedIndex();
-				if(indexR == -1 || indexS == -1){
-					return;
-				}
-				Station s = lineList.get(indexR).getStations().get(indexS);
-				staSize.getValueFactory().setValue(s.getNameSize());
-				staSize.setDisable(s.getNameSize()==-1);
-				staNameNoShow.setSelected(s.getNameSize()==-1);
-				staStyle.getSelectionModel().select(s.getNameStyle());
-				staCurveConnection.setDisable(!lineList.get(indexR).isCurvable(indexS));
-				staCurveConnection.setSelected(lineList.get(indexR).getCurveConnection(indexS));
-				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter};
-				//位置指定トグルの有効/無効を切り替える
-				boolean obeyLine = s.getTextLocation()==Station.TEXT_UNSET;
-				staObeyLine.setSelected(obeyLine);
-				Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
-				((javafx.scene.Node)staTate).setDisable(obeyLine);
-				((javafx.scene.Node)staYoko).setDisable(obeyLine);
-				staTextMuki.selectToggle(s.isTategaki() ? staTate : staYoko);
-				if(!obeyLine) {
-					staTextLocation.selectToggle(stlToggles[s.getTextLocation()-Station.TEXT_LEFT]);
-				}
-				//選択中の駅を赤点で表示する
-				if(movingStList.size() < 2) {
-					movingStList.clear();
-					movingStList.add(new MvSta(s));
-					lineDraw();
-				}
-			});
+		StationList.getSelectionModel().selectedIndexProperty().addListener(this::lineStationSelectedIndexChanged);
 		
 		showBackInLE.setOnAction((ActionEvent) -> {
 			lineDraw();
@@ -1908,6 +1880,48 @@ public class UIController implements Initializable{
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
 		RouteColor.setValue(line.getNameColor());//色設定
+	}
+
+	/**
+	 * 路線編集モードで駅リストの選択中インデックス変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void lineStationSelectedIndexChanged(ObservableValue<?> observable, Number oldValue, Number newValue) {
+		selectedEditLine.ifPresentOrElse(line -> {
+			if (newValue.intValue() == -1) {
+				selectedLineStation = Optional.empty();
+			} else {
+				Station station = line.getStation(newValue.intValue());
+				selectedLineStation = Optional.of(station);
+				staSize.getValueFactory().setValue(station.getNameSize());
+				staSize.setDisable(station.getNameSize()==-1);
+				staNameNoShow.setSelected(station.getNameSize()==-1);
+				staStyle.getSelectionModel().select(station.getNameStyle());
+				staCurveConnection.setDisable(!line.isCurvable(newValue.intValue()));
+				staCurveConnection.setSelected(line.getCurveConnection(newValue.intValue()));
+				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter};
+				//位置指定トグルの有効/無効を切り替える
+				boolean obeyLine = station.getTextLocation()==Station.TEXT_UNSET;
+				staObeyLine.setSelected(obeyLine);
+				Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
+				((javafx.scene.Node)staTate).setDisable(obeyLine);
+				((javafx.scene.Node)staYoko).setDisable(obeyLine);
+				staTextMuki.selectToggle(station.isTategaki() ? staTate : staYoko);
+				if(!obeyLine) {
+					staTextLocation.selectToggle(stlToggles[station.getTextLocation()-Station.TEXT_LEFT]);
+				}
+				//選択中の駅を赤点で表示する
+				if(movingStList.size() < 2) {
+					movingStList.clear();
+					movingStList.add(new MvSta(station));
+					lineDraw();
+				}
+			}
+		},
+		() -> selectedLineStation = Optional.empty());
 	}
 
 	/**
