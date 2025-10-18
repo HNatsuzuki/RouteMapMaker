@@ -190,6 +190,8 @@ public class UIController implements Initializable{
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
 	private MapDrawer drawer;
+	//ドラッグスタート時の座標を記録する。station座標（zoomを考慮）．
+	Point2D mouseDownPoint = new Point2D(0, 0);
 
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
@@ -912,15 +914,15 @@ public class UIController implements Initializable{
 			});
 		}
 		
-		double[] startCoor = new double[2];//ドラッグスタート時の座標を記録する。station座標（zoomを考慮）．
 		draggedRect.setVisible(false);
 		canvas.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>(){//canvas上でマウスが押された時
 			@Override
 			public void handle(MouseEvent e){
-				startCoor[0] = e.getX()/drawer.getZoomRatio();
-				startCoor[1] = e.getY()/drawer.getZoomRatio();
+				double x = e.getX()/drawer.getZoomRatio();
+				double y = e.getY()/drawer.getZoomRatio();
+				mouseDownPoint = new Point2D(x, y);
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					movingSt = searchStation(startCoor[0], startCoor[1]);
+					movingSt = searchStation(new Point2D(x, y));
 					if(movingSt == null){
 						draggedRect.setVisible(true);
 						draggedRect.setX(e.getX());
@@ -929,8 +931,8 @@ public class UIController implements Initializable{
 						draggedRect.setHeight(0);
 						movingStList.clear();
 					}else{
-						startCoor[0] = movingSt.getPointUS()[0];//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
-						startCoor[1] = movingSt.getPointUS()[1];
+						//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
+						mouseDownPoint = movingSt.getPointUSAsPoint2D();
 						boolean contain = movingStList.stream().filter(ms -> ms.getStation()==movingSt).count()>0;
 						if(contain && shortCutKeyPressed){//movingStListから選択されたものを削除する
 							//ConcurrentModificationExceptionを回避するためにIteratorを使う
@@ -945,7 +947,7 @@ public class UIController implements Initializable{
 							movingStList.add(new MvSta(movingSt));
 						}
 						for(MvSta ms: movingStList){//start座標の更新
-							ms.setStart(ms.getStation().getPointUS());
+							ms.setStart(ms.getStation().getPointUSAsPoint2D());
 						}
 						draggedRect.setVisible(false);
 					}
@@ -962,28 +964,29 @@ public class UIController implements Initializable{
 					if(e.getButton()!=MouseButton.PRIMARY) {
 						return;
 					}
-					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
+					//zoomを考慮した現在のマウス座標
+					final Point2D cc = new Point2D(e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio());
 					if(movingSt != null){//特定の駅が選択されている時
 						//movingSt.setPoint(e.getX(), e.getY());
 						for(MvSta ms: movingStList){
-							ms.getStation().setPoint(ms.getStart()[0] + cc[0] - startCoor[0], ms.getStart()[1] + cc[1] - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart().add(cc).subtract(mouseDownPoint));
 						}
 						//領域の自動拡大
 						if(canvas.getWidth() - e.getX() < canvasMargin) canvas.setWidth(e.getX() + canvasMargin);
 						if(canvas.getHeight() - e.getY() < canvasMargin) canvas.setHeight(e.getY() + canvasMargin);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
-						if(e.getX() - startCoor[0]*drawer.getZoomRatio() <= 0){//符号の反転が必要
+						if(e.getX() - mouseDownPoint.getX()*drawer.getZoomRatio() <= 0){//符号の反転が必要
 							draggedRect.setX(e.getX());
-							draggedRect.setWidth(startCoor[0]*drawer.getZoomRatio() - e.getX());
+							draggedRect.setWidth(mouseDownPoint.getX()*drawer.getZoomRatio() - e.getX());
 						}else{//反転必要なし
-							draggedRect.setWidth(e.getX() - startCoor[0]*drawer.getZoomRatio());
+							draggedRect.setWidth(e.getX() - mouseDownPoint.getX()*drawer.getZoomRatio());
 						}
-						if(e.getY() - startCoor[1]*drawer.getZoomRatio() <= 0){
+						if(e.getY() - mouseDownPoint.getY()*drawer.getZoomRatio() <= 0){
 							draggedRect.setY(e.getY());
-							draggedRect.setHeight(startCoor[1]*drawer.getZoomRatio() - e.getY());
+							draggedRect.setHeight(mouseDownPoint.getY()*drawer.getZoomRatio() - e.getY());
 						}else{
-							draggedRect.setHeight(e.getY() - startCoor[1]*drawer.getZoomRatio());
+							draggedRect.setHeight(e.getY() - mouseDownPoint.getY()*drawer.getZoomRatio());
 						}
 					}
 				}else{//leftEditbuttonが選択されている状態
@@ -1004,14 +1007,13 @@ public class UIController implements Initializable{
 						double mouseX = gridedPos[0];
 						double mouseY = gridedPos[1];
 						for(MvSta ms: movingStList){
-							ms.getStation().setPoint(ms.getStart()[0] + mouseX - startCoor[0], ms.getStart()[1] + mouseY - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart().add(mouseX, mouseY).subtract(mouseDownPoint));
 						}
 						//マウスが全く動いてないかつ全てがもともと座標固定駅だった場合はpushしてはならない
 						boolean shouldBePushed = false;
 						for(MvSta ms: movingStList){
 							//完全にイコールにするとすごく小さな値で差がついてしまう
-							if(! ms.getIsSet() || Math.abs(ms.getStart()[0] - ms.getStation().getPoint()[0]) > 0.5  || 
-									Math.abs(ms.getStart()[1] - ms.getStation().getPoint()[1]) > 0.5){
+							if(! ms.getIsSet() || ms.getStart().distance(ms.getStation().getPoint2D()) > 0.5){
 								shouldBePushed = true;
 								break;
 							}
@@ -2348,22 +2350,19 @@ public class UIController implements Initializable{
 		}
 	}
 
-	Station searchStation(double x, double y){
+	Station searchStation(Point2D point){
 		for(int i = 0; i < lineList.size(); i++) {
 			Line line = lineList.get(i);
 			for(int j = 0; j < line.getStations().size(); j++){
-				Station st = line.getStations().get(j);
-				double[] p;
-				if(st.isSet()){
-					p = st.getPoint();
-				}else{
-					p = st.getInterPoint();
-				}
-				double dist_square = Math.pow(x-p[0], 2) + Math.pow(y-p[1], 2);
-				if(dist_square <= Math.pow(6, 2)){
+				Station station = line.getStation(j);
+				Point2D stationPoint = station.isSet()
+					? station.getPoint2D()
+					: station.getInterPoint2D();
+
+				if (stationPoint.distance(point) <= 6) {
 					RouteTable.getSelectionModel().select(i);//選択処理をする
 					StationList.getSelectionModel().select(j);
-					return st;
+					return station;
 				}
 			}
 		}

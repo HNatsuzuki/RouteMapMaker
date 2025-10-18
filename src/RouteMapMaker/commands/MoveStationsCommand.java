@@ -27,8 +27,8 @@ public class MoveStationsCommand implements Command {
         for (MvSta ms: movingStations) {
             stations.add(ms.getStation());
             isSet.add(ms.getIsSet());
-            startX.add(ms.getStart()[0]);
-            startY.add(ms.getStart()[1]);
+            startX.add(ms.getStart().getX());
+            startY.add(ms.getStart().getY());
             afterX.add(ms.getStation().getPoint()[0]);
             afterY.add(ms.getStation().getPoint()[1]);
         }

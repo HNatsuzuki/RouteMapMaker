@@ -55,6 +55,11 @@ public class Station {//駅に関する情報を保持するクラス
 		this.y.set(y);
 		pointSet.set(true);
 	}
+	public void setPoint(Point2D point) {
+		this.x.set(point.getX());
+		this.y.set(point.getY());
+		pointSet.set(true);
+	}
 	public DoubleProperty[] getPointProperty(){
 		DoubleProperty[] dpa = new DoubleProperty[2];
 		dpa[0] = this.x;
@@ -119,6 +124,14 @@ public class Station {//駅に関する情報を保持するクラス
 			p[0] = x.get();
 			p[1] = y.get();
 			return p;
+		}
+	}
+
+	public Point2D getInterPoint2D() {
+		if (pointSet.get()) {
+			throw new IllegalArgumentException("座標固定駅の座標は取得できません。");
+		} else {
+			return new Point2D(x.get(), y.get());
 		}
 	}
 	public void setTextLocation(int muki){
