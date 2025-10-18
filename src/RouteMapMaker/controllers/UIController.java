@@ -29,7 +29,6 @@ import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -895,7 +894,7 @@ public class UIController implements Initializable{
 		bgImageY.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(Integer.MIN_VALUE,Integer.MAX_VALUE,0));
 		bgImageSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,1000,100));
 		bgImageOpacity.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0,100,0));
-		Spinner[] bgSpinners = {bgImageX, bgImageY, bgImageSize, bgImageOpacity};
+		List<Spinner<Integer>> bgSpinners = List.of(bgImageX, bgImageY, bgImageSize, bgImageOpacity);
 		for(Spinner<Integer> spinner: bgSpinners) {
 			// SpinnerEventHandlerの登録
 			spinner.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(spinner));
@@ -1432,8 +1431,7 @@ public class UIController implements Initializable{
 		});
 		
 		tStaList.setItems(tStaListOb);
-		trainListView.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
-			// TODO Auto-generated method stub
+		trainListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != -1){
@@ -1480,7 +1478,7 @@ public class UIController implements Initializable{
 			}
 			mapDraw();
 		});
-		Spinner[] re_line_spinners = {re_line_SP, re_lineC_SP, re_lineSA_SP, re_lineSB_SP, re_mark_SP};
+		List<Spinner<Integer>> re_line_spinners = List.of(re_line_SP, re_lineC_SP, re_lineSA_SP, re_lineSB_SP, re_mark_SP);
 		for(Spinner<Integer> sp: re_line_spinners) {
 			int min = (sp==re_line_SP || sp==re_mark_SP ? 1 : Integer.MIN_VALUE);
 			int initial = (sp==re_line_SP ? 10 : sp==re_mark_SP ? 8 : 0);
