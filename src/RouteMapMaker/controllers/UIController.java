@@ -154,7 +154,14 @@ public class UIController implements Initializable{
 	private ObservableList<StopMark> markList = FXCollections.observableArrayList();//駅ごと
 	private ObservableList<StopMark> trainMarkList = FXCollections.observableArrayList();//経路ごと
 	private final LineList lineList = new LineList();
-	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
+
+	/** 路線編集モードで選択中の路線 */
+	private Optional<Line> selectedEditLine = Optional.empty();
+
+	/** 現在選択中の路線？（RouteTableのlistenerでセットされている） */
+	@Deprecated
+	private Line line;
+
 	private Station movingSt;
 	private List<MvSta> movingStList = new ArrayList<>();
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
@@ -316,6 +323,8 @@ public class UIController implements Initializable{
 		setCanvasOriginal(lineList.getMaxPoint());
 		rnList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
+		StationList.setItems(snList);
+		StationList.setEditable(true);
 		(new Thread(){
 			@Override
 			public void run(){
@@ -338,7 +347,6 @@ public class UIController implements Initializable{
 			alert.showAndWait();
 			config.setNoAlert(box.isSelected());
 		}
-		selectSomething(true);
 		lineDraw();
 		line = lineList.get(0);
 
@@ -392,28 +400,7 @@ public class UIController implements Initializable{
 					}
 					lineDraw();
 				});
-		RouteTable.getSelectionModel().selectedItemProperty().addListener( (ObservableValue<? extends String> ov, 
-				String old_val, String new_val) -> {
-					//路線が選択された時の処理
-					int index = RouteTable.getSelectionModel().getSelectedIndex();
-					if(index == -1) {
-						//index-1は何も選択されてないことを示すので処理しない。
-						return;
-					}
-					line = lineList.get(index);
-					StationList.setItems(snList);
-					snList.clear();
-					line.getStations().stream().forEach(s -> snList.add(s.getName())); //駅名リストの更新
-					StationList.getSelectionModel().selectLast();
-					StationList.setEditable(true);
-					//トグルの選択と駅名表示位置設定
-					Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
-					lineTextLocation.selectToggle(tlToggle[line.getNameLocation()]);
-					lineTextMuki.selectToggle(line.isTategaki() ? lineTate : lineYoko);
-					RouteSize.getValueFactory().setValue(lineList.get(index).getNameSize());//サイズ設定
-					RouteStyle.getSelectionModel().select(lineList.get(index).getNameStyle());//style設定
-					RouteColor.setValue(lineList.get(index).getNameColor());//色設定
-				});
+		RouteTable.getSelectionModel().selectedIndexProperty().addListener(this::lineSelectedIndexChangedInEditMode);
 		RouteTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
 			@Override
 			public void handle(ListView.EditEvent<String> t){
@@ -1799,6 +1786,8 @@ public class UIController implements Initializable{
 			ReDraw();
 		});
 
+		selectSomething(true);
+
 		// 設定変更時イベント処理
 		config.getR_gridProperty().addListener((obs) -> {
 			ReDraw();
@@ -1879,6 +1868,31 @@ public class UIController implements Initializable{
 			rnList.remove(index);
 			lineDraw();
 		}
+	}
+
+	/**
+	 * 路線編集モードで路線リストの選択中インデックス変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void lineSelectedIndexChangedInEditMode(ObservableValue<?> observable, Number oldValue, Number newValue) {
+		if (newValue.intValue() == -1) {
+			selectedEditLine = Optional.empty();
+			return;
+		}
+		line = lineList.get(newValue.intValue());
+		selectedEditLine = Optional.of(line);
+		snList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
+		StationList.getSelectionModel().selectLast();
+		//トグルの選択と駅名表示位置設定
+		Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
+		lineTextLocation.selectToggle(tlToggle[line.getNameLocation()]);
+		lineTextMuki.selectToggle(line.isTategaki() ? lineTate : lineYoko);
+		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
+		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
+		RouteColor.setValue(line.getNameColor());//色設定
 	}
 
 	/**
