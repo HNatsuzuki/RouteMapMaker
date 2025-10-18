@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 
 /**
@@ -13,10 +14,8 @@ public class MoveStationsCommand implements Command {
     //MvStaオブジェクトをそのまま使うと外部から変更された時にヤバイので全て値をコピーして使います。
     private final List<Station> stations = new ArrayList<>();
     private final List<Boolean> isSet = new ArrayList<>(); //変更前の状態（変更後は必ずtrueなので）
-    private final List<Double> startX = new ArrayList<>();
-    private final List<Double> startY = new ArrayList<>();
-    private final List<Double> afterX = new ArrayList<>();
-    private final List<Double> afterY = new ArrayList<>();
+    private final List<Point2D> start = new ArrayList<>();
+    private final List<Point2D> after = new ArrayList<>();
 
     /**
      * コンストラクタ
@@ -27,10 +26,8 @@ public class MoveStationsCommand implements Command {
         for (MvSta ms: movingStations) {
             stations.add(ms.getStation());
             isSet.add(ms.getIsSet());
-            startX.add(ms.getStart().getX());
-            startY.add(ms.getStart().getY());
-            afterX.add(ms.getStation().getPoint().getX());
-            afterY.add(ms.getStation().getPoint().getY());
+            start.add(ms.getStart());
+            after.add(ms.getStation().getPoint());
         }
     }
 
@@ -40,7 +37,7 @@ public class MoveStationsCommand implements Command {
     @Override
     public void execute() {
         for (int i = 0; i < stations.size(); ++i) {
-            stations.get(i).setPoint(afterX.get(i), afterY.get(i));
+            stations.get(i).setPoint(after.get(i));
         }
     }
 
@@ -51,9 +48,9 @@ public class MoveStationsCommand implements Command {
     public void undo() {
         for (int i = 0; i < stations.size(); i++) {
             if (isSet.get(i)) {
-                stations.get(i).setPoint(startX.get(i), startY.get(i));
+                stations.get(i).setPoint(start.get(i));
             } else {
-                stations.get(i).setInterPoint(startX.get(i), startY.get(i));
+                stations.get(i).setInterPoint(start.get(i));
             }
         }
     }

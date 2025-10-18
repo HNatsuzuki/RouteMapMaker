@@ -106,6 +106,13 @@ public class Station {//駅に関する情報を保持するクラス
 		this.x.set(x);
 		this.y.set(y);
 	}
+
+	public void setInterPoint(Point2D point) {
+		pointSet.set(false);
+		x.set(point.getX());
+		y.set(point.getY());
+	}
+
 	public double[] getInterPoint(){
 		if(pointSet.get()){
 			throw new IllegalArgumentException();
@@ -124,6 +131,7 @@ public class Station {//駅に関する情報を保持するクラス
 			return new Point2D(x.get(), y.get());
 		}
 	}
+
 	public void setTextLocation(int muki){
 		this.textLocation.set(muki);
 	}
