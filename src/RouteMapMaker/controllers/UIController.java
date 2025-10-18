@@ -998,16 +998,16 @@ public class UIController implements Initializable{
 			@Override
 			public void handle(MouseEvent e){
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
+					//zoomを考慮した現在のマウス座標
+					final Point2D cc = new Point2D(e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio());
 					if(movingSt != null){//特定の駅が選択されている時
 						if(e.getButton()!=MouseButton.PRIMARY) {
 							return;
 						}
-						double[] gridedPos = getGridedPoint(cc[0], cc[1]);
-						double mouseX = gridedPos[0];
-						double mouseY = gridedPos[1];
+						Point2D snappedPoint = snapToGrid(cc);
+
 						for(MvSta ms: movingStList){
-							ms.getStation().setPoint(ms.getStart().add(mouseX, mouseY).subtract(mouseDownPoint));
+							ms.getStation().setPoint(ms.getStart().add(snappedPoint).subtract(mouseDownPoint));
 						}
 						//マウスが全く動いてないかつ全てがもともと座標固定駅だった場合はpushしてはならない
 						boolean shouldBePushed = false;
@@ -2093,35 +2093,42 @@ public class UIController implements Initializable{
 		return newLine;
 	}
 	
-	double[] getGridedPoint(double org_x, double org_y) {
-		double[] pos = {org_x, org_y};
+	/**
+	 * グリッドの交点に近い座標を取得します。
+	 *
+	 * @param point 元の座標
+	 * @return グリッドの交点
+	 */
+	private Point2D snapToGrid(Point2D point) {
 		if(!config.getR_grid()) {
 			// グリッド非表示．グリッド補正の必要なし
-			return pos;
+			return point;
 		}
 		
+		double x = point.getX();
+		double y = point.getY();
 		int interval = config.getR_gridInterval();
 		if(config.isGridTriangle()) {
 			// 三角形グリッド．XとY個別の固定はサポートしない．
 			if(config.getR_bindToGridX()) {
 				//まずy座標を確定させる
 				double y_interval = interval * Math.sqrt(3) / 2;
-				int idx = (int) (Math.round(org_y / y_interval));
-				pos[1] = idx * y_interval;
+				int idx = (int) (Math.round(point.getY() / y_interval));
+				y = idx * y_interval;
 				//つづいてx座標を計算する．idxが偶数か奇数かで半interval分ずれる
 				double offset = (idx%2==1 ? interval/2.0 : 0);
-				pos[0] = Math.round((org_x - offset) / interval) * interval + offset;
+				x = Math.round((point.getX() - offset) / interval) * interval + offset;
 			}
 		} else {
 			//四角形グリッド
 			if(config.getR_bindToGridX()){//グリッドにバインドする設定だった場合は座標の補正を行う。
-				pos[0] = Math.round(org_x / interval) * interval;
+				x = Math.round(point.getX() / interval) * interval;
 			}
 			if(config.getR_bindToGridY()){
-				pos[1] = Math.round(org_y / interval) * interval;
+				y = Math.round(point.getY() / interval) * interval;
 			}
 		}
-		return pos;
+		return new Point2D(x, y);
 	}
 
 	private void setCanvasOriginal(Point2D point) {
@@ -2290,9 +2297,8 @@ public class UIController implements Initializable{
 					}
 				}
 				if(!c.getStation().isSet()){//座標非設置点だった場合
-					double[] p = detectCoordinate(i, l);
 					//接続点は座標を固定。
-					c.getStation().setPoint(p[0], p[1]);
+					c.getStation().setPoint(c.getStation().getInterPoint2D());
 				}
 				//駅オブジェクト自体を置き換えて共通化してしまう。
 				//すべての路線のConnectionとTrainStopを走査し，すべての当該駅を置き換える
@@ -2317,37 +2323,6 @@ public class UIController implements Initializable{
 			}
 		}
 		return 1;
-	}
-	
-	double[] detectCoordinate(int stIndex, Line line) {
-		double[] detected = new double[2];
-		if(line.getStations().get(stIndex).isSet()){
-			return line.getStations().get(stIndex).getPoint();
-		}else{
-			double[] start = new double[2];
-			double[] end = new double[2];
-			int startIndex = 0;
-			int endIndex = 0;
-			//始点検索
-			for(int i = stIndex - 1; i >= 0; i--){
-				if(line.getStations().get(i).isSet()){
-					start = line.getStations().get(i).getPoint();
-					startIndex = i;
-					break;
-				}
-			}
-			//終点検索
-			for(int i = stIndex + 1; i < line.getStations().size(); i++){
-				if(line.getStations().get(i).isSet()){
-					end = line.getStations().get(i).getPoint();
-					endIndex = i;
-					break;
-				}
-			}
-			detected[0] = start[0] + (end[0] - start[0]) * (stIndex - startIndex) / (endIndex - startIndex);
-			detected[1] = start[1] + (end[1] - start[1]) * (stIndex - startIndex) / (endIndex - startIndex);
-			return detected;
-		}
 	}
 
 	Station searchStation(Point2D point){
