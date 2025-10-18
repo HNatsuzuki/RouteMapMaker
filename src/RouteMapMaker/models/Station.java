@@ -75,23 +75,13 @@ public class Station {//駅に関する情報を保持するクラス
 	public boolean isSet(){
 		return pointSet.get();
 	}
-	public double[] getPoint(){
-		if(pointSet.get()){
-			double[] p = new double[2];
-			p[0] = x.get();
-			p[1] = y.get();
-			return p;
-		}else{
-			throw new IllegalArgumentException();
-		}
-	}
 
 	/**
-	 * Point2D 型で駅の固定座標を取得します。
+	 * 駅の固定座標を取得します。
 	 *
 	 * @return 駅の固定座標
 	 */
-	public Point2D getPoint2D() {
+	public Point2D getPoint() {
 		if (!pointSet.get()) {
 			throw new IllegalArgumentException("座標非固定駅の座標は取得できません。");
 		}

@@ -776,7 +776,7 @@ public class UIController implements Initializable{
 					Station oldSta = lineList.get(indexR).getStations().get(indexS);
 					Station newSta = new Station("新-" + oldSta.getName());
 					//以下初期設定。clone使いたいけどshiftCoorでトラブりそうなのでやめる
-					newSta.setPoint(oldSta.getPoint()[0] + 50, oldSta.getPoint()[1] + 50);
+					newSta.setPoint(oldSta.getPoint().add(50, 50));
 					newSta.setConnection(oldSta.getConnection());
 					newSta.setTextLocation(oldSta.getTextLocation());
 					newSta.setNameSize(oldSta.getNameSize());
@@ -1014,7 +1014,7 @@ public class UIController implements Initializable{
 						boolean shouldBePushed = false;
 						for(MvSta ms: movingStList){
 							//完全にイコールにするとすごく小さな値で差がついてしまう
-							if(! ms.getIsSet() || ms.getStart().distance(ms.getStation().getPoint2D()) > 0.5){
+							if(! ms.getIsSet() || ms.getStart().distance(ms.getStation().getPoint()) > 0.5){
 								shouldBePushed = true;
 								break;
 							}
@@ -2336,7 +2336,7 @@ public class UIController implements Initializable{
 			for(int j = 0; j < line.getStations().size(); j++){
 				Station station = line.getStation(j);
 				Point2D stationPoint = station.isSet()
-					? station.getPoint2D()
+					? station.getPoint()
 					: station.getInterPoint2D();
 
 				if (stationPoint.distance(point) <= 6) {

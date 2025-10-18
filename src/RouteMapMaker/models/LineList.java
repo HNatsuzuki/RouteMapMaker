@@ -107,7 +107,7 @@ public class LineList implements List<Line> {
         return getStations().stream()
             .filter(s -> s.isSet())
             .filter(s -> {
-                var p = s.getPoint2D();
+                var p = s.getPoint();
                 return p.getX() >= x && p.getX() <= right && p.getY() >= y && p.getY() <= bottom;
             }).collect(Collectors.toList());
     }
@@ -129,8 +129,8 @@ public class LineList implements List<Line> {
     public Point2D getMaxPoint() {
         Point2D point;
         List<Station> stations = this.lines.stream().flatMap(l -> l.getStations().stream()).filter(Station::isSet).collect(Collectors.toList());
-        OptionalDouble maxX = stations.stream().mapToDouble(s -> s.getPoint()[0]).max();
-        OptionalDouble maxY = stations.stream().mapToDouble(s -> s.getPoint()[1]).max();
+        OptionalDouble maxX = stations.stream().mapToDouble(s -> s.getPoint().getX()).max();
+        OptionalDouble maxY = stations.stream().mapToDouble(s -> s.getPoint().getY()).max();
 
         if (maxX.isPresent() && maxY.isPresent()) {
             point = new Point2D(maxX.getAsDouble(), maxY.getAsDouble());

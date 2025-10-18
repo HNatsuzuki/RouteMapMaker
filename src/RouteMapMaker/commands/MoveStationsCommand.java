@@ -29,8 +29,8 @@ public class MoveStationsCommand implements Command {
             isSet.add(ms.getIsSet());
             startX.add(ms.getStart().getX());
             startY.add(ms.getStart().getY());
-            afterX.add(ms.getStation().getPoint()[0]);
-            afterY.add(ms.getStation().getPoint()[1]);
+            afterX.add(ms.getStation().getPoint().getX());
+            afterY.add(ms.getStation().getPoint().getY());
         }
     }
 

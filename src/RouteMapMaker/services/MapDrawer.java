@@ -341,7 +341,7 @@ public class MapDrawer {
             //まずは始点での処理。
             List<Line.Connection> fixedStations = line.getConnections().stream().
                     filter(c -> c.getStation().isSet()).collect(Collectors.toList());
-            startP = stations.get(0).getPoint2D();
+            startP = stations.get(0).getPoint();
             gc.beginPath();
             gc.moveTo(startP.getX(), startP.getY());
 
@@ -351,13 +351,13 @@ public class MapDrawer {
                     continue;
                 }
 
-                endP = stations.get(i).getPoint2D();
+                endP = stations.get(i).getPoint();
 
                 if (line.getCurveConnection(i) && line.isCurvable(i)) {
                     // ベジエ曲線での接続
                     int idx = fixedStations.indexOf(line.getConnections().get(i));
-                    LineSegment l1 = new LineSegment(fixedStations.get(idx - 2).getStation().getPoint2D(), startP);
-                    LineSegment l2 = new LineSegment(endP, fixedStations.get(idx + 1).getStation().getPoint2D());
+                    LineSegment l1 = new LineSegment(fixedStations.get(idx - 2).getStation().getPoint(), startP);
+                    LineSegment l2 = new LineSegment(endP, fixedStations.get(idx + 1).getStation().getPoint());
                     Point2D cp = l1.getIntersection(l2); //control point
                     gc.quadraticCurveTo(cp.getX(), cp.getY(), endP.getX(), endP.getY());
                 } else {

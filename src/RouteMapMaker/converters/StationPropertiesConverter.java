@@ -20,10 +20,10 @@ public class StationPropertiesConverter {
         Properties properties = new Properties();
         properties.setProperty(prefix + "name", station.getName());
         properties.setProperty(prefix + "pointSet", String.valueOf(station.isSet()));
-        if(station.isSet()){
-            properties.setProperty(prefix + "x", String.valueOf(station.getPoint()[0]));
-            properties.setProperty(prefix + "y", String.valueOf(station.getPoint()[1]));
-        }else{
+        if (station.isSet()) {
+            properties.setProperty(prefix + "x", String.valueOf(station.getPoint().getX()));
+            properties.setProperty(prefix + "y", String.valueOf(station.getPoint().getY()));
+        } else {
             properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint()[0]));
             properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint()[1]));
         }
