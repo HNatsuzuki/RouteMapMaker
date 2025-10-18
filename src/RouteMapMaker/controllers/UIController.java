@@ -42,7 +42,6 @@ import javafx.geometry.Dimension2D;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
@@ -158,7 +157,6 @@ public class UIController implements Initializable{
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
 	private List<MvSta> movingStList = new ArrayList<>();
-	private GraphicsContext gc;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
 	final double canvasMargin = 200;
 	private final double version = 9;//セーブファイルのバージョン。セーブファイルに完全な互換性がなくなった時に変更する。
@@ -308,8 +306,7 @@ public class UIController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		gc = canvas.getGraphicsContext2D();
-		drawer = new MapDrawer(config, gc, stationFontFamily);
+		drawer = new MapDrawer(config, canvas.getGraphicsContext2D(), stationFontFamily);
 		drawer.initialize();
 
 		RouteTable.setItems(rnList);
