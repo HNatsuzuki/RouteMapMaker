@@ -382,23 +382,21 @@ public class UIController implements Initializable{
 				});
 		lineTextMuki.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
-					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
-					if(RouteIndex == -1){
-						alert.showWarning("路線を選択してください。");
+			selectedEditLine.ifPresentOrElse(line -> {
+				if (new_toggle == null && old_toggle != null) {
+					//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+					lineTextMuki.selectToggle(old_toggle);
+				} else if (old_toggle != null && old_toggle != new_toggle
+						&& line.isTategaki() == (old_toggle == lineTate)) {
+					//手動で操作されたことによるlistenerの呼び出し
+					boolean nt = (new_toggle == lineTate);
+					Command command = new ValueSetCommand<>(line.getTategakiProperty(), nt);
+					urManager.execute(command);
+				}
+				lineDraw();
+			},
+			() -> alert.showWarning("路線を選択してください。"));
 
-						return;
-					}
-					if(new_toggle==null && old_toggle!=null) {
-						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-						lineTextMuki.selectToggle(old_toggle);
-					} else if(old_toggle != null && old_toggle != new_toggle
-							&& lineList.get(RouteIndex).isTategaki() == (old_toggle==lineTate)) {
-						//手動で操作されたことによるlistenerの呼び出し
-						boolean nt = (new_toggle==lineTate);
-						Command command = new ValueSetCommand<>(lineList.get(RouteIndex).getTategakiProperty(), nt);
-						urManager.execute(command);
-					}
-					lineDraw();
 				});
 		RouteTable.getSelectionModel().selectedIndexProperty().addListener(this::lineSelectedIndexChangedInEditMode);
 		RouteTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
@@ -417,44 +415,39 @@ public class UIController implements Initializable{
 				RouteTable.getSelectionModel().select(t.getIndex());
 			}
 		});
-		RouteColor.setOnAction((ActionEvent) -> {
-			int index = RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Command command = new ValueSetCommand<>(lineList.get(index).getNameColorProperty(), RouteColor.getValue());
+		RouteColor.setOnAction(actionEvent -> {
+			selectedEditLine.ifPresent(line -> {
+				Command command = new ValueSetCommand<>(line.getNameColorProperty(), RouteColor.getValue());
 				urManager.execute(command);
 				lineDraw();
-			}
+			});
 		});
 		RouteSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,Integer.MAX_VALUE,15,1));
 		RouteSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(RouteSize));
 		RouteSize.valueProperty().addListener((obs, oldVal, newVal) -> {
-			int index = RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				if(oldVal.intValue() == lineList.get(index).getNameSize()) {
-					Command command = new ValueSetCommand<>(lineList.get(index).getNameSizeProperty(), oldVal, newVal);
+			selectedEditLine.ifPresent(line -> {
+				if (oldVal.intValue() == line.getNameSize()) {
+					Command command = new ValueSetCommand<>(line.getNameSizeProperty(), oldVal, newVal);
 					urManager.execute(command);
+					lineDraw();
 				}
-
-				lineDraw();
-			}
+			});
 		});
 		ObservableList<String> RouteStyle_Options = FXCollections.observableArrayList("Regular", "Italic", "Bold", "BoldItalic");
 		RouteStyle.setItems(RouteStyle_Options);
 		RouteStyle.valueProperty().addListener((obs, oldVal, newVal) -> {
-			int index = RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				if(oldVal != null){
-					if((oldVal.equals("Regular") && lineList.get(index).getNameStyle() == Line.REGULAR) ||
-						(oldVal.equals("Italic") && lineList.get(index).getNameStyle() == Line.ITALIC) ||
-						(oldVal.equals("Bold") && lineList.get(index).getNameStyle() == Line.BOLD) ||
-						(oldVal.equals("BoldItalic") && lineList.get(index).getNameStyle() == Line.ITALIC_BOLD)) {
-						Command command = new ValueSetCommand<>(lineList.get(index).getNameStyleProperty(), RouteStyle.getSelectionModel().getSelectedIndex());
+			selectedEditLine.ifPresent(line -> {
+				if (oldVal != null) {
+					if ((oldVal.equals("Regular") && line.getNameStyle() == Line.REGULAR) ||
+						(oldVal.equals("Italic") && line.getNameStyle() == Line.ITALIC) ||
+						(oldVal.equals("Bold") && line.getNameStyle() == Line.BOLD) ||
+						(oldVal.equals("BoldItalic") && line.getNameStyle() == Line.ITALIC_BOLD)) {
+						Command command = new ValueSetCommand<>(line.getNameStyleProperty(), RouteStyle.getSelectionModel().getSelectedIndex());
 						urManager.execute(command);
+						lineDraw();
 					}
 				}
-
-				lineDraw();
-			}
+			});
 		});
 		stationFont.setOnAction((ActionEvent) ->{//フォントを設定。これは全路線共通です。
 			String oldVal = stationFontFamily.get();
