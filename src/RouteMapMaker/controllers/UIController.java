@@ -1400,34 +1400,7 @@ public class UIController implements Initializable{
 						mapDraw();
 					}
 				});
-		TrainAdd.setOnAction((ActionEvent) ->{
-			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Train newTrain = new Train("系統" + (lineList.get(index).getTrains().size() + 1));
-				Command command = new AddListItemCommand<>(lineList.get(index).getTrains(), newTrain);
-				urManager.execute(command);
-				int indexT = lineList.get(index).getTrains().size() - 1;
-				if(lineList.get(index).getTrains().size() > 1){//先例があればそれに従って自動補完を行う
-					lineList.get(index).getTrains().get(indexT).setLineDistance(lineList.get(index).getTrains().get(indexT-1)
-							.getLineDistance() + lineList.get(index).getTrains().get(indexT-1).getLineWidth());
-					lineList.get(index).getTrains().get(indexT).setLineWidth(lineList.get(index).getTrains().get(indexT-1)
-							.getLineWidth());
-					lineList.get(index).getTrains().get(indexT).setEdgeA(lineList.get(index).getTrains().get(indexT-1)
-							.getEdgeA());
-					lineList.get(index).getTrains().get(indexT).setEdgeB(lineList.get(index).getTrains().get(indexT-1)
-							.getEdgeB());
-					lineList.get(index).getTrains().get(indexT).setMarkColor(lineList.get(index).getTrains().get(indexT-1)
-							.getMarkColor());
-					lineList.get(index).getTrains().get(indexT).setMarkSize(lineList.get(index).getTrains().get(indexT-1)
-							.getMarkSize());
-				}
-				editTrainStops(lineList.get(index), lineList.get(index).getTrains().get(indexT));
-			}
-			trList.clear();
-			for(int i = 0; i < lineList.get(index).getTrains().size(); i++){
-				trList.add(lineList.get(index).getTrains().get(i).getName());
-			}
-		});
+		TrainAdd.setOnAction((ActionEvent) -> addTrain());
 		TrainDelete.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
@@ -1947,6 +1920,44 @@ public class UIController implements Initializable{
 		config.getNonFixedColorProperty().addListener((obs) -> {
 			ReDraw();
 		});
+	}
+
+	/**
+	 * 系統追加処理
+	 */
+	private void addTrain() {
+		int index = R_RouteTable.getSelectionModel().getSelectedIndex();
+
+		if (index == -1)
+		{
+			return;
+		}
+
+		Line line = lineList.get(index);
+		List<Train> trains = line.getTrains();
+		Train newTrain = new Train("系統" + (trains.size() + 1));
+
+		if (trains.size() > 0) {
+			//先例があればそれに従って自動補完を行う
+			Train prevTrain = trains.get(trains.size() - 1);
+			newTrain.setLineDistance(prevTrain.getLineDistance() + prevTrain.getLineWidth());
+			newTrain.setLineWidth(prevTrain.getLineWidth());
+			newTrain.setEdgeA(prevTrain.getEdgeA());
+			newTrain.setEdgeB(prevTrain.getEdgeB());
+			newTrain.setMarkColor(prevTrain.getMarkColor());
+			newTrain.setMarkSize(prevTrain.getMarkSize());
+		}
+
+		// 系統追加
+		Command command = new AddListItemCommand<>(trains, newTrain);
+		urManager.execute(command);
+
+		// 停車駅編集処理
+		editTrainStops(line, newTrain);
+
+		// 系統リスト更新
+		trList.setAll(trains.stream().map(t -> t.getName()).collect(Collectors.toList()));
+		TrainTable.getSelectionModel().selectLast();
 	}
 	
 	private Object Integer(int indexS) {
