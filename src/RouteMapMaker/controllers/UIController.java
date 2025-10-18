@@ -932,7 +932,7 @@ public class UIController implements Initializable{
 						movingStList.clear();
 					}else{
 						//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
-						mouseDownPoint = movingSt.getPointUSAsPoint2D();
+						mouseDownPoint = movingSt.getPointUS();
 						boolean contain = movingStList.stream().filter(ms -> ms.getStation()==movingSt).count()>0;
 						if(contain && shortCutKeyPressed){//movingStListから選択されたものを削除する
 							//ConcurrentModificationExceptionを回避するためにIteratorを使う
@@ -947,7 +947,7 @@ public class UIController implements Initializable{
 							movingStList.add(new MvSta(movingSt));
 						}
 						for(MvSta ms: movingStList){//start座標の更新
-							ms.setStart(ms.getStation().getPointUSAsPoint2D());
+							ms.setStart(ms.getStation().getPointUS());
 						}
 						draggedRect.setVisible(false);
 					}

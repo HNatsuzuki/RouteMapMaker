@@ -37,7 +37,7 @@ public class ScaleLineStationsCommand implements Command {
         this.scaleY = scaleY;
         this.pivotX = pivotX;
         this.pivotY = pivotY;
-        oldPoints = lineList.stream().flatMap(l -> l.getStations().stream()).collect(Collectors.toMap(s -> s, s -> s.getPointUSAsPoint2D(), (e, r) -> e));
+        oldPoints = lineList.stream().flatMap(l -> l.getStations().stream()).collect(Collectors.toMap(s -> s, s -> s.getPointUS(), (e, r) -> e));
     }
 
     /**

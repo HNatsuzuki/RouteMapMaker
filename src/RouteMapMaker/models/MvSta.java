@@ -6,7 +6,7 @@ public class MvSta {//駅座標の移動に関する情報を保持するクラ�
 	boolean isSet;//最初固定点だったか非固定点だったか
 	public MvSta(Station sta){
 		this.sta = sta;
-		this.start = sta.getPointUSAsPoint2D();
+		this.start = sta.getPointUS();
 		this.isSet = sta.isSet();
 	}
 

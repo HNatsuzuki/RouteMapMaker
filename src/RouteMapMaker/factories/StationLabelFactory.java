@@ -71,8 +71,8 @@ public class StationLabelFactory {
 
         int style = station.getNameStyle() == Station.STYLE_UNSET ? line.getNameStyle() : station.getNameStyle();
         TextStyle textStyle = new TextStyle(size, fontFamily.get(), FontStyle.fromLineTextStyle(style), location, isVertical, line.getNameColor());
-        double[] stationPoint = station.getPointUS();
-        Point2D position = new Point2D(stationPoint[0] + offset[0], stationPoint[1] + offset[1]);
+        Point2D stationPoint = station.getPointUS();
+        Point2D position = stationPoint.add(offset[0], offset[1]);
 
         return Optional.of(new TextLabel(text, position, textStyle));
     }

@@ -453,8 +453,8 @@ public class MapDrawer {
                     gc.setFill(config.getNonFixedColor());
                 }
 
-                double[] point = station.getPointUS();
-                gc.fillOval(point[0] - STATION_POINT_RADIUS, point[1] - STATION_POINT_RADIUS, STATION_POINT_RADIUS * 2, STATION_POINT_RADIUS * 2);
+                Point2D point = station.getPointUS();
+                gc.fillOval(point.getX() - STATION_POINT_RADIUS, point.getY() - STATION_POINT_RADIUS, STATION_POINT_RADIUS * 2, STATION_POINT_RADIUS * 2);
             }
         }
     }

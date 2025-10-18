@@ -131,13 +131,9 @@ public class Station {//駅に関する情報を保持するクラス
 	public boolean isTategaki() {
 		return tategaki.get();
 	}
-	public double[] getPointUS(){//isSetを考慮しません。使うのは全ての座標が決定した後にしましょう。
-		double[] p = new double[2];
-		p[0] = point.get().getX();
-		p[1] = point.get().getY();
-		return p;
-	}
-	public Point2D getPointUSAsPoint2D() {
+
+	public Point2D getPointUS() {
+		//isSetを考慮しません。使うのは全ての座標が決定した後にしましょう。
 		return point.get();
 	}
 	public int getNameSize(){

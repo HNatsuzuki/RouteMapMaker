@@ -145,9 +145,9 @@ public class TrainPathCalculator {
         Point2D controlPoint = null;
         LineSegment segment = null;
         LineSegment previousSegment = prevStation != null ? LineSegment.createShifted(
-            prevStation.getPointUSAsPoint2D(), currentStation.getPointUSAsPoint2D(), offset) : null;
+            prevStation.getPointUS(), currentStation.getPointUS(), offset) : null;
         LineSegment nextSegment = nextStation != null ? LineSegment.createShifted(
-            currentStation.getPointUSAsPoint2D(), nextStation.getPointUSAsPoint2D(), offset) : null;
+            currentStation.getPointUS(), nextStation.getPointUS(), offset) : null;
 
         if (isCurvedConnection) {
             point = nextSegment.getStart();
@@ -155,7 +155,7 @@ public class TrainPathCalculator {
 
             if (!isStartStation) {
                 LineSegment prevPrevSegment = LineSegment.createShifted(
-                    prevPrevStation.getPointUSAsPoint2D(), prevStation.getPointUSAsPoint2D(), offset);
+                    prevPrevStation.getPointUS(), prevStation.getPointUS(), offset);
                 controlPoint = prevPrevSegment.getIntersection(nextSegment);
             }
         } else if (isNextCurvedConnection) {
