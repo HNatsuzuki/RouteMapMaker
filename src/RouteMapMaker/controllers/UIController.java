@@ -542,9 +542,6 @@ public class UIController implements Initializable{
 				Line.Connection newCon = line.insertStation(index, new Station(staNum + "駅"));
 				Command command = new AddListItemCommand<>(line.getConnections(), index, newCon);
 				urManager.push(command);
-				//固定座標ではないが参照座標を登録する。
-				double[] p = detectCoordinate(index, RouteTable.getSelectionModel().getSelectedIndex());
-				line.getStations().get(index).setInterPoint(p[0], p[1]);
 				snList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
 					snList.add(line.getStations().get(i).getName());
@@ -2350,11 +2347,7 @@ public class UIController implements Initializable{
 			return detected;
 		}
 	}
-	
-	double[] detectCoordinate(int stIndex, int lnIndex){//座標非設定点でその駅の座標を特定するメソッド
-		return detectCoordinate(stIndex, lineList.get(lnIndex));
-	}
-	
+
 	Station searchStation(double x, double y){
 		for(int i = 0; i < lineList.size(); i++) {
 			Line line = lineList.get(i);
