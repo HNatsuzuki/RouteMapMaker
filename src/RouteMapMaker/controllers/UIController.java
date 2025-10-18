@@ -152,7 +152,7 @@ public class UIController implements Initializable{
 	private ObservableList<String> rnList = FXCollections.observableArrayList();
 	private ObservableList<String> tStaListOb = FXCollections.observableArrayList();
 	private ObservableList<String> snList = FXCollections.observableArrayList();
-	private ObservableList<String> trList = FXCollections.observableArrayList();
+	private ObservableList<String> trainNameList = FXCollections.observableArrayList();
 	private ObservableList<StopMark> markList = FXCollections.observableArrayList();//駅ごと
 	private ObservableList<StopMark> trainMarkList = FXCollections.observableArrayList();//経路ごと
 	private final LineList lineList = new LineList();
@@ -206,9 +206,9 @@ public class UIController implements Initializable{
 	@FXML Button StationAdd;
 	@FXML Button stationFont;
 	@FXML Button tStaEdit;
-	@FXML Button TrainAdd;
-	@FXML Button TrainDelete;
-	@FXML Button TrainCopy;
+	@FXML Button trainAddButton;
+	@FXML Button trainDeleteButton;
+	@FXML Button trainCopyButton;
 	@FXML Button TT_UP;
 	@FXML Button TT_DOWN;
 	@FXML Button RRT_UP;
@@ -232,7 +232,7 @@ public class UIController implements Initializable{
 	@FXML Label mouseLocation;
 	@FXML ListView<String> RouteTable;
 	@FXML ListView<String> StationList;
-	@FXML ListView<String> TrainTable;
+	@FXML ListView<String> trainListView;
 	@FXML ListView<String> tStaList;
 	@FXML ListView<String> R_RouteTable;
 	@FXML MenuBar menubar;
@@ -811,7 +811,7 @@ public class UIController implements Initializable{
 
 					//運転経路編集ウィンドウで変更を反映させる
 					int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
-					int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+					int indexT = trainListView.getSelectionModel().getSelectedIndex();
 					if(indexRR != -1 && indexT != -1){
 						tStaListOb.clear();
 						for(TrainStop ts: lineList.get(indexRR).getTrains().get(indexT).getStops()){
@@ -1376,9 +1376,9 @@ public class UIController implements Initializable{
 			mb_redo.setDisable(! urManager.getRedoableProperty().get());
 		});
 		//以下、運転経路項目
-		TrainTable.setItems(trList);
-		TrainTable.setCellFactory(TextFieldListCell.forListView());
-		TrainTable.setEditable(true);
+		trainListView.setItems(trainNameList);
+		trainListView.setCellFactory(TextFieldListCell.forListView());
+		trainListView.setEditable(true);
 		//メニューバー横にある２つのトグルボタンについて。編集領域を切り替える。
 		esGroup = new ToggleGroup();
 		rightEditButton.setToggleGroup(esGroup);
@@ -1400,118 +1400,54 @@ public class UIController implements Initializable{
 						mapDraw();
 					}
 				});
-		TrainAdd.setOnAction((ActionEvent) ->{
-			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Train newTrain = new Train("系統" + (lineList.get(index).getTrains().size() + 1));
-				Command command = new AddListItemCommand<>(lineList.get(index).getTrains(), newTrain);
-				urManager.execute(command);
-				int indexT = lineList.get(index).getTrains().size() - 1;
-				if(lineList.get(index).getTrains().size() > 1){//先例があればそれに従って自動補完を行う
-					lineList.get(index).getTrains().get(indexT).setLineDistance(lineList.get(index).getTrains().get(indexT-1)
-							.getLineDistance() + lineList.get(index).getTrains().get(indexT-1).getLineWidth());
-					lineList.get(index).getTrains().get(indexT).setLineWidth(lineList.get(index).getTrains().get(indexT-1)
-							.getLineWidth());
-					lineList.get(index).getTrains().get(indexT).setEdgeA(lineList.get(index).getTrains().get(indexT-1)
-							.getEdgeA());
-					lineList.get(index).getTrains().get(indexT).setEdgeB(lineList.get(index).getTrains().get(indexT-1)
-							.getEdgeB());
-					lineList.get(index).getTrains().get(indexT).setMarkColor(lineList.get(index).getTrains().get(indexT-1)
-							.getMarkColor());
-					lineList.get(index).getTrains().get(indexT).setMarkSize(lineList.get(index).getTrains().get(indexT-1)
-							.getMarkSize());
-				}
-				editTrainStops(lineList.get(index), lineList.get(index).getTrains().get(indexT));
-			}
-			trList.clear();
-			for(int i = 0; i < lineList.get(index).getTrains().size(); i++){
-				trList.add(lineList.get(index).getTrains().get(i).getName());
-			}
-		});
-		TrainDelete.setOnAction((ActionEvent) ->{
-			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexT != -1){
-				Command command = new RemoveListItemCommand<>(lineList.get(indexR).getTrains(), indexT);
-				urManager.execute(command);
-			}
-			trList.clear();
-			for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-				trList.add(lineList.get(indexR).getTrains().get(i).getName());
-			}
-		});
-		TrainCopy.setOnAction((ActionEvent) ->{
-			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexT != -1){
-				Train copyTrain = lineList.get(indexR).getTrains().get(indexT).clone();
-				Command command = new AddListItemCommand<>(lineList.get(indexR).getTrains(), indexT + 1, copyTrain);
-				urManager.execute(command);
-				lineList.get(indexR).getTrains().get(indexT + 1).setName
-				(lineList.get(indexR).getTrains().get(indexT + 1).getName() + " のコピー");
-				trList.clear();
-				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trList.add(lineList.get(indexR).getTrains().get(i).getName());
-				}
-				TrainTable.getSelectionModel().select(indexT + 1);
-			}
-		});
-		TrainTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
-			@Override
-			public void handle(ListView.EditEvent<String> t){
-				int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-				int indexT = t.getIndex();
-				TrainTable.getItems().set(t.getIndex(), t.getNewValue());
-				if(t.getNewValue().equals("")){//空白の系統名はダメです
-					alert.showWarning("系統名は空白にできません。何かしら名前をつけてください。");
-				}else{
-					if(! lineList.get(indexR).getTrains().get(indexT).getName().equals(t.getNewValue())){
-						Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getNameProperty(), t.getNewValue());
-						urManager.execute(command);
-					}
-				}
-				trList.clear();
-				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trList.add(lineList.get(indexR).getTrains().get(i).getName());
-				}
-			}
-		});
+		
+		// 系統追加ボタン
+		trainAddButton.setOnAction(actionEvent -> addTrain());
+
+		// 系統削除ボタン
+		trainDeleteButton.setOnAction(actionEvent -> deleteTrain());
+
+		// 系統複製ボタン
+		trainCopyButton.setOnAction(actionEvent -> copyTrain());
+
+		// 系統リスト
+		trainListView.setOnEditCommit(this::trainTableEditCommit);
 		TT_UP.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT >= 1){//indexが-1と0の時は意味を持たない
 				//オブジェクト入れ替え
 				Command command = new SwapListItemUpCommand<>(lineList.get(indexR).getTrains(), indexT);
 				urManager.execute(command);
-				trList.clear();
+				trainNameList.clear();
 				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trList.add(lineList.get(indexR).getTrains().get(i).getName());
+					trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
 				}
-				TrainTable.getSelectionModel().select(indexT - 1);
+				trainListView.getSelectionModel().select(indexT - 1);
 				mapDraw();
 			}
 		});
 		TT_DOWN.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexT != -1 && indexT != lineList.get(indexR).getTrains().size() - 1){//indexが-1と最後尾の時は意味を持たない
 				//オブジェクト入れ替え
 				Command command = new SwapListItemDownCommand<>(lineList.get(indexR).getTrains(), indexT);
 				urManager.execute(command);
-				trList.clear();
+				trainNameList.clear();
 				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trList.add(lineList.get(indexR).getTrains().get(i).getName());
+					trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
 				}
-				TrainTable.getSelectionModel().select(indexT + 1);
+				trainListView.getSelectionModel().select(indexT + 1);
 				mapDraw();
 			}
 		});
 		
 		tStaList.setItems(tStaListOb);
-		TrainTable.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
+		trainListView.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
 			// TODO Auto-generated method stub
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != -1){
 				tStaListOb.clear();
 				for(int i = 0; i < lineList.get(indexR).getTrains().get(indexT).getStops().size(); i++){
@@ -1532,7 +1468,7 @@ public class UIController implements Initializable{
 		tStaEdit.setOnAction((ActionEvent) ->{
 			//ウィンドウがポップアップして編集する。
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != -1){
 				editTrainStops(lineList.get(indexR), lineList.get(indexR).getTrains().get(indexT));
 			}
@@ -1540,7 +1476,7 @@ public class UIController implements Initializable{
 		//色パレットの初期設定
 		re_line_CP.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getLineColorProperty(), re_line_CP.getValue());
 				urManager.execute(command);
@@ -1549,7 +1485,7 @@ public class UIController implements Initializable{
 		});
 		re_mark_CP.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getMarkColorProperty(), re_mark_CP.getValue());
 				urManager.execute(command);
@@ -1565,7 +1501,7 @@ public class UIController implements Initializable{
 		}
 		re_line_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				if(oldVal.intValue() == lineList.get(indexR).getTrains().get(indexT).getLineWidth()) {
 					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getLineWidthProperty(), oldVal, newVal);
@@ -1577,7 +1513,7 @@ public class UIController implements Initializable{
 		});
 		re_lineC_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				if(oldVal.intValue() == lineList.get(indexR).getTrains().get(indexT).getLineDistance()) {
 					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getLineDistanceProperty(), oldVal, newVal);
@@ -1589,7 +1525,7 @@ public class UIController implements Initializable{
 		});
 		re_lineSA_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				if(lineList.get(indexR).getTrains().get(indexT).getEdgeA() == oldVal.intValue()) {
 					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getEdgeAProperty(), oldVal, newVal);
@@ -1601,7 +1537,7 @@ public class UIController implements Initializable{
 		});
 		re_lineSB_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				if(oldVal.intValue() == lineList.get(indexR).getTrains().get(indexT).getEdgeB()) {
 					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getEdgeBProperty(), oldVal, newVal);
@@ -1613,7 +1549,7 @@ public class UIController implements Initializable{
 		});
 		re_mark_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexT != - 1){
 				if(oldVal.intValue() == lineList.get(indexR).getTrains().get(indexT).getMarkSize()) {
 					Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getMarkSizeProperty(), oldVal, newVal);
@@ -1633,7 +1569,7 @@ public class UIController implements Initializable{
 		re_mark_CB.setButtonCell(tcellFactory.call(null));
 		re_mark_CB.getSelectionModel().select(1);//CIRCLEをデフォルトにする。
 		re_mark_CB.valueProperty().addListener((obs, oldVal, newVal) -> {
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
 				if(re_mark_CB.getValue() != null){//setMarkList()でこのComboboxの中身が変えられた時にvalueがnullの状態でリスナーがコールされる
@@ -1656,7 +1592,7 @@ public class UIController implements Initializable{
 			if(isLoading) {
 				return;
 			}
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexK != -1 && indexR != -1){
 				if(oldVal == lineList.get(indexR).getTrains().get(indexK).getLineDash()) {
@@ -1670,9 +1606,9 @@ public class UIController implements Initializable{
 		R_RouteTable.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
 			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(index != -1){
-				trList.clear();
+				trainNameList.clear();
 				for(int i = 0; i < lineList.get(index).getTrains().size(); i++){
-					trList.add(lineList.get(index).getTrains().get(i).getName());
+					trainNameList.add(lineList.get(index).getTrains().get(i).getName());
 				}
 				R_nameX.getValueFactory().setValue(lineList.get(index).getNameZure()[0]);
 				R_nameY.getValueFactory().setValue(lineList.get(index).getNameZure()[1]);
@@ -1733,7 +1669,7 @@ public class UIController implements Initializable{
 		});
 		tStaList.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexK != -1 && indexS != -1){
 				re_staPSize_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().getNameSize());
@@ -1750,7 +1686,7 @@ public class UIController implements Initializable{
 		re_staPSize_SP.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(re_staPSize_SP));
 		re_staPSize_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station station = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
@@ -1766,7 +1702,7 @@ public class UIController implements Initializable{
 		re_staPStyle_CB.setItems(staStyle_Options);
 		re_staPStyle_CB.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				int oldT = -1;
@@ -1794,7 +1730,7 @@ public class UIController implements Initializable{
 		re_staPShift_TB.setToggleGroup(re_staPShift_TB_TG);
 		re_staPShift_TB_TG.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station sta = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
@@ -1809,7 +1745,7 @@ public class UIController implements Initializable{
 		re_staPX_SP.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(re_staPX_SP));
 		re_staPX_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station sta = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
@@ -1825,7 +1761,7 @@ public class UIController implements Initializable{
 		re_staPY_SP.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(re_staPY_SP));
 		re_staPY_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station sta = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
@@ -1841,7 +1777,7 @@ public class UIController implements Initializable{
 		re_staLAX_SP.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(re_staLAX_SP));
 		re_staLAX_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
@@ -1857,7 +1793,7 @@ public class UIController implements Initializable{
 		re_staLAY_SP.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(re_staLAY_SP));
 		re_staLAY_SP.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
@@ -1886,7 +1822,7 @@ public class UIController implements Initializable{
 		re_staMark_CB.getSelectionModel().select(0);//路線準拠をデフォルトにする。
 		re_staMark_CB.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
-			int indexK = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				if(re_staMark_CB.getValue() != null){//setMarkList()でこのComboboxの中身が変えられた時にvalueがnullの状態でリスナーがコールされる
@@ -1947,6 +1883,102 @@ public class UIController implements Initializable{
 		config.getNonFixedColorProperty().addListener((obs) -> {
 			ReDraw();
 		});
+	}
+
+	/**
+	 * 系統追加処理
+	 */
+	private void addTrain() {
+		int index = R_RouteTable.getSelectionModel().getSelectedIndex();
+
+		if (index == -1)
+		{
+			return;
+		}
+
+		Line line = lineList.get(index);
+		List<Train> trains = line.getTrains();
+		Train newTrain = new Train("系統" + (trains.size() + 1));
+
+		if (trains.size() > 0) {
+			//先例があればそれに従って自動補完を行う
+			Train prevTrain = trains.get(trains.size() - 1);
+			newTrain.setLineDistance(prevTrain.getLineDistance() + prevTrain.getLineWidth());
+			newTrain.setLineWidth(prevTrain.getLineWidth());
+			newTrain.setEdgeA(prevTrain.getEdgeA());
+			newTrain.setEdgeB(prevTrain.getEdgeB());
+			newTrain.setMarkColor(prevTrain.getMarkColor());
+			newTrain.setMarkSize(prevTrain.getMarkSize());
+		}
+
+		// 系統追加
+		Command command = new AddListItemCommand<>(trains, newTrain);
+		urManager.execute(command);
+
+		// 停車駅編集処理
+		editTrainStops(line, newTrain);
+
+		// 系統リスト更新
+		trainNameList.setAll(trains.stream().map(t -> t.getName()).collect(Collectors.toList()));
+		trainListView.getSelectionModel().selectLast();
+	}
+
+	/**
+	 * 系統削除処理
+	 */
+	private void deleteTrain() {
+		int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int indexT = trainListView.getSelectionModel().getSelectedIndex();
+
+		if (indexR != -1 && indexT != -1) {
+			Command command = new RemoveListItemCommand<>(lineList.get(indexR).getTrains(), indexT);
+			urManager.execute(command);
+			trainNameList.remove(indexT);
+		}
+	}
+
+	/**
+	 * 系統複製処理
+	 */
+	private void copyTrain() {
+		int lineIndex = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int trainIndex = trainListView.getSelectionModel().getSelectedIndex();
+
+		if (lineIndex != -1 && trainIndex != -1) {
+			Train src = lineList.get(lineIndex).getTrains().get(trainIndex);
+			Train dest = src.clone();
+			dest.setName(src.getName() + " のコピー");
+			Command command = new AddListItemCommand<>(lineList.get(lineIndex).getTrains(), trainIndex + 1, dest);
+			urManager.execute(command);
+
+			// 系統リスト更新
+			trainNameList.add(trainIndex + 1, dest.getName());
+			trainListView.getSelectionModel().select(trainIndex + 1);
+		}
+	}
+
+	/**
+	 * 系統リストの編集完了時イベント
+	 *
+	 * @param editEvent イベント引数
+	 */
+	private void trainTableEditCommit(ListView.EditEvent<String> editEvent) {
+		int lineIndex = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int trainIndex = editEvent.getIndex();
+		String newTrainName = editEvent.getNewValue();
+
+		if (newTrainName.equals("")) {
+			//空白の系統名はダメです
+			alert.showWarning("系統名は空白にできません。何かしら名前をつけてください。");
+		} else {
+			Train train = lineList.get(lineIndex).getTrains().get(trainIndex);
+
+			if (!train.getName().equals(newTrainName)) {
+				Command command = new ValueSetCommand<>(train.getNameProperty(), newTrainName);
+				urManager.execute(command);
+				trainListView.getItems().set(trainIndex, newTrainName);
+			}
+		}
 	}
 	
 	private Object Integer(int indexS) {
@@ -2139,17 +2171,17 @@ public class UIController implements Initializable{
 				if(lineList.size() != 0){
 					R_RouteTable.getSelectionModel().select(0);
 					indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-					trList.clear();
+					trainNameList.clear();
 					for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-						trList.add(lineList.get(indexR).getTrains().get(i).getName());
+						trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
 					}
 				}
 			}
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+			int indexT = trainListView.getSelectionModel().getSelectedIndex();
 			if(indexT == -1 && lineList.size() != 0){
 				if(lineList.get(indexR).getTrains().size() != 0){
-					TrainTable.getSelectionModel().select(0);
-					indexT = TrainTable.getSelectionModel().getSelectedIndex();
+					trainListView.getSelectionModel().select(0);
+					indexT = trainListView.getSelectionModel().getSelectedIndex();
 					tStaListOb.clear();
 					for(int i = 0; i < lineList.get(indexR).getTrains().get(indexT).getStops().size(); i++){
 						tStaListOb.add(lineList.get(indexR).getTrains().get(indexT).getStops().get(i).getSta().getName());
@@ -2171,8 +2203,8 @@ public class UIController implements Initializable{
 		int indexLS = StationList.getSelectionModel().getSelectedIndex();
 		int sizeLS = snList.size();
 		int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
-		int indexRT = TrainTable.getSelectionModel().getSelectedIndex();
-		int sizeRT = trList.size();
+		int indexRT = trainListView.getSelectionModel().getSelectedIndex();
+		int sizeRT = trainNameList.size();
 		int indexRS = tStaList.getSelectionModel().getSelectedIndex();
 		int sizeRS = tStaListOb.size();
 		//駅名フォント設定と背景設定は駅を選択し直しても更新されないので個別に更新
@@ -2196,8 +2228,8 @@ public class UIController implements Initializable{
 		//つづいて右枠
 		if(rnList.size() == sizeLR && indexRR != -1){
 			R_RouteTable.getSelectionModel().select(indexLR);
-			if(trList.size() == sizeRT && indexRT != -1){
-				TrainTable.getSelectionModel().select(indexRT);
+			if(trainNameList.size() == sizeRT && indexRT != -1){
+				trainListView.getSelectionModel().select(indexRT);
 				if(tStaListOb.size() == sizeRS && indexRS != -1){
 					tStaList.getSelectionModel().select(indexRS);
 				}else{
