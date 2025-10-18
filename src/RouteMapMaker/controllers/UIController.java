@@ -1409,26 +1409,9 @@ public class UIController implements Initializable{
 
 		// 系統複製ボタン
 		TrainCopy.setOnAction(actionEvent -> copyTrain());
-		TrainTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
-			@Override
-			public void handle(ListView.EditEvent<String> t){
-				int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-				int indexT = t.getIndex();
-				TrainTable.getItems().set(t.getIndex(), t.getNewValue());
-				if(t.getNewValue().equals("")){//空白の系統名はダメです
-					alert.showWarning("系統名は空白にできません。何かしら名前をつけてください。");
-				}else{
-					if(! lineList.get(indexR).getTrains().get(indexT).getName().equals(t.getNewValue())){
-						Command command = new ValueSetCommand<>(lineList.get(indexR).getTrains().get(indexT).getNameProperty(), t.getNewValue());
-						urManager.execute(command);
-					}
-				}
-				trainNameList.clear();
-				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
-				}
-			}
-		});
+
+		// 系統リスト
+		TrainTable.setOnEditCommit(this::trainTableEditCommit);
 		TT_UP.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
@@ -1971,6 +1954,30 @@ public class UIController implements Initializable{
 			// 系統リスト更新
 			trainNameList.add(trainIndex + 1, dest.getName());
 			TrainTable.getSelectionModel().select(trainIndex + 1);
+		}
+	}
+
+	/**
+	 * 系統リストの編集完了時イベント
+	 *
+	 * @param editEvent イベント引数
+	 */
+	private void trainTableEditCommit(ListView.EditEvent<String> editEvent) {
+		int lineIndex = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int trainIndex = editEvent.getIndex();
+		String newTrainName = editEvent.getNewValue();
+
+		if (newTrainName.equals("")) {
+			//空白の系統名はダメです
+			alert.showWarning("系統名は空白にできません。何かしら名前をつけてください。");
+		} else {
+			Train train = lineList.get(lineIndex).getTrains().get(trainIndex);
+
+			if (!train.getName().equals(newTrainName)) {
+				Command command = new ValueSetCommand<>(train.getNameProperty(), newTrainName);
+				urManager.execute(command);
+				TrainTable.getItems().set(trainIndex, newTrainName);
+			}
 		}
 	}
 	
