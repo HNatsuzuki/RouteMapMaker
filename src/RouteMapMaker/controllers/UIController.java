@@ -1406,22 +1406,9 @@ public class UIController implements Initializable{
 
 		// 系統削除ボタン
 		TrainDelete.setOnAction(actionEvent -> deleteTrain());
-		TrainCopy.setOnAction((ActionEvent) ->{
-			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexT != -1){
-				Train copyTrain = lineList.get(indexR).getTrains().get(indexT).clone();
-				Command command = new AddListItemCommand<>(lineList.get(indexR).getTrains(), indexT + 1, copyTrain);
-				urManager.execute(command);
-				lineList.get(indexR).getTrains().get(indexT + 1).setName
-				(lineList.get(indexR).getTrains().get(indexT + 1).getName() + " のコピー");
-				trainNameList.clear();
-				for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-					trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
-				}
-				TrainTable.getSelectionModel().select(indexT + 1);
-			}
-		});
+
+		// 系統複製ボタン
+		TrainCopy.setOnAction(actionEvent -> copyTrain());
 		TrainTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
 			@Override
 			public void handle(ListView.EditEvent<String> t){
@@ -1964,6 +1951,26 @@ public class UIController implements Initializable{
 			Command command = new RemoveListItemCommand<>(lineList.get(indexR).getTrains(), indexT);
 			urManager.execute(command);
 			trainNameList.remove(indexT);
+		}
+	}
+
+	/**
+	 * 系統複製処理
+	 */
+	private void copyTrain() {
+		int lineIndex = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int trainIndex = TrainTable.getSelectionModel().getSelectedIndex();
+
+		if (lineIndex != -1 && trainIndex != -1) {
+			Train src = lineList.get(lineIndex).getTrains().get(trainIndex);
+			Train dest = src.clone();
+			dest.setName(src.getName() + " のコピー");
+			Command command = new AddListItemCommand<>(lineList.get(lineIndex).getTrains(), trainIndex + 1, dest);
+			urManager.execute(command);
+
+			// 系統リスト更新
+			trainNameList.add(trainIndex + 1, dest.getName());
+			TrainTable.getSelectionModel().select(trainIndex + 1);
 		}
 	}
 	
