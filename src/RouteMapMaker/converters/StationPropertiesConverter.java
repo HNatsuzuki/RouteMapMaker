@@ -20,20 +20,20 @@ public class StationPropertiesConverter {
         Properties properties = new Properties();
         properties.setProperty(prefix + "name", station.getName());
         properties.setProperty(prefix + "pointSet", String.valueOf(station.isSet()));
-        if(station.isSet()){
-            properties.setProperty(prefix + "x", String.valueOf(station.getPoint()[0]));
-            properties.setProperty(prefix + "y", String.valueOf(station.getPoint()[1]));
-        }else{
-            properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint()[0]));
-            properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint()[1]));
+        if (station.isSet()) {
+            properties.setProperty(prefix + "x", String.valueOf(station.getPoint().getX()));
+            properties.setProperty(prefix + "y", String.valueOf(station.getPoint().getY()));
+        } else {
+            properties.setProperty(prefix + "x", String.valueOf(station.getInterPoint().getX()));
+            properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint().getY()));
         }
         properties.setProperty(prefix + "stationConnection", String.valueOf(station.getConnection()));
         properties.setProperty(prefix + "textLocation", String.valueOf(station.getTextLocation()));
         properties.setProperty(prefix + "tategaki", String.valueOf(station.isTategaki()));
         properties.setProperty(prefix + "size", String.valueOf(station.getNameSize()));
         properties.setProperty(prefix + "style", String.valueOf(station.getNameStyle()));
-        properties.setProperty(prefix + "nameX", String.valueOf(station.getNameZure()[0]));
-        properties.setProperty(prefix + "nameY", String.valueOf(station.getNameZure()[1]));
+        properties.setProperty(prefix + "nameX", String.valueOf(station.getNameOffset().getX()));
+        properties.setProperty(prefix + "nameY", String.valueOf(station.getNameOffset().getY()));
         properties.setProperty(prefix + "shiftOnStation", String.valueOf(station.shiftBasedOnStation()));
         properties.setProperty(prefix + "curve", String.valueOf(curve));
 

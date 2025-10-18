@@ -15,6 +15,7 @@ import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.MvSta;
 import RouteMapMaker.models.PaintMode;
 import RouteMapMaker.models.PathSegment;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
 import RouteMapMaker.models.TextStyle;
@@ -24,7 +25,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Dimension2D;
-import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -73,10 +73,6 @@ public class MapDrawer {
 
     public void setCanvasSize(Dimension2D size) {
         this.canvasSize.set(size);;
-    }
-
-    public void setCanvasSize(double[] size) {
-        this.canvasSize.set(new Dimension2D(size[0], size[1]));
     }
 
     public double getZoomRatio() {
@@ -345,7 +341,7 @@ public class MapDrawer {
             //まずは始点での処理。
             List<Line.Connection> fixedStations = line.getConnections().stream().
                     filter(c -> c.getStation().isSet()).collect(Collectors.toList());
-            startP = stations.get(0).getPoint2D();
+            startP = stations.get(0).getPoint();
             gc.beginPath();
             gc.moveTo(startP.getX(), startP.getY());
 
@@ -355,13 +351,13 @@ public class MapDrawer {
                     continue;
                 }
 
-                endP = stations.get(i).getPoint2D();
+                endP = stations.get(i).getPoint();
 
                 if (line.getCurveConnection(i) && line.isCurvable(i)) {
                     // ベジエ曲線での接続
                     int idx = fixedStations.indexOf(line.getConnections().get(i));
-                    LineSegment l1 = new LineSegment(fixedStations.get(idx - 2).getStation().getPoint2D(), startP);
-                    LineSegment l2 = new LineSegment(endP, fixedStations.get(idx + 1).getStation().getPoint2D());
+                    LineSegment l1 = new LineSegment(fixedStations.get(idx - 2).getStation().getPoint(), startP);
+                    LineSegment l2 = new LineSegment(endP, fixedStations.get(idx + 1).getStation().getPoint());
                     Point2D cp = l1.getIntersection(l2); //control point
                     gc.quadraticCurveTo(cp.getX(), cp.getY(), endP.getX(), endP.getY());
                 } else {
@@ -457,8 +453,8 @@ public class MapDrawer {
                     gc.setFill(config.getNonFixedColor());
                 }
 
-                double[] point = station.getPointUS();
-                gc.fillOval(point[0] - STATION_POINT_RADIUS, point[1] - STATION_POINT_RADIUS, STATION_POINT_RADIUS * 2, STATION_POINT_RADIUS * 2);
+                Point2D point = station.getPointUS();
+                gc.fillOval(point.getX() - STATION_POINT_RADIUS, point.getY() - STATION_POINT_RADIUS, STATION_POINT_RADIUS * 2, STATION_POINT_RADIUS * 2);
             }
         }
     }

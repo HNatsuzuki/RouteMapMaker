@@ -5,12 +5,12 @@ import java.util.stream.Collectors;
 
 import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextLabel;
 import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.TextStyle;
 import javafx.beans.property.StringProperty;
-import javafx.geometry.Point2D;
 
 /**
  * 駅名描画に必要なパラメータを作成するクラスです。
@@ -46,17 +46,17 @@ public class StationLabelFactory {
         }
 
         //駅名シフト
-        int[] offset;
+        Point2D offset;
 
         if (isEditMode) {
             //路線編集モードならオフセットなし
-            offset = new int[] {0, 0};
+            offset = new Point2D(0, 0);
         } else if (station.shiftBasedOnStation()){
             //駅の設定準拠
-            offset = station.getNameZure();
+            offset = station.getNameOffset();
         } else {
             //路線の設定準拠
-            offset = line.getNameZure();
+            offset = line.getNameOffset();
         }
 
         boolean isVertical = station.getTextLocation() == Station.TEXT_UNSET ? line.isTategaki() : station.isTategaki();
@@ -71,8 +71,8 @@ public class StationLabelFactory {
 
         int style = station.getNameStyle() == Station.STYLE_UNSET ? line.getNameStyle() : station.getNameStyle();
         TextStyle textStyle = new TextStyle(size, fontFamily.get(), FontStyle.fromLineTextStyle(style), location, isVertical, line.getNameColor());
-        double[] stationPoint = station.getPointUS();
-        Point2D position = new Point2D(stationPoint[0] + offset[0], stationPoint[1] + offset[1]);
+        Point2D stationPoint = station.getPointUS();
+        Point2D position = stationPoint.add(offset);
 
         return Optional.of(new TextLabel(text, position, textStyle));
     }

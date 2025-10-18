@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.PathSegment;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
-import javafx.geometry.Point2D;
 
 /**
  * 路線に含まれる系統の線を描画するパスを計算するクラスです。
@@ -65,7 +65,7 @@ public class TrainPathCalculator {
             if (currentStation == stops.get(stopCount).getSta()) {
                 //駅毎位置補正を加え、運転系統の駅座標・角度を更新する
                 TrainStop trainStop = stops.get(stopCount);
-                Point2D stationOffset = trainStop.getOffset();
+                Point2D stationOffset = trainStop.getShift();
                 point = point.add(stationOffset);
                 trainStop.setPosition(point);
 
@@ -145,9 +145,9 @@ public class TrainPathCalculator {
         Point2D controlPoint = null;
         LineSegment segment = null;
         LineSegment previousSegment = prevStation != null ? LineSegment.createShifted(
-            prevStation.getPointUSAsPoint2D(), currentStation.getPointUSAsPoint2D(), offset) : null;
+            prevStation.getPointUS(), currentStation.getPointUS(), offset) : null;
         LineSegment nextSegment = nextStation != null ? LineSegment.createShifted(
-            currentStation.getPointUSAsPoint2D(), nextStation.getPointUSAsPoint2D(), offset) : null;
+            currentStation.getPointUS(), nextStation.getPointUS(), offset) : null;
 
         if (isCurvedConnection) {
             point = nextSegment.getStart();
@@ -155,7 +155,7 @@ public class TrainPathCalculator {
 
             if (!isStartStation) {
                 LineSegment prevPrevSegment = LineSegment.createShifted(
-                    prevPrevStation.getPointUSAsPoint2D(), prevStation.getPointUSAsPoint2D(), offset);
+                    prevPrevStation.getPointUS(), prevStation.getPointUS(), offset);
                 controlPoint = prevPrevSegment.getIntersection(nextSegment);
             }
         } else if (isNextCurvedConnection) {

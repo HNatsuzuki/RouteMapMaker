@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
-import javafx.geometry.Point2D;
 
 /**
  * undo, redo が可能な、路線全体を拡大・縮小するコマンドです。
@@ -37,7 +37,7 @@ public class ScaleLineStationsCommand implements Command {
         this.scaleY = scaleY;
         this.pivotX = pivotX;
         this.pivotY = pivotY;
-        oldPoints = lineList.stream().flatMap(l -> l.getStations().stream()).collect(Collectors.toMap(s -> s, s -> s.getPointUSAsPoint2D(), (e, r) -> e));
+        oldPoints = lineList.stream().flatMap(l -> l.getStations().stream()).collect(Collectors.toMap(s -> s, s -> s.getPointUS(), (e, r) -> e));
     }
 
     /**
@@ -54,12 +54,16 @@ public class ScaleLineStationsCommand implements Command {
                     continue;
                 }
 
+                Point2D oldPoint = station.getPointProperty().get();
+
                 // X
-                double oldX = station.getPointProperty()[0].get();
-                station.getPointProperty()[0].set((oldX - pivotX) * scaleX + pivotX);
+                double oldX = oldPoint.getX();
+                double newX = (oldX - pivotX) * scaleX + pivotX;
                 // Y
-                double oldY = station.getPointProperty()[1].get();
-                station.getPointProperty()[1].set((oldY - pivotY) * scaleY + pivotY);
+                double oldY = oldPoint.getY();
+                double newY = (oldY - pivotY) * scaleY + pivotY;
+
+                station.getPointProperty().set(new Point2D(newX, newY));
                 scaledStations.add(station);
             }
         }
@@ -73,8 +77,7 @@ public class ScaleLineStationsCommand implements Command {
         for (Entry<Station, Point2D> oldPoint : oldPoints.entrySet()) {
             Station station = oldPoint.getKey();
             Point2D point = oldPoint.getValue();
-            station.getPointProperty()[0].set(point.getX());
-            station.getPointProperty()[1].set(point.getY());
+            station.getPointProperty().set(point);
         }
     }
 

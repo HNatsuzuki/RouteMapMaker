@@ -4,7 +4,6 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.geometry.Point2D;
 
 public class TrainStop {//系統毎に保持する必要がある駅に関する情報を駅オブジェクトと関連付けて保存。
 	private Station station;//駅
@@ -32,11 +31,7 @@ public class TrainStop {//系統毎に保持する必要がある駅に関する
 	public IntegerProperty getShiftYProperty(){
 		return this.shiftY;
 	}
-	public int[] getShift(){
-		int s[] = {shiftX.get(), shiftY.get()};
-		return s;
-	}
-	public Point2D getOffset() {
+	public Point2D getShift() {
 		return new Point2D(shiftX.get(), shiftY.get());
 	}
 	public Station getSta(){

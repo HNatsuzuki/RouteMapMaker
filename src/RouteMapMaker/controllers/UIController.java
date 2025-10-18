@@ -40,7 +40,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Dimension2D;
-import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -128,6 +127,7 @@ import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.FreeItem;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.MvSta;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.ScaleParameters;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
@@ -158,11 +158,9 @@ public class UIController implements Initializable{
 	private final LineList lineList = new LineList();
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
-	private ObservableList<MvSta> movingStList = FXCollections.observableArrayList();
+	private List<MvSta> movingStList = new ArrayList<>();
 	private FreeItem movingItem = null;
 	private GraphicsContext gc;
-	private double y_largest = 0;
-	private double x_largest = 0;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
 	final double canvasMargin = 200;
 	private final double version = 9;//セーブファイルのバージョン。セーブファイルに完全な互換性がなくなった時に変更する。
@@ -170,7 +168,6 @@ public class UIController implements Initializable{
 	private File dataFile;
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
-	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
 	private StringProperty stationFontFamily = new SimpleStringProperty("System");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
@@ -193,6 +190,8 @@ public class UIController implements Initializable{
 	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
 	private MapDrawer drawer;
+	//ドラッグスタート時の座標を記録する。station座標（zoomを考慮）．
+	Point2D mouseDownPoint = new Point2D(0, 0);
 
 	@FXML AnchorPane leftPane;
 	@FXML AnchorPane rightPane;
@@ -545,9 +544,6 @@ public class UIController implements Initializable{
 				Line.Connection newCon = line.insertStation(index, new Station(staNum + "駅"));
 				Command command = new AddListItemCommand<>(line.getConnections(), index, newCon);
 				urManager.push(command);
-				//固定座標ではないが参照座標を登録する。
-				double[] p = detectCoordinate(index, RouteTable.getSelectionModel().getSelectedIndex());
-				line.getStations().get(index).setInterPoint(p[0], p[1]);
 				snList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
 					snList.add(line.getStations().get(i).getName());
@@ -779,7 +775,7 @@ public class UIController implements Initializable{
 					Station oldSta = lineList.get(indexR).getStations().get(indexS);
 					Station newSta = new Station("新-" + oldSta.getName());
 					//以下初期設定。clone使いたいけどshiftCoorでトラブりそうなのでやめる
-					newSta.setPoint(oldSta.getPoint()[0] + 50, oldSta.getPoint()[1] + 50);
+					newSta.setPoint(oldSta.getPoint().add(50, 50));
 					newSta.setConnection(oldSta.getConnection());
 					newSta.setTextLocation(oldSta.getTextLocation());
 					newSta.setNameSize(oldSta.getNameSize());
@@ -918,15 +914,15 @@ public class UIController implements Initializable{
 			});
 		}
 		
-		double[] startCoor = new double[2];//ドラッグスタート時の座標を記録する。station座標（zoomを考慮）．
 		draggedRect.setVisible(false);
 		canvas.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>(){//canvas上でマウスが押された時
 			@Override
 			public void handle(MouseEvent e){
-				startCoor[0] = e.getX()/drawer.getZoomRatio();
-				startCoor[1] = e.getY()/drawer.getZoomRatio();
+				double x = e.getX()/drawer.getZoomRatio();
+				double y = e.getY()/drawer.getZoomRatio();
+				mouseDownPoint = new Point2D(x, y);
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					movingSt = searchStation(startCoor[0], startCoor[1]);
+					movingSt = searchStation(new Point2D(x, y));
 					if(movingSt == null){
 						draggedRect.setVisible(true);
 						draggedRect.setX(e.getX());
@@ -935,8 +931,8 @@ public class UIController implements Initializable{
 						draggedRect.setHeight(0);
 						movingStList.clear();
 					}else{
-						startCoor[0] = movingSt.getPointUS()[0];//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
-						startCoor[1] = movingSt.getPointUS()[1];
+						//駅移動時の開始座標は開始時のマウス座標ではなく駅座標にする。
+						mouseDownPoint = movingSt.getPointUS();
 						boolean contain = movingStList.stream().filter(ms -> ms.getStation()==movingSt).count()>0;
 						if(contain && shortCutKeyPressed){//movingStListから選択されたものを削除する
 							//ConcurrentModificationExceptionを回避するためにIteratorを使う
@@ -968,28 +964,29 @@ public class UIController implements Initializable{
 					if(e.getButton()!=MouseButton.PRIMARY) {
 						return;
 					}
-					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
+					//zoomを考慮した現在のマウス座標
+					final Point2D cc = new Point2D(e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio());
 					if(movingSt != null){//特定の駅が選択されている時
 						//movingSt.setPoint(e.getX(), e.getY());
 						for(MvSta ms: movingStList){
-							ms.getStation().setPoint(ms.getStart()[0] + cc[0] - startCoor[0], ms.getStart()[1] + cc[1] - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart().add(cc).subtract(mouseDownPoint));
 						}
 						//領域の自動拡大
 						if(canvas.getWidth() - e.getX() < canvasMargin) canvas.setWidth(e.getX() + canvasMargin);
 						if(canvas.getHeight() - e.getY() < canvasMargin) canvas.setHeight(e.getY() + canvasMargin);
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
-						if(e.getX() - startCoor[0]*drawer.getZoomRatio() <= 0){//符号の反転が必要
+						if(e.getX() - mouseDownPoint.getX()*drawer.getZoomRatio() <= 0){//符号の反転が必要
 							draggedRect.setX(e.getX());
-							draggedRect.setWidth(startCoor[0]*drawer.getZoomRatio() - e.getX());
+							draggedRect.setWidth(mouseDownPoint.getX()*drawer.getZoomRatio() - e.getX());
 						}else{//反転必要なし
-							draggedRect.setWidth(e.getX() - startCoor[0]*drawer.getZoomRatio());
+							draggedRect.setWidth(e.getX() - mouseDownPoint.getX()*drawer.getZoomRatio());
 						}
-						if(e.getY() - startCoor[1]*drawer.getZoomRatio() <= 0){
+						if(e.getY() - mouseDownPoint.getY()*drawer.getZoomRatio() <= 0){
 							draggedRect.setY(e.getY());
-							draggedRect.setHeight(startCoor[1]*drawer.getZoomRatio() - e.getY());
+							draggedRect.setHeight(mouseDownPoint.getY()*drawer.getZoomRatio() - e.getY());
 						}else{
-							draggedRect.setHeight(e.getY() - startCoor[1]*drawer.getZoomRatio());
+							draggedRect.setHeight(e.getY() - mouseDownPoint.getY()*drawer.getZoomRatio());
 						}
 					}
 				}else{//leftEditbuttonが選択されている状態
@@ -1001,23 +998,22 @@ public class UIController implements Initializable{
 			@Override
 			public void handle(MouseEvent e){
 				if(esGroup.getSelectedToggle() == rightEditButton){
-					final double[] cc = {e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio()}; //zoomを考慮した現在のマウス座標
+					//zoomを考慮した現在のマウス座標
+					final Point2D cc = new Point2D(e.getX()/drawer.getZoomRatio(), e.getY()/drawer.getZoomRatio());
 					if(movingSt != null){//特定の駅が選択されている時
 						if(e.getButton()!=MouseButton.PRIMARY) {
 							return;
 						}
-						double[] gridedPos = getGridedPoint(cc[0], cc[1]);
-						double mouseX = gridedPos[0];
-						double mouseY = gridedPos[1];
+						Point2D snappedPoint = snapToGrid(cc);
+
 						for(MvSta ms: movingStList){
-							ms.getStation().setPoint(ms.getStart()[0] + mouseX - startCoor[0], ms.getStart()[1] + mouseY - startCoor[1]);
+							ms.getStation().setPoint(ms.getStart().add(snappedPoint).subtract(mouseDownPoint));
 						}
 						//マウスが全く動いてないかつ全てがもともと座標固定駅だった場合はpushしてはならない
 						boolean shouldBePushed = false;
 						for(MvSta ms: movingStList){
 							//完全にイコールにするとすごく小さな値で差がついてしまう
-							if(! ms.getIsSet() || Math.abs(ms.getStart()[0] - ms.getStation().getPoint()[0]) > 0.5  || 
-									Math.abs(ms.getStart()[1] - ms.getStation().getPoint()[1]) > 0.5){
+							if(! ms.getIsSet() || ms.getStart().distance(ms.getStation().getPoint()) > 0.5){
 								shouldBePushed = true;
 								break;
 							}
@@ -1027,26 +1023,21 @@ public class UIController implements Initializable{
 							urManager.push(command);
 							System.out.println("mouseReleased - pushed!");
 						}
+
 						//canvasのサイズを調整する。
-						x_largest = 0;
-						y_largest = 0;
-						for(int i = 0; i < lineList.size(); i++){
-							for(int j = 0; j < lineList.get(i).getStations().size(); j++){
-								if(lineList.get(i).getStations().get(j).isSet()){
-									double[] p = lineList.get(i).getStations().get(j).getPoint();
-									if(p[0] > x_largest) x_largest = p[0]; 
-									if(p[1] > y_largest) y_largest = p[1]; 
-								}
-							}
-						}
-						canvasOriginal[0] = x_largest + canvasMargin/drawer.getZoomRatio();
-						canvasOriginal[1] = y_largest + canvasMargin/drawer.getZoomRatio();
-						drawer.setCanvasSize(canvasOriginal);
+						double margin = canvasMargin / drawer.getZoomRatio();
+						Point2D maxPoint = lineList.getMaxPoint();
+						Point2D canvasMaxPoint = maxPoint.add(margin, margin);
+						drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
-						movingStList = searchStation(draggedRect.getX()/drawer.getZoomRatio(), draggedRect.getY()/drawer.getZoomRatio(),
-								draggedRect.getWidth()/drawer.getZoomRatio(), draggedRect.getHeight()/drawer.getZoomRatio());
+						movingStList = lineList.findStationsByArea(
+							draggedRect.getX() / drawer.getZoomRatio(),
+							draggedRect.getY() / drawer.getZoomRatio(),
+							draggedRect.getWidth() / drawer.getZoomRatio(),
+							draggedRect.getHeight()/drawer.getZoomRatio()
+							).stream().map(s -> new MvSta(s)).collect(Collectors.toList());
 						lineDraw();
 					}
 				}else{
@@ -1603,15 +1594,15 @@ public class UIController implements Initializable{
 			mapDraw();
 		});
 		R_RouteTable.setItems(rnList);
-		R_RouteTable.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
+		R_RouteTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
 			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(index != -1){
 				trainNameList.clear();
 				for(int i = 0; i < lineList.get(index).getTrains().size(); i++){
 					trainNameList.add(lineList.get(index).getTrains().get(i).getName());
 				}
-				R_nameX.getValueFactory().setValue(lineList.get(index).getNameZure()[0]);
-				R_nameY.getValueFactory().setValue(lineList.get(index).getNameZure()[1]);
+				R_nameX.getValueFactory().setValue((int)lineList.get(index).getNameOffset().getX());
+				R_nameY.getValueFactory().setValue((int)lineList.get(index).getNameOffset().getY());
 				selectSomething(false);
 			}
 		});
@@ -1646,7 +1637,7 @@ public class UIController implements Initializable{
 		R_nameX.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(index != -1){
-				if(oldVal == lineList.get(index).getNameZure()[0]) {
+				if(oldVal == (int)lineList.get(index).getNameOffset().getX()) {
 					Command command = new ValueSetCommand<>(lineList.get(index).getNameXProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1659,7 +1650,7 @@ public class UIController implements Initializable{
 		R_nameY.valueProperty().addListener((obs, oldVal, newVal) -> {
 			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(index != -1){
-				if(oldVal == lineList.get(index).getNameZure()[1]) {
+				if(oldVal == (int)lineList.get(index).getNameOffset().getY()) {
 					Command command = new ValueSetCommand<>(lineList.get(index).getNameYProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1667,19 +1658,20 @@ public class UIController implements Initializable{
 				mapDraw();
 			}
 		});
-		tStaList.getSelectionModel().selectedItemProperty().addListener((ChangeListener) (observable, oldValue, newValue) -> {
+		tStaList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
 			int indexS = tStaList.getSelectionModel().getSelectedIndex();
 			int indexK = trainListView.getSelectionModel().getSelectedIndex();
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexK != -1 && indexS != -1){
-				re_staPSize_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().getNameSize());
-				re_staPStyle_CB.getSelectionModel().select(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().getNameStyle());
-				re_staPShift_TB.setSelected(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().shiftBasedOnStation());
-				re_staPX_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().getNameZure()[0]);
-				re_staPY_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta().getNameZure()[1]);
-				re_staLAX_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getShift()[0]);
-				re_staLAY_SP.getValueFactory().setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getShift()[1]);
-				re_staMark_CB.setValue(lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getMark());
+				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
+				re_staPSize_SP.getValueFactory().setValue(stop.getSta().getNameSize());
+				re_staPStyle_CB.getSelectionModel().select(stop.getSta().getNameStyle());
+				re_staPShift_TB.setSelected(stop.getSta().shiftBasedOnStation());
+				re_staPX_SP.getValueFactory().setValue((int)stop.getSta().getNameOffset().getX());
+				re_staPY_SP.getValueFactory().setValue((int)stop.getSta().getNameOffset().getY());
+				re_staLAX_SP.getValueFactory().setValue((int)stop.getShift().getX());
+				re_staLAY_SP.getValueFactory().setValue((int)stop.getShift().getY());
+				re_staMark_CB.setValue(stop.getMark());
 			}
 		});
 		re_staPSize_SP.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-1, Integer.MAX_VALUE, 0, 1));
@@ -1749,7 +1741,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station sta = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
-				if(oldVal == sta.getNameZure()[0]) {
+				if(oldVal == (int)sta.getNameOffset().getX()) {
 					Command command = new ValueSetCommand<>(sta.getNameXProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1765,7 +1757,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1){
 				Station sta = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS).getSta();
-				if(oldVal == sta.getNameZure()[1]) {
+				if(oldVal == (int)sta.getNameOffset().getY()) {
 					Command command = new ValueSetCommand<>(sta.getNameYProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1781,7 +1773,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
-				if(oldVal == stop.getShift()[0]) {
+				if(oldVal == (int)stop.getShift().getX()) {
 					Command command = new ValueSetCommand<>(stop.getShiftXProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -1797,7 +1789,7 @@ public class UIController implements Initializable{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexS != -1 && indexK != -1 && indexR != -1){
 				TrainStop stop = lineList.get(indexR).getTrains().get(indexK).getStops().get(indexS);
-				if(oldVal == stop.getShift()[1]) {
+				if(oldVal == (int)stop.getShift().getY()) {
 					Command command = new ValueSetCommand<>(stop.getShiftYProperty(), oldVal, newVal);
 					urManager.execute(command);
 				}
@@ -2106,41 +2098,49 @@ public class UIController implements Initializable{
 		return newLine;
 	}
 	
-	double[] getGridedPoint(double org_x, double org_y) {
-		double[] pos = {org_x, org_y};
+	/**
+	 * グリッドの交点に近い座標を取得します。
+	 *
+	 * @param point 元の座標
+	 * @return グリッドの交点
+	 */
+	private Point2D snapToGrid(Point2D point) {
 		if(!config.getR_grid()) {
 			// グリッド非表示．グリッド補正の必要なし
-			return pos;
+			return point;
 		}
 		
+		double x = point.getX();
+		double y = point.getY();
 		int interval = config.getR_gridInterval();
 		if(config.isGridTriangle()) {
 			// 三角形グリッド．XとY個別の固定はサポートしない．
 			if(config.getR_bindToGridX()) {
 				//まずy座標を確定させる
 				double y_interval = interval * Math.sqrt(3) / 2;
-				int idx = (int) (Math.round(org_y / y_interval));
-				pos[1] = idx * y_interval;
+				int idx = (int) (Math.round(point.getY() / y_interval));
+				y = idx * y_interval;
 				//つづいてx座標を計算する．idxが偶数か奇数かで半interval分ずれる
 				double offset = (idx%2==1 ? interval/2.0 : 0);
-				pos[0] = Math.round((org_x - offset) / interval) * interval + offset;
+				x = Math.round((point.getX() - offset) / interval) * interval + offset;
 			}
 		} else {
 			//四角形グリッド
 			if(config.getR_bindToGridX()){//グリッドにバインドする設定だった場合は座標の補正を行う。
-				pos[0] = Math.round(org_x / interval) * interval;
+				x = Math.round(point.getX() / interval) * interval;
 			}
 			if(config.getR_bindToGridY()){
-				pos[1] = Math.round(org_y / interval) * interval;
+				y = Math.round(point.getY() / interval) * interval;
 			}
 		}
-		return pos;
+		return new Point2D(x, y);
 	}
 
 	private void setCanvasOriginal(Point2D point) {
-		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
-		canvasOriginal[1] = point.getY() + canvasMargin * 2;
-		drawer.setCanvasSize(canvasOriginal);
+		//最初だけ余分に取っておいたほうがいいっぽい
+		double margin = canvasMargin * 2;
+		Point2D canvasMaxPoint = point.add(margin, margin);
+		drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
@@ -2302,9 +2302,8 @@ public class UIController implements Initializable{
 					}
 				}
 				if(!c.getStation().isSet()){//座標非設置点だった場合
-					double[] p = detectCoordinate(i, l);
 					//接続点は座標を固定。
-					c.getStation().setPoint(p[0], p[1]);
+					c.getStation().setPoint(c.getStation().getInterPoint());
 				}
 				//駅オブジェクト自体を置き換えて共通化してしまう。
 				//すべての路線のConnectionとTrainStopを走査し，すべての当該駅を置き換える
@@ -2330,84 +2329,26 @@ public class UIController implements Initializable{
 		}
 		return 1;
 	}
-	
-	double[] detectCoordinate(int stIndex, Line line) {
-		double[] detected = new double[2];
-		if(line.getStations().get(stIndex).isSet()){
-			return line.getStations().get(stIndex).getPoint();
-		}else{
-			double[] start = new double[2];
-			double[] end = new double[2];
-			int startIndex = 0;
-			int endIndex = 0;
-			//始点検索
-			for(int i = stIndex - 1; i >= 0; i--){
-				if(line.getStations().get(i).isSet()){
-					start = line.getStations().get(i).getPoint();
-					startIndex = i;
-					break;
-				}
-			}
-			//終点検索
-			for(int i = stIndex + 1; i < line.getStations().size(); i++){
-				if(line.getStations().get(i).isSet()){
-					end = line.getStations().get(i).getPoint();
-					endIndex = i;
-					break;
-				}
-			}
-			detected[0] = start[0] + (end[0] - start[0]) * (stIndex - startIndex) / (endIndex - startIndex);
-			detected[1] = start[1] + (end[1] - start[1]) * (stIndex - startIndex) / (endIndex - startIndex);
-			return detected;
-		}
-	}
-	
-	double[] detectCoordinate(int stIndex, int lnIndex){//座標非設定点でその駅の座標を特定するメソッド
-		return detectCoordinate(stIndex, lineList.get(lnIndex));
-	}
-	
-	Station searchStation(double x, double y){
+
+	Station searchStation(Point2D point){
 		for(int i = 0; i < lineList.size(); i++) {
 			Line line = lineList.get(i);
 			for(int j = 0; j < line.getStations().size(); j++){
-				Station st = line.getStations().get(j);
-				double[] p;
-				if(st.isSet()){
-					p = st.getPoint();
-				}else{
-					p = st.getInterPoint();
-				}
-				double dist_square = Math.pow(x-p[0], 2) + Math.pow(y-p[1], 2);
-				if(dist_square <= Math.pow(6, 2)){
+				Station station = line.getStation(j);
+				Point2D stationPoint = station.isSet()
+					? station.getPoint()
+					: station.getInterPoint();
+
+				if (stationPoint.distance(point) <= 6) {
 					RouteTable.getSelectionModel().select(i);//選択処理をする
 					StationList.getSelectionModel().select(j);
-					return st;
+					return station;
 				}
 			}
 		}
 		return null;
 	}
-	
-	ObservableList<MvSta> searchStation(double x, double y, double w, double h){
-		//ドラッグで生成された四角形の中に存在する駅をリストで返す。座標固定駅のみ。
-		ObservableList<MvSta> staList = FXCollections.observableArrayList();
-		for(Line l: lineList){
-			for(Station sta: l.getStations()){
-				if(sta.isSet()){
-					double[] p = sta.getPoint();
-					if(x <= p[0] && p[0] <= x + w && y <= p[1] && p[1] <= y + h){
-						boolean contain = false;
-						for(MvSta ms: staList){
-							if(ms.getStation() == sta) contain = true;
-						}
-						if(! contain) staList.add(new MvSta(sta));//重複対策
-					}
-				}
-			}
-		}
-		return staList;
-	}
-	
+
 	void readERMFile(File file) throws IOException {
 		try (ErmFileReader ermFileReader = new ErmFileReader(file)) {
 			SaveData saveData = ermFileReader.read();
@@ -2536,22 +2477,11 @@ public class UIController implements Initializable{
 		}
 
 		//canvasの設定
-		x_largest = 0;
-		y_largest = 0;
-		for(int i = 0; i < lineList.size(); i++){
-			for(int j = 0; j < lineList.get(i).getStations().size(); j++){
-				if(lineList.get(i).getStations().get(j).isSet()){
-					double[] pc = lineList.get(i).getStations().get(j).getPoint();
-					if(pc[0] > x_largest) x_largest = pc[0]; 
-					if(pc[1] > y_largest) y_largest = pc[1]; 
-				}
-			}
-		}
-		canvasOriginal[0] = x_largest + canvasMargin;
-		canvasOriginal[1] = y_largest + canvasMargin;
-		drawer.setCanvasSize(canvasOriginal);
-		canvas.setWidth(x_largest + canvasMargin);
-		canvas.setHeight(y_largest + canvasMargin);
+		Point2D maxPoint = lineList.getMaxPoint();
+		Point2D canvasMaxPoint = maxPoint.add(canvasMargin, canvasMargin);
+		drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
+		canvas.setWidth(canvasMaxPoint.getX());
+		canvas.setHeight(canvasMaxPoint.getY());
 		resetParams();//適切にGUIパラメータを再セット。
 		rightEditButton.setSelected(true);//読み込み時は路線編集モードにする。
 		isLoading = false;
@@ -2649,12 +2579,13 @@ public class UIController implements Initializable{
 	}
 	void exportImage(){
 		//新しくウィンドウを開いて何倍にするか聞く
+		var canvasSize = drawer.getCanvasSize();
 		Stage expStage = new Stage();
 		expStage.initModality(Modality.APPLICATION_MODAL);
 		VBox expBox = new VBox();
 		Label l1 = new Label("出力するイメージの大きさを設定してください（現在の倍率：200%）");
-		Label l2 = new Label("元のサイズ：縦" + canvasOriginal[0] + "、横" + canvasOriginal[1]);
-		Label l3 = new Label("出力サイズ：縦" + canvasOriginal[0] * 2 + "、横" + canvasOriginal[1] * 2);
+		Label l2 = new Label("元のサイズ：縦" + canvasSize.getHeight() + "、横" + canvasSize.getWidth());
+		Label l3 = new Label("出力サイズ：縦" + canvasSize.getHeight() * 2 + "、横" + canvasSize.getWidth() * 2);
 		Slider slider = new Slider();
 		slider.setMin(100);
 		slider.setMax(1600);
@@ -2666,7 +2597,7 @@ public class UIController implements Initializable{
 		slider.setValue(200);
 		slider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double zoomer = slider.getValue() / 100;
-			l3.setText("元のサイズ：縦" + canvasOriginal[0] * zoomer + "、横" + canvasOriginal[1] * zoomer);
+			l3.setText("元のサイズ：縦" + canvasSize.getHeight() * zoomer + "、横" + canvasSize.getWidth() * zoomer);
 			l1.setText("出力するイメージの大きさを設定してください（現在の倍率：" + slider.getValue() + "%）");
 		});
 		Button b1 = new Button("出力");

@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import RouteMapMaker.models.FreeItem;
-import javafx.geometry.Point2D;
+import RouteMapMaker.models.Point2D;
 
 /**
  * undo, redo が可能な、自由挿入アイテムを拡大・縮小するコマンドです。
