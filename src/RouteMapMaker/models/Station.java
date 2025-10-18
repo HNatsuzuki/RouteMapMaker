@@ -166,9 +166,8 @@ public class Station {//駅に関する情報を保持するクラス
 	public IntegerProperty getNameYProperty(){
 		return this.nameY;
 	}
-	public int[] getNameZure(){
-		int[] ia = {nameX.get(), nameY.get()};
-		return ia;
+	public Point2D getNameOffset(){
+		return new Point2D(nameX.intValue(), nameY.intValue());
 	}
 	public boolean shiftBasedOnStation(){
 		return this.shiftOnStation.get();

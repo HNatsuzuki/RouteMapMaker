@@ -46,17 +46,17 @@ public class StationLabelFactory {
         }
 
         //駅名シフト
-        int[] offset;
+        Point2D offset;
 
         if (isEditMode) {
             //路線編集モードならオフセットなし
-            offset = new int[] {0, 0};
+            offset = new Point2D(0, 0);
         } else if (station.shiftBasedOnStation()){
             //駅の設定準拠
-            offset = station.getNameZure();
+            offset = station.getNameOffset();
         } else {
             //路線の設定準拠
-            offset = line.getNameZure();
+            offset = line.getNameOffset();
         }
 
         boolean isVertical = station.getTextLocation() == Station.TEXT_UNSET ? line.isTategaki() : station.isTategaki();
@@ -72,7 +72,7 @@ public class StationLabelFactory {
         int style = station.getNameStyle() == Station.STYLE_UNSET ? line.getNameStyle() : station.getNameStyle();
         TextStyle textStyle = new TextStyle(size, fontFamily.get(), FontStyle.fromLineTextStyle(style), location, isVertical, line.getNameColor());
         Point2D stationPoint = station.getPointUS();
-        Point2D position = stationPoint.add(offset[0], offset[1]);
+        Point2D position = stationPoint.add(offset);
 
         return Optional.of(new TextLabel(text, position, textStyle));
     }

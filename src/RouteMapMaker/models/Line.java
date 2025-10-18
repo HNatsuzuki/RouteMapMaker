@@ -64,8 +64,8 @@ public class Line {//路線の情報を保持するクラス。
 	private IntegerProperty nameSize = new SimpleIntegerProperty(15);
 	private IntegerProperty nameLocation = new SimpleIntegerProperty(BOTTOM);
 	private ObjectProperty<Color> nameColor = new SimpleObjectProperty<>(Color.BLACK);
-	private IntegerProperty NameX = new SimpleIntegerProperty(0);
-	private IntegerProperty NameY = new SimpleIntegerProperty(0);
+	private IntegerProperty nameX = new SimpleIntegerProperty(0);
+	private IntegerProperty nameY = new SimpleIntegerProperty(0);
 	
 	public Line(String name){//コンストラクタ
 		connections = FXCollections.observableArrayList();
@@ -206,20 +206,19 @@ public class Line {//路線の情報を保持するクラス。
 		this.nameColor.set(c);
 	}
 	public void setNameX(int i){
-		this.NameX.set(i);
+		this.nameX.set(i);
 	}
 	public void setNameY(int i){
-		this.NameY.set(i);
+		this.nameY.set(i);
 	}
 	public IntegerProperty getNameXProperty(){
-		return this.NameX;
+		return this.nameX;
 	}
 	public IntegerProperty getNameYProperty(){
-		return this.NameY;
+		return this.nameY;
 	}
-	public int[] getNameZure(){
-		int[] ia = {NameX.get(), NameY.get()};
-		return ia;
+	public Point2D getNameOffset(){
+		return new Point2D(nameX.intValue(), nameY.intValue());
 	}
 	public ObservableList<Train> getTrains(){
 		return trains;

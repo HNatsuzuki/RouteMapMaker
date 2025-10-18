@@ -34,8 +34,8 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         properties.setProperty(prefix + "nameColorG", String.valueOf(line.getNameColor().getGreen()));
         properties.setProperty(prefix + "nameColorB", String.valueOf(line.getNameColor().getBlue()));
         properties.setProperty(prefix + "nameColorO", String.valueOf(line.getNameColor().getOpacity()));
-        properties.setProperty(prefix + "nameX", String.valueOf(line.getNameZure()[0]));
-        properties.setProperty(prefix + "nameY", String.valueOf(line.getNameZure()[1]));
+        properties.setProperty(prefix + "nameX", String.valueOf(line.getNameOffset().getX()));
+        properties.setProperty(prefix + "nameY", String.valueOf(line.getNameOffset().getY()));
 
         Properties stationsProperties = StationListPropertiesConverter.toProperties(line.getStations(), line, prefix);
         properties.putAll(stationsProperties);
