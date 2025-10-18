@@ -75,10 +75,6 @@ public class MapDrawer {
         this.canvasSize.set(size);;
     }
 
-    public void setCanvasSize(double[] size) {
-        this.canvasSize.set(new Dimension2D(size[0], size[1]));
-    }
-
     public double getZoomRatio() {
         return this.zoomRatio;
     }

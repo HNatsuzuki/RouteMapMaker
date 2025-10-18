@@ -161,8 +161,6 @@ public class UIController implements Initializable{
 	private ObservableList<MvSta> movingStList = FXCollections.observableArrayList();
 	private FreeItem movingItem = null;
 	private GraphicsContext gc;
-	private double y_largest = 0;
-	private double x_largest = 0;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
 	final double canvasMargin = 200;
 	private final double version = 9;//セーブファイルのバージョン。セーブファイルに完全な互換性がなくなった時に変更する。
@@ -170,7 +168,6 @@ public class UIController implements Initializable{
 	private File dataFile;
 	private Stage mainStage;//この画面のstage。MODALにするのに使ったり
 	private Background background = new Background();
-	public double[] canvasOriginal = new double[2];//mapDrawで1倍の時のcanvasのサイズを記録しておく。
 	private StringProperty stationFontFamily = new SimpleStringProperty("System");//駅名に使用するフォントファミリ名
 	private ObservableList<StopMark> customMarks = FXCollections.observableArrayList();//カスタム停車駅マークを保持するクラス。
 	private ObservableList<FreeItem> freeItems = FXCollections.observableArrayList();//自由挿入テキスト、画像を保持するクラス。
@@ -1027,21 +1024,12 @@ public class UIController implements Initializable{
 							urManager.push(command);
 							System.out.println("mouseReleased - pushed!");
 						}
+
 						//canvasのサイズを調整する。
-						x_largest = 0;
-						y_largest = 0;
-						for(int i = 0; i < lineList.size(); i++){
-							for(int j = 0; j < lineList.get(i).getStations().size(); j++){
-								if(lineList.get(i).getStations().get(j).isSet()){
-									double[] p = lineList.get(i).getStations().get(j).getPoint();
-									if(p[0] > x_largest) x_largest = p[0]; 
-									if(p[1] > y_largest) y_largest = p[1]; 
-								}
-							}
-						}
-						canvasOriginal[0] = x_largest + canvasMargin/drawer.getZoomRatio();
-						canvasOriginal[1] = y_largest + canvasMargin/drawer.getZoomRatio();
-						drawer.setCanvasSize(canvasOriginal);
+						double margin = canvasMargin / drawer.getZoomRatio();
+						Point2D maxPoint = lineList.getMaxPoint();
+						Point2D canvasMaxPoint = maxPoint.add(margin, margin);
+						drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
 						lineDraw();
 					}else{//特定の駅が選択されているわけではないとき
 						draggedRect.setVisible(false);
@@ -2138,9 +2126,10 @@ public class UIController implements Initializable{
 	}
 
 	private void setCanvasOriginal(Point2D point) {
-		canvasOriginal[0] = point.getX() + canvasMargin * 2;//最初だけ余分に取っておいたほうがいいっぽい
-		canvasOriginal[1] = point.getY() + canvasMargin * 2;
-		drawer.setCanvasSize(canvasOriginal);
+		//最初だけ余分に取っておいたほうがいいっぽい
+		double margin = canvasMargin * 2;
+		Point2D canvasMaxPoint = point.add(margin, margin);
+		drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
 	}
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
@@ -2536,22 +2525,11 @@ public class UIController implements Initializable{
 		}
 
 		//canvasの設定
-		x_largest = 0;
-		y_largest = 0;
-		for(int i = 0; i < lineList.size(); i++){
-			for(int j = 0; j < lineList.get(i).getStations().size(); j++){
-				if(lineList.get(i).getStations().get(j).isSet()){
-					double[] pc = lineList.get(i).getStations().get(j).getPoint();
-					if(pc[0] > x_largest) x_largest = pc[0]; 
-					if(pc[1] > y_largest) y_largest = pc[1]; 
-				}
-			}
-		}
-		canvasOriginal[0] = x_largest + canvasMargin;
-		canvasOriginal[1] = y_largest + canvasMargin;
-		drawer.setCanvasSize(canvasOriginal);
-		canvas.setWidth(x_largest + canvasMargin);
-		canvas.setHeight(y_largest + canvasMargin);
+		Point2D maxPoint = lineList.getMaxPoint();
+		Point2D canvasMaxPoint = maxPoint.add(canvasMargin, canvasMargin);
+		drawer.setCanvasSize(new Dimension2D(canvasMaxPoint.getX(), canvasMaxPoint.getY()));
+		canvas.setWidth(canvasMaxPoint.getX());
+		canvas.setHeight(canvasMaxPoint.getY());
 		resetParams();//適切にGUIパラメータを再セット。
 		rightEditButton.setSelected(true);//読み込み時は路線編集モードにする。
 		isLoading = false;
@@ -2649,12 +2627,13 @@ public class UIController implements Initializable{
 	}
 	void exportImage(){
 		//新しくウィンドウを開いて何倍にするか聞く
+		var canvasSize = drawer.getCanvasSize();
 		Stage expStage = new Stage();
 		expStage.initModality(Modality.APPLICATION_MODAL);
 		VBox expBox = new VBox();
 		Label l1 = new Label("出力するイメージの大きさを設定してください（現在の倍率：200%）");
-		Label l2 = new Label("元のサイズ：縦" + canvasOriginal[0] + "、横" + canvasOriginal[1]);
-		Label l3 = new Label("出力サイズ：縦" + canvasOriginal[0] * 2 + "、横" + canvasOriginal[1] * 2);
+		Label l2 = new Label("元のサイズ：縦" + canvasSize.getHeight() + "、横" + canvasSize.getWidth());
+		Label l3 = new Label("出力サイズ：縦" + canvasSize.getHeight() * 2 + "、横" + canvasSize.getWidth() * 2);
 		Slider slider = new Slider();
 		slider.setMin(100);
 		slider.setMax(1600);
@@ -2666,7 +2645,7 @@ public class UIController implements Initializable{
 		slider.setValue(200);
 		slider.valueProperty().addListener((obs, oldVal, newVal) -> {
 			double zoomer = slider.getValue() / 100;
-			l3.setText("元のサイズ：縦" + canvasOriginal[0] * zoomer + "、横" + canvasOriginal[1] * zoomer);
+			l3.setText("元のサイズ：縦" + canvasSize.getHeight() * zoomer + "、横" + canvasSize.getWidth() * zoomer);
 			l1.setText("出力するイメージの大きさを設定してください（現在の倍率：" + slider.getValue() + "%）");
 		});
 		Button b1 = new Button("出力");
