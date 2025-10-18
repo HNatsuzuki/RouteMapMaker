@@ -1403,18 +1403,9 @@ public class UIController implements Initializable{
 		
 		// 系統追加ボタン
 		TrainAdd.setOnAction(actionEvent -> addTrain());
-		TrainDelete.setOnAction((ActionEvent) ->{
-			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
-			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexT != -1){
-				Command command = new RemoveListItemCommand<>(lineList.get(indexR).getTrains(), indexT);
-				urManager.execute(command);
-			}
-			trainNameList.clear();
-			for(int i = 0; i < lineList.get(indexR).getTrains().size(); i++){
-				trainNameList.add(lineList.get(indexR).getTrains().get(i).getName());
-			}
-		});
+
+		// 系統削除ボタン
+		TrainDelete.setOnAction(actionEvent -> deleteTrain());
 		TrainCopy.setOnAction((ActionEvent) ->{
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			int indexT = TrainTable.getSelectionModel().getSelectedIndex();
@@ -1960,6 +1951,20 @@ public class UIController implements Initializable{
 		// 系統リスト更新
 		trainNameList.setAll(trains.stream().map(t -> t.getName()).collect(Collectors.toList()));
 		TrainTable.getSelectionModel().selectLast();
+	}
+
+	/**
+	 * 系統削除処理
+	 */
+	private void deleteTrain() {
+		int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
+		int indexT = TrainTable.getSelectionModel().getSelectedIndex();
+
+		if (indexR != -1 && indexT != -1) {
+			Command command = new RemoveListItemCommand<>(lineList.get(indexR).getTrains(), indexT);
+			urManager.execute(command);
+			trainNameList.remove(indexT);
+		}
 	}
 	
 	private Object Integer(int indexS) {
