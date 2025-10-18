@@ -308,7 +308,6 @@ public class UIController implements Initializable{
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		// TODO Auto-generated method stub
 		gc = canvas.getGraphicsContext2D();
 		drawer = new MapDrawer(config, gc, stationFontFamily);
 		drawer.initialize();
@@ -345,50 +344,15 @@ public class UIController implements Initializable{
 		selectSomething(true);
 		lineDraw();
 		line = lineList.get(0);
-		RouteAdd.setOnAction((ActionEvent) ->{
-			createNewLine(null);
-			lineDraw();
-		});
-		RouteDelete.setOnAction((ActionEvent) ->{
-			int index = RouteTable.getSelectionModel().getSelectedIndex();
-			if(index != -1){
-				Command command = new RemoveListItemCommand<>(lineList, index);
-				urManager.execute(command);
-				rnList.clear();
-				for(int i=0; i < lineList.size(); i++){
-					rnList.add(lineList.get(i).getName());
-				}
-				lineDraw();
-			}
-		});
-		RouteLoad.setOnAction((ActionEvent) ->{
-			// 駅名が書かれたファイルを選択
-			ArrayList<String> staNames = new ArrayList<String>();
 
-			fileOpenDialog.showDialog("ファイルを開く", config.getTextFileDir(), FileType.TXT)
-				.filter(r -> r.getFileType() == FileType.TXT)
-				.ifPresent(r -> {
-					try {
-						var selectedFile = r.getFile();
-						config.setTextFileDir(selectedFile.getParent());
-						BufferedReader br = new BufferedReader(new FileReader(selectedFile));
-						String line = br.readLine();
-						while(line != null) {
-							staNames.add(line);
-							line = br.readLine();
-						}
-						br.close();
-						createNewLine(staNames);
-						lineDraw();
-					} catch (IOException e) {
-						alert.showError("エラーが発生しました。ファイルを読み込めません。");
-					} catch (Exception e) {
-						e.printStackTrace();
-						alert.showError("エラーが発生しました。\n"
-								+ "以下のエラーメッセージを@himeshi_hobにお知らせください。\n" + e.getLocalizedMessage());
-					}
-			});
-		});
+		// 路線追加ボタン
+		RouteAdd.setOnAction(actionEvent -> addNewLine());
+
+		// 路線削除ボタン
+		RouteDelete.setOnAction(actionEvent -> deleteLine());
+
+		// 駅名読み込みボタン
+		RouteLoad.setOnAction(actionEvent -> addNewLineWithTextFile());
 		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
 		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
@@ -1870,6 +1834,54 @@ public class UIController implements Initializable{
 		config.getNonFixedColorProperty().addListener((obs) -> {
 			ReDraw();
 		});
+	}
+
+	/**
+	 * 新しい路線を追加します。
+	 */
+	private void addNewLine() {
+		createNewLine(null);
+		lineDraw();
+	}
+
+	/**
+	 * テキストファイルから路線を作成します。
+	 */
+	private void addNewLineWithTextFile() {
+		fileOpenDialog.showDialog("ファイルを開く", config.getTextFileDir(), FileType.TXT)
+			.filter(r -> r.getFileType() == FileType.TXT)
+			.ifPresent(r -> {
+				ArrayList<String> staNames = new ArrayList<String>();
+				var selectedFile = r.getFile();
+				config.setTextFileDir(selectedFile.getParent());
+				try (FileReader fr = new FileReader(selectedFile);
+					BufferedReader br = new BufferedReader(fr)) {
+					String line;
+
+					while ((line = br.readLine()) != null) {
+						staNames.add(line);
+					}
+
+					createNewLine(staNames);
+					lineDraw();
+				} catch (IOException e) {
+					alert.showError("エラーが発生しました。ファイルを読み込めません。");
+				}
+		});
+	}
+
+	/**
+	 * 路線を削除します。
+	 */
+	private void deleteLine() {
+		int index = RouteTable.getSelectionModel().getSelectedIndex();
+
+		if (index != -1) {
+			Command command = new RemoveListItemCommand<>(lineList, index);
+			urManager.execute(command);
+			rnList.remove(index);
+			lineDraw();
+		}
 	}
 
 	/**
