@@ -107,49 +107,11 @@ public class TrainStopsEditController implements Initializable{
 						deleteAllButton.setSelected(false);
 					}
 				});
-		stationListView.setOnMouseClicked((MouseEvent) ->{
-			if(group.getSelectedToggle() == insertButton){
-				int indexB = stationListView.getSelectionModel().getSelectedIndex();
-				int indexC = trainStopListView.getSelectionModel().getSelectedIndex();
-				if(indexC == -1){
-					alert.showError("停車駅を追加する位置を選んでください。");
-				}else if(indexB != -1){
-					//追加して大丈夫か検査する。
-					int pre;//前の停車駅の路線でのindex
-					int next;//後の停車駅の路線でのindex
-					try{
-						pre = stations.indexOf(train.getStops().get(indexC - 1).getSta());
-					}catch(IndexOutOfBoundsException e){
-						pre = -1;//系統の先頭に追加要求があった場合。
-					}
-					try{
-						next = stations.lastIndexOf(train.getStops().get(indexC).getSta());
-					}catch(IndexOutOfBoundsException e){
-						next = stations.size();//系統の最後に追加要求があった場合
-					}
-					if(pre < indexB && indexB < next){
-						boolean adjon = false;//連続して同じ駅が登録されていると都合が悪い。
-						try{
-							if(stations.get(indexB) == train.getStops().get(indexC -1).getSta()) adjon = true;
-							if(stations.get(indexB) == train.getStops().get(indexC).getSta()) adjon = true;
-						}catch(Exception e){
-							//indexエラーはここでは無視していいので何もしない
-						}
-						if(adjon){
-							alert.showWarning("同じ駅を隣接して追加することはできません。");
-						}else{//順番検査と隣接検査をクリアしたら追加する。
-							train.getStops().add(indexC, new TrainStop(stations.get(indexB)));
-						}
-					}else{
-						alert.showWarning("停車駅は駅一覧の上から順である必要があります。");
-					}
-					trainStopNameList.clear();
-					for(int i = 0; i < train.getStops().size(); i++){
-						trainStopNameList.add(train.getStops().get(i).getSta().getName());
-					}
-					trainStopNameList.add("<最後に追加>");
-					trainStopListView.getSelectionModel().select(indexC + 1);
-				}
+
+		// 路線の駅リスト
+		stationListView.setOnMouseClicked((MouseEvent) -> {
+			if (group.getSelectedToggle() == insertButton) {
+					insertStation();
 			}
 		});
 
@@ -165,6 +127,50 @@ public class TrainStopsEditController implements Initializable{
 		closeButton.setOnAction(event -> {
 			((Stage)((Node)event.getSource()).getScene().getWindow()).close();
 		});
+	}
+
+	/**
+	 * 系統に選択した駅を挿入します。
+	 */
+	private void insertStation() {
+		int selectedStationIndex = stationListView.getSelectionModel().getSelectedIndex();
+		int selectedTrainStopIndex = trainStopListView.getSelectionModel().getSelectedIndex();
+		if(selectedTrainStopIndex == -1) {
+			alert.showError("停車駅を追加する位置を選んでください。");
+		} else if (selectedStationIndex != -1) {
+			// TODO: バリデーション処理の分離、アルゴリズム最適化
+			//追加して大丈夫か検査する。
+			//前の停車駅の路線でのindex
+			int pre = selectedTrainStopIndex > 0
+				? stations.indexOf(train.getStops().get(selectedTrainStopIndex - 1).getSta())
+				: -1;
+
+			//後の停車駅の路線でのindex
+			int next = selectedTrainStopIndex < train.getStops().size()
+				? stations.lastIndexOf(train.getStops().get(selectedTrainStopIndex).getSta())
+				: stations.size();
+
+			if (pre < selectedStationIndex && selectedStationIndex < next) {
+				Station insertStation = stations.get(selectedStationIndex);
+				boolean isAdjacent = false;//連続して同じ駅が登録されていると都合が悪い。
+				try{
+					if(insertStation == train.getStops().get(selectedTrainStopIndex -1).getSta()) isAdjacent = true;
+					if(insertStation == train.getStops().get(selectedTrainStopIndex).getSta()) isAdjacent = true;
+				}catch(Exception e){
+					//indexエラーはここでは無視していいので何もしない
+				}
+				if (isAdjacent) {
+					alert.showWarning("同じ駅を隣接して追加することはできません。");
+				} else {
+					//順番検査と隣接検査をクリアしたら追加する。
+					train.getStops().add(selectedTrainStopIndex, new TrainStop(insertStation));
+					trainStopNameList.add(selectedTrainStopIndex, insertStation.getName());
+					trainStopListView.getSelectionModel().select(selectedTrainStopIndex + 1);
+				}
+			} else {
+				alert.showWarning("停車駅は駅一覧の上から順である必要があります。");
+			}
+		}
 	}
 
 	/**
