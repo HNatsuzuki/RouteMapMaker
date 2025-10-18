@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
-import javafx.geometry.Point2D;
 
 /**
  * undo, redo が可能な、路線全体を拡大・縮小するコマンドです。

@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.LineSegment;
 import RouteMapMaker.models.PathSegment;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
-import javafx.geometry.Point2D;
 
 /**
  * 路線に含まれる系統の線を描画するパスを計算するクラスです。

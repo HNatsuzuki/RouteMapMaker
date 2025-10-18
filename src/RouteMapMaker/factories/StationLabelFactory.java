@@ -5,12 +5,12 @@ import java.util.stream.Collectors;
 
 import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.Line;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.TextLabel;
 import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.TextStyle;
 import javafx.beans.property.StringProperty;
-import javafx.geometry.Point2D;
 
 /**
  * 駅名描画に必要なパラメータを作成するクラスです。

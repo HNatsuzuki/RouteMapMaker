@@ -1,7 +1,5 @@
 package RouteMapMaker.models;
 
-import javafx.geometry.Point2D;
-
 /**
  * 線分を表すクラスです。
  */

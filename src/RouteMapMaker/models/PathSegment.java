@@ -1,7 +1,5 @@
 package RouteMapMaker.models;
 
-import javafx.geometry.Point2D;
-
 /**
  * 図形を描くためのセグメントを表すクラスです。
  */

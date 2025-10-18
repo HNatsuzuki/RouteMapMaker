@@ -1,8 +1,8 @@
 package RouteMapMaker.services;
 
 import RouteMapMaker.models.MarkLayer;
+import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.StopMark;
-import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.StrokeLineCap;
