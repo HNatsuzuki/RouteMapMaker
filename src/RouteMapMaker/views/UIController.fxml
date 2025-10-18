@@ -122,10 +122,10 @@
                      <children>
                         <Label layoutX="10.0" layoutY="281.0" text="運転経路一覧" />
                         <ListView fx:id="R_RouteTable" layoutX="5.0" layoutY="23.0" prefHeight="183.0" prefWidth="160.0" />
-                        <ListView fx:id="TrainTable" layoutX="4.0" layoutY="310.0" prefHeight="140.0" prefWidth="150.0" />
+                        <ListView fx:id="trainListView" layoutX="4.0" layoutY="310.0" prefHeight="140.0" prefWidth="150.0" />
                         <ListView fx:id="tStaList" layoutX="5.0" layoutY="815.0" prefHeight="115.0" prefWidth="190.0" />
-                        <Button fx:id="TrainAdd" layoutX="114.0" layoutY="276.0" mnemonicParsing="false" text="追加" />
-                        <Button fx:id="TrainDelete" layoutX="158.0" layoutY="276.0" mnemonicParsing="false" text="削除" />
+                        <Button fx:id="trainAddButton" layoutX="114.0" layoutY="276.0" mnemonicParsing="false" text="追加" />
+                        <Button fx:id="trainDeleteButton" layoutX="158.0" layoutY="276.0" mnemonicParsing="false" text="削除" />
                         <Label layoutX="19.0" layoutY="785.0" text="駅一覧" />
                         <Button fx:id="tStaEdit" layoutX="130.0" layoutY="780.0" mnemonicParsing="false" text="編集" />
                         <ColorPicker fx:id="re_line_CP" layoutX="97.0" layoutY="490.0" prefHeight="27.0" prefWidth="93.0" />
@@ -179,7 +179,7 @@
                         <Label layoutX="14.0" layoutY="6.0" text="路線一覧" />
                         <Button fx:id="RRT_UP" layoutX="169.0" layoutY="24.0" mnemonicParsing="false" text="▲" />
                         <Button fx:id="RRT_DOWN" layoutX="169.0" layoutY="69.0" mnemonicParsing="false" text="▼" />
-                        <Button fx:id="TrainCopy" layoutX="158.0" layoutY="303.0" mnemonicParsing="false" text="複製" />
+                        <Button fx:id="trainCopyButton" layoutX="158.0" layoutY="303.0" mnemonicParsing="false" text="複製" />
                         <Label layoutX="5.0" layoutY="1226.0" text="-1を入力で駅名を非表示" textFill="#0090ff" />
                      </children>
                   </AnchorPane>
