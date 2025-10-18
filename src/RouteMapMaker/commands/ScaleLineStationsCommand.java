@@ -54,12 +54,16 @@ public class ScaleLineStationsCommand implements Command {
                     continue;
                 }
 
+                Point2D oldPoint = station.getPointProperty().get();
+
                 // X
-                double oldX = station.getPointProperty()[0].get();
-                station.getPointProperty()[0].set((oldX - pivotX) * scaleX + pivotX);
+                double oldX = oldPoint.getX();
+                double newX = (oldX - pivotX) * scaleX + pivotX;
                 // Y
-                double oldY = station.getPointProperty()[1].get();
-                station.getPointProperty()[1].set((oldY - pivotY) * scaleY + pivotY);
+                double oldY = oldPoint.getY();
+                double newY = (oldY - pivotY) * scaleY + pivotY;
+
+                station.getPointProperty().set(new Point2D(newX, newY));
                 scaledStations.add(station);
             }
         }
@@ -73,8 +77,7 @@ public class ScaleLineStationsCommand implements Command {
         for (Entry<Station, Point2D> oldPoint : oldPoints.entrySet()) {
             Station station = oldPoint.getKey();
             Point2D point = oldPoint.getValue();
-            station.getPointProperty()[0].set(point.getX());
-            station.getPointProperty()[1].set(point.getY());
+            station.getPointProperty().set(point);
         }
     }
 

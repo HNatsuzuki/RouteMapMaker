@@ -1,11 +1,11 @@
 package RouteMapMaker.models;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -26,8 +26,7 @@ public class Station {//駅に関する情報を保持するクラス
 	
 	private StringProperty name = new SimpleStringProperty();//駅名
 	private BooleanProperty pointSet = new SimpleBooleanProperty(false);//固定座標があるか否か
-	private DoubleProperty x = new SimpleDoubleProperty(0.0);//固定座標x
-	private DoubleProperty y = new SimpleDoubleProperty(0.0);//固定座標y
+	private final ObjectProperty<Point2D> point = new SimpleObjectProperty<>();
 	private int stationConnection = 0;
 	private IntegerProperty textLocation = new SimpleIntegerProperty(TEXT_UNSET);//駅ごとの駅名表示位置
 	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
@@ -51,20 +50,15 @@ public class Station {//駅に関する情報を保持するクラス
 		return name.get();
 	}
 	public void setPoint(double x, double y){
-		this.x.set(x);
-		this.y.set(y);
+		point.set(new Point2D(x, y));
 		pointSet.set(true);
 	}
 	public void setPoint(Point2D point) {
-		this.x.set(point.getX());
-		this.y.set(point.getY());
+		this.point.set(point);
 		pointSet.set(true);
 	}
-	public DoubleProperty[] getPointProperty(){
-		DoubleProperty[] dpa = new DoubleProperty[2];
-		dpa[0] = this.x;
-		dpa[1] = this.y;
-		return dpa;
+	public ObjectProperty<Point2D> getPointProperty(){
+		return point;
 	}
 	public void erasePoint(){
 		pointSet.set(false);
@@ -86,7 +80,7 @@ public class Station {//駅に関する情報を保持するクラス
 			throw new IllegalArgumentException("座標非固定駅の座標は取得できません。");
 		}
 
-		return new Point2D(x.get(), y.get());
+		return point.get();
 	}
 
 	public void plusConnection(){
@@ -103,21 +97,19 @@ public class Station {//駅に関する情報を保持するクラス
 	}
 	public void setInterPoint(double x, double y){
 		pointSet.set(false);
-		this.x.set(x);
-		this.y.set(y);
+		point.set(new Point2D(x, y));
 	}
 
 	public void setInterPoint(Point2D point) {
 		pointSet.set(false);
-		x.set(point.getX());
-		y.set(point.getY());
+		this.point.set(point);
 	}
 
 	public Point2D getInterPoint() {
 		if (pointSet.get()) {
 			throw new IllegalArgumentException("座標固定駅の座標は取得できません。");
 		} else {
-			return new Point2D(x.get(), y.get());
+			return point.get();
 		}
 	}
 
@@ -141,12 +133,12 @@ public class Station {//駅に関する情報を保持するクラス
 	}
 	public double[] getPointUS(){//isSetを考慮しません。使うのは全ての座標が決定した後にしましょう。
 		double[] p = new double[2];
-		p[0] = x.get();
-		p[1] = y.get();
+		p[0] = point.get().getX();
+		p[1] = point.get().getY();
 		return p;
 	}
 	public Point2D getPointUSAsPoint2D() {
-		return new Point2D(this.x.get(), this.y.get());
+		return point.get();
 	}
 	public int getNameSize(){
 		return size.get();
@@ -199,7 +191,6 @@ public class Station {//駅に関する情報を保持するクラス
 	 * @param y y方向の移動量
 	 */
 	public void translate(double x, double y) {
-		this.x.set(this.x.get() + x);
-		this.y.set(this.y.get() + y);
+		point.set(point.get().add(x, y));
 	}
 }
