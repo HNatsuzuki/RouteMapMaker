@@ -26,6 +26,8 @@ import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -358,7 +360,16 @@ public class UIController implements Initializable{
 
 		// 駅名読み込みボタン
 		RouteLoad.setOnAction(actionEvent -> addNewLineWithTextFile());
+
+		// 路線選択中を表す binding
+		BooleanBinding isSelectedEditLine = Bindings.isNotNull(RouteTable.getSelectionModel().selectedItemProperty());
+
 		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
+		lineRight.disableProperty().bind(isSelectedEditLine.not());
+		lineLeft.disableProperty().bind(isSelectedEditLine.not());
+		lineTop.disableProperty().bind(isSelectedEditLine.not());
+		lineBottom.disableProperty().bind(isSelectedEditLine.not());
+		lineCenter.disableProperty().bind(isSelectedEditLine.not());
 		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
@@ -380,6 +391,9 @@ public class UIController implements Initializable{
 					}
 					lineDraw();
 				});
+
+		lineTate.disableProperty().bind(isSelectedEditLine.not());
+		lineYoko.disableProperty().bind(isSelectedEditLine.not());
 		lineTextMuki.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 				Toggle new_toggle) ->{
 			selectedEditLine.ifPresentOrElse(line -> {
@@ -415,6 +429,8 @@ public class UIController implements Initializable{
 				RouteTable.getSelectionModel().select(t.getIndex());
 			}
 		});
+
+		RouteColor.disableProperty().bind(isSelectedEditLine.not());
 		RouteColor.setOnAction(actionEvent -> {
 			selectedEditLine.ifPresent(line -> {
 				Command command = new ValueSetCommand<>(line.getNameColorProperty(), RouteColor.getValue());
@@ -424,6 +440,7 @@ public class UIController implements Initializable{
 		});
 		RouteSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,Integer.MAX_VALUE,15,1));
 		RouteSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(RouteSize));
+		RouteSize.disableProperty().bind(isSelectedEditLine.not());
 		RouteSize.valueProperty().addListener((obs, oldVal, newVal) -> {
 			selectedEditLine.ifPresent(line -> {
 				if (oldVal.intValue() == line.getNameSize()) {
@@ -435,6 +452,7 @@ public class UIController implements Initializable{
 		});
 		ObservableList<String> RouteStyle_Options = FXCollections.observableArrayList("Regular", "Italic", "Bold", "BoldItalic");
 		RouteStyle.setItems(RouteStyle_Options);
+		RouteStyle.disableProperty().bind(isSelectedEditLine.not());
 		RouteStyle.valueProperty().addListener((obs, oldVal, newVal) -> {
 			selectedEditLine.ifPresent(line -> {
 				if (oldVal != null) {
@@ -462,15 +480,18 @@ public class UIController implements Initializable{
 			currentFont.setFont(Font.font(stationFontFamily.get()));
 			lineDraw();
 		});
+
+		// 駅追加ボタン
+		StationAdd.disableProperty().bind(isSelectedEditLine.not());
 		StationAdd.setOnAction((ActionEvent) ->{
 			int index = StationList.getSelectionModel().getSelectedIndex();
-			if(index == 0){
+			if (index == -1) {
+				alert.showWarning("追加位置を選択してください。");
+			} else if(index == 0) {
 				alert.showWarning("駅は2番目以降に挿入してください。");
-			}
-			else if(line.getCurveConnection(index) && line.isCurvable(index)) {
+			} else if (line.getCurveConnection(index) && line.isCurvable(index)) {
 				alert.showWarning("曲線区間に駅を挿入することはできません．");
-			}
-			else{
+			} else {
 				int staNum = 0;
 				while(true){
 					String d = staNum + "駅";
@@ -483,14 +504,14 @@ public class UIController implements Initializable{
 				Line.Connection newCon = line.insertStation(index, new Station(staNum + "駅"));
 				Command command = new AddListItemCommand<>(line.getConnections(), index, newCon);
 				urManager.push(command);
-				snList.clear();
-				for(int i=0; i < line.getStations().size(); i++){
-					snList.add(line.getStations().get(i).getName());
-				}
+				snList.add(index, newCon.getStation().getName());
 				StationList.getSelectionModel().select(index + 1);
 				lineDraw();
 			}
 		});
+
+		// 駅削除ボタン
+		StationDelete.disableProperty().bind(isSelectedEditLine.not());
 		StationDelete.setOnAction((ActionEvent) ->{
 			int index = StationList.getSelectionModel().getSelectedIndex();
 			if(index == 0 || index == line.getStations().size() - 1){
@@ -1873,6 +1894,7 @@ public class UIController implements Initializable{
 	private void lineSelectedIndexChangedInEditMode(ObservableValue<?> observable, Number oldValue, Number newValue) {
 		if (newValue.intValue() == -1) {
 			selectedEditLine = Optional.empty();
+			snList.clear();
 			return;
 		}
 		line = lineList.get(newValue.intValue());
