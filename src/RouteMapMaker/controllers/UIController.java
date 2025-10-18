@@ -159,7 +159,6 @@ public class UIController implements Initializable{
 	private Line line; //現在選択中の路線？（RouteTableのlistenerでセットされている）
 	private Station movingSt;
 	private List<MvSta> movingStList = new ArrayList<>();
-	private FreeItem movingItem = null;
 	private GraphicsContext gc;
 	private ToggleGroup esGroup;//どちらの編集モードかのToggleGroup
 	final double canvasMargin = 200;
@@ -1185,7 +1184,6 @@ public class UIController implements Initializable{
 		});
 		mb_config.setOnAction((ActionEvent) ->{
 			if(! configWindowOpened){
-				ConfigUIController configEuc = null;
 				FXMLLoader editLoader = null;
 				configStage = new Stage();
 				VBox ap = null;
@@ -1203,7 +1201,6 @@ public class UIController implements Initializable{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				configEuc = (ConfigUIController)editLoader.getController();
 				Scene sc = sceneFactory.createScene(ap);
 				configStage.setScene(sc);
 				configStage.setTitle("環境設定");
@@ -1971,11 +1968,6 @@ public class UIController implements Initializable{
 				trainListView.getItems().set(trainIndex, newTrainName);
 			}
 		}
-	}
-	
-	private Object Integer(int indexS) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/**
@@ -2807,33 +2799,7 @@ public class UIController implements Initializable{
 		}
 		return data;
 	}
-	void setAutoUpdate(Button bt, String surl){//オートアップデートを実行するメソッド。結局やらないことにしました。
-		bt.setOnAction((ActionEvent) ->{
-			boolean goNext = true;//エラーがあったらこいつをfalseにして止めます。
-			try{
-				URL url = new URL(surl);
-				HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-				conn.setRequestMethod("GET");
-				conn.connect();
-				if(conn.getResponseCode() == HttpURLConnection.HTTP_OK){
-					System.out.println("新しい実行ファイルのダウンロードに問題ありません。");
-					String CURRENT_DIRECTORY = new File("").getAbsolutePath();
-					InputStream is = conn.getInputStream();
-				}
-			}catch(MalformedURLException e){
-				e.printStackTrace();
-			}catch(IOException e){
-				e.printStackTrace();
-			}
-		});
-	}
-	void saveHistory(){//現在の状態をヒストリに加える。
-		//最初に保存していいか確認
-		Optional<ButtonType> result = alert.showConfirmation("ヒストリに保存するために現在の状態を保存します。よろしいですか？");
-		if(result.get() == ButtonType.OK){
-			
-		}
-	}
+
 	protected void setMenuBarMode(boolean b){//メニューバーはシステムのものを使うかどうか設定
 		menubar.setUseSystemMenuBar(b);
 	}
