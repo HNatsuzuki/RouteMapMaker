@@ -118,15 +118,14 @@ public class TransformController implements Initializable {
 		}
 	}
 	private void calcSize(){//スケール変換後のサイズを計算し、表示する。
-		double[] after = new double[2];
 		try{
 			double X = scale_X.getValue().doubleValue();
 			double Y = scale_Y.getValue().doubleValue();
 			double W = scale_Width.getValue().doubleValue() / 100;
 			double H = scale_Height.getValue().doubleValue() / 100;
-			after[0] = (canvasSize.getWidth() - X) * W + X;
-			after[1] = (canvasSize.getHeight() - Y) * H + Y;
-			scale_after.setText((int)after[0] + " × " + (int) after[1]);
+			double afterX = (canvasSize.getWidth() - X) * W + X;
+			double afterY = (canvasSize.getHeight() - Y) * H + Y;
+			scale_after.setText((int)afterX + " × " + (int) afterY);
 		}catch(NumberFormatException e){
 			scale_after.setText("");
 		}
