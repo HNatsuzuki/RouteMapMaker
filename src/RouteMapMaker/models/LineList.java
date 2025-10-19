@@ -122,6 +122,24 @@ public class LineList implements List<Line> {
     }
 
     /**
+     * デフォルトの駅名を生成します。
+     *
+     * @return デフォルトの駅名
+     */
+    public String generateDefaultStationName() {
+        int num = 0;
+
+        while(true){
+            String name = num + "駅";
+            if (hasStationWithName(name)) {
+                num++;
+            } else {
+                return name;
+            }
+        }
+    }
+
+    /**
      * 全路線に含まれる駅の最大の座標を取得します。
      *
      * @return 最大の座標。一つも存在しない場合は (0, 0) を返します。

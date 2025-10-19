@@ -103,6 +103,7 @@ import RouteMapMaker.commands.AddListItemCommand;
 import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
 import RouteMapMaker.commands.IntegrateStationCommand;
+import RouteMapMaker.commands.LineStationAddCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.ScaleFreeItemsCommand;
@@ -154,7 +155,7 @@ public class UIController implements Initializable{
 	final double EPSILON = 0.00001;//doubleでの比較用。double変数は==で比較しちゃだめです！
 	private ObservableList<String> lineNameList = FXCollections.observableArrayList();
 	private ObservableList<String> tStaListOb = FXCollections.observableArrayList();
-	private ObservableList<String> snList = FXCollections.observableArrayList();
+	private ObservableList<String> stationNameList = FXCollections.observableArrayList();
 	private ObservableList<String> trainNameList = FXCollections.observableArrayList();
 	private ObservableList<StopMark> markList = FXCollections.observableArrayList();//駅ごと
 	private ObservableList<StopMark> trainMarkList = FXCollections.observableArrayList();//経路ごと
@@ -213,7 +214,7 @@ public class UIController implements Initializable{
 	@FXML Button staRemoveRestr;
 	@FXML Button staDeConnect;
 	@FXML Button StationDelete;
-	@FXML Button StationAdd;
+	@FXML Button stationAddButton;
 	@FXML Button stationFontSelectButton;
 	@FXML Button tStaEdit;
 	@FXML Button trainAddButton;
@@ -351,7 +352,7 @@ public class UIController implements Initializable{
 		setCanvasOriginal(lineList.getMaxPoint());
 		lineNameList.add(newLine.getName());
 		StationList.setCellFactory(TextFieldListCell.forListView());
-		StationList.setItems(snList);
+		StationList.setItems(stationNameList);
 		StationList.setEditable(true);
 		line = lineList.get(0);
 
@@ -429,33 +430,8 @@ public class UIController implements Initializable{
 		stationFontSelectButton.setOnAction(actionEvent -> selectStationFont());
 
 		// 駅追加ボタン
-		StationAdd.disableProperty().bind(isSelectedEditLine.not());
-		StationAdd.setOnAction((ActionEvent) ->{
-			int index = StationList.getSelectionModel().getSelectedIndex();
-			if (index == -1) {
-				alert.showWarning("追加位置を選択してください。");
-			} else if(index == 0) {
-				alert.showWarning("駅は2番目以降に挿入してください。");
-			} else if (line.getCurveConnection(index) && line.isCurvable(index)) {
-				alert.showWarning("曲線区間に駅を挿入することはできません．");
-			} else {
-				int staNum = 0;
-				while(true){
-					String d = staNum + "駅";
-					if (lineList.hasStationWithName(d)) {
-						staNum++;
-					} else {
-						break;
-					}
-				}
-				Line.Connection newCon = line.insertStation(index, new Station(staNum + "駅"));
-				Command command = new AddListItemCommand<>(line.getConnections(), index, newCon);
-				urManager.push(command);
-				snList.add(index, newCon.getStation().getName());
-				StationList.getSelectionModel().select(index + 1);
-				lineDraw();
-			}
-		});
+		stationAddButton.disableProperty().bind(isSelectedEditLine.not());
+		stationAddButton.setOnAction(actionEvent -> addLineStation());
 
 		// 駅削除ボタン
 		StationDelete.disableProperty().bind(isSelectedEditLine.not());
@@ -497,9 +473,9 @@ public class UIController implements Initializable{
 					urManager.execute(removeConnectionCommand);
 				}
 
-				snList.clear();
+				stationNameList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
-					snList.add(line.getStations().get(i).getName());
+					stationNameList.add(line.getStations().get(i).getName());
 				}
 				StationList.getSelectionModel().select(index);
 				lineDraw();
@@ -525,9 +501,9 @@ public class UIController implements Initializable{
 						urManager.execute(command);
 					}
 				}
-				snList.clear();
+				stationNameList.clear();
 				for(int i=0; i < line.getStations().size(); i++){
-					snList.add(line.getStations().get(i).getName());
+					stationNameList.add(line.getStations().get(i).getName());
 				}
 				StationList.getSelectionModel().select(indexS);
 				lineDraw();
@@ -695,9 +671,9 @@ public class UIController implements Initializable{
 					urManager.execute(command);
 
 					lineDraw();
-					snList.clear();
+					stationNameList.clear();
 					for(int i=0; i < line.getStations().size(); i++){
-						snList.add(line.getStations().get(i).getName());
+						stationNameList.add(line.getStations().get(i).getName());
 					}
 
 					//運転経路編集ウィンドウで変更を反映させる
@@ -1800,12 +1776,12 @@ public class UIController implements Initializable{
 	private void lineSelectedIndexChangedInEditMode(ObservableValue<?> observable, Number oldValue, Number newValue) {
 		if (newValue.intValue() == -1) {
 			selectedEditLine = Optional.empty();
-			snList.clear();
+			stationNameList.clear();
 			return;
 		}
 		line = lineList.get(newValue.intValue());
 		selectedEditLine = Optional.of(line);
-		snList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
+		stationNameList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
 		StationList.getSelectionModel().selectLast();
 		//トグルの選択と駅名表示位置設定		
 		lineTextLocationGroup.getToggles().stream()
@@ -2010,6 +1986,31 @@ public class UIController implements Initializable{
 			currentFont.setFont(Font.font(stationFontFamily.get()));
 			lineDraw();
 		});
+	}
+
+	/**
+	 * 選択中路線の選択した箇所に駅を追加します。
+	 */
+	private void addLineStation() {
+		int index = StationList.getSelectionModel().getSelectedIndex();
+
+		if (index == -1) {
+			alert.showWarning("追加位置を選択してください。");
+		} else if(index == 0) {
+			alert.showWarning("駅は2番目以降に挿入してください。");
+		} else if (line.isConnectedByCurve(index)) {
+			alert.showWarning("曲線区間に駅を挿入することはできません．");
+		} else {
+			selectedEditLine.ifPresent(line -> {
+				String stationName = lineList.generateDefaultStationName();
+				Station newStation = new Station(stationName);
+				Command command = new LineStationAddCommand(line, index, newStation);
+				urManager.execute(command);
+				stationNameList.add(index, stationName);
+				StationList.getSelectionModel().select(index + 1);
+				lineDraw();
+			});
+		}
 	}
 
 	/**
@@ -2280,10 +2281,10 @@ public class UIController implements Initializable{
 				if(lineList.size() != 0){
 					lineEditListView.getSelectionModel().select(0);
 					indexR = lineEditListView.getSelectionModel().getSelectedIndex();
-					StationList.setItems(snList);
-					snList.clear();
+					StationList.setItems(stationNameList);
+					stationNameList.clear();
 					for(int i=0; i < lineList.get(indexR).getStations().size(); i++){
-						snList.add(lineList.get(indexR).getStations().get(i).getName());
+						stationNameList.add(lineList.get(indexR).getStations().get(i).getName());
 					}
 				}
 			}
@@ -2331,7 +2332,7 @@ public class UIController implements Initializable{
 		int indexLR = lineEditListView.getSelectionModel().getSelectedIndex();
 		int sizeLR = lineNameList.size();
 		int indexLS = StationList.getSelectionModel().getSelectedIndex();
-		int sizeLS = snList.size();
+		int sizeLS = stationNameList.size();
 		int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
 		int indexRT = trainListView.getSelectionModel().getSelectedIndex();
 		int sizeRT = trainNameList.size();
@@ -2347,7 +2348,7 @@ public class UIController implements Initializable{
 		}
 		if(lineNameList.size() == sizeLR && indexLR != -1){
 			lineEditListView.getSelectionModel().select(indexLR);
-			if(snList.size() == sizeLS && indexLS != -1){
+			if(stationNameList.size() == sizeLS && indexLS != -1){
 				StationList.getSelectionModel().select(indexLS);
 			}else{
 				selectSomething(true);

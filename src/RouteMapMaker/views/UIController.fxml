@@ -46,7 +46,7 @@
                         <Button fx:id="RouteAdd" layoutX="41.0" layoutY="35.0" mnemonicParsing="false" text="追加" />
                         <Button fx:id="RouteDelete" layoutX="129.0" layoutY="35.0" mnemonicParsing="false" text="削除" />
                         <Label layoutX="17.0" layoutY="593.0" text="駅一覧" />
-                        <Button fx:id="StationAdd" layoutX="75.0" layoutY="588.0" mnemonicParsing="false" text="追加" />
+                        <Button fx:id="stationAddButton" layoutX="75.0" layoutY="588.0" mnemonicParsing="false" text="追加" />
                         <Button fx:id="StationDelete" layoutX="119.0" layoutY="588.0" mnemonicParsing="false" text="削除" />
                         <Label layoutX="7.0" layoutY="245.0" text="路線駅名表示" />
                         <Label layoutX="19.0" layoutY="828.0" text="駅プロパティ" />
