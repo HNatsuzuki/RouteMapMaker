@@ -11,6 +11,7 @@ import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.services.AlertService;
@@ -122,7 +123,7 @@ public class ChangeAllController implements Initializable{
 				boolean tate = (v >> 4) > 0;
 				v = v - (tate ? (1<<4) : 0); //縦書きbitを消去
 				for(Line l: A_list.getSelectionModel().getSelectedItems()){
-					l.setNameLocation(v);
+					l.setNameLocation(TextLocation.fromLineLocation(v));
 					l.setVertical(tate);
 				}
 				uic.ReDraw();

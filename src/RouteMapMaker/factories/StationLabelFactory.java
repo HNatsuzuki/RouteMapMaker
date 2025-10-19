@@ -40,7 +40,7 @@ public class StationLabelFactory {
 
         TextLocation location;
         if (station.getTextLocation() == Station.TEXT_UNSET) {
-            location = TextLocation.fromLineLocation(line.getNameLocation());
+            location = line.getNameLocation();
         } else {
             location = TextLocation.fromStationLocation(station.getTextLocation());
         }

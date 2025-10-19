@@ -62,7 +62,7 @@ public class Line {//路線の情報を保持するクラス。
 	private final BooleanProperty vertical = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
 	private IntegerProperty nameStyle = new SimpleIntegerProperty(REGULAR);
 	private IntegerProperty nameSize = new SimpleIntegerProperty(15);
-	private IntegerProperty nameLocation = new SimpleIntegerProperty(BOTTOM);
+	private final ObjectProperty<TextLocation> nameLocation = new SimpleObjectProperty<>(TextLocation.BOTTOM);
 	private ObjectProperty<Color> nameColor = new SimpleObjectProperty<>(Color.BLACK);
 	private IntegerProperty nameX = new SimpleIntegerProperty(0);
 	private IntegerProperty nameY = new SimpleIntegerProperty(0);
@@ -187,13 +187,13 @@ public class Line {//路線の情報を保持するクラス。
 		if(i <= 0) throw new IllegalArgumentException("lineのNameSizeは0以下にできません");//0以下は許容しません。
 		this.nameSize.set(i);
 	}
-	public int getNameLocation(){
+	public TextLocation getNameLocation(){
 		return this.nameLocation.get();
 	}
-	public IntegerProperty getNameLocationProperty(){
+	public ObjectProperty<TextLocation> getNameLocationProperty(){
 		return this.nameLocation;
 	}
-	public void setNameLocation(int i){
+	public void setNameLocation(TextLocation i){
 		this.nameLocation.set(i);
 	}
 	public Color getNameColor(){

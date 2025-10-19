@@ -7,6 +7,7 @@ import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.Train;
 import javafx.scene.paint.Color;
 
@@ -74,14 +75,14 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         if (version < 7) {
             //上付き、下付きなど未対応のデータ
             boolean vertical = Boolean.valueOf(properties.getProperty(prefix + "tategaki"));
-            line.setNameLocation(vertical ? Line.BOTTOM : Line.RIGHT);
+            line.setNameLocation(vertical ? TextLocation.BOTTOM : TextLocation.RIGHT);
             line.setVertical(vertical);
         } else if (version < 9) {
             //縦・横とtopやbottomが分離されていないデータ
-            line.setNameLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation")));
-            line.setVertical(line.getNameLocation() == Line.TOP || line.getNameLocation() == Line.BOTTOM);
+            line.setNameLocation(TextLocation.fromLineLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation"))));
+            line.setVertical(line.getNameLocation() == TextLocation.TOP || line.getNameLocation() == TextLocation.BOTTOM);
         } else {
-            line.setNameLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation")));
+            line.setNameLocation(TextLocation.fromLineLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation"))));
             line.setVertical(Boolean.valueOf(properties.getProperty(prefix + "tategaki")));
         }
 

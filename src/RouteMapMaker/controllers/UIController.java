@@ -131,6 +131,7 @@ import RouteMapMaker.models.Point2D;
 import RouteMapMaker.models.ScaleParameters;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
+import RouteMapMaker.models.TextLocation;
 import RouteMapMaker.models.Train;
 import RouteMapMaker.models.TrainStop;
 import RouteMapMaker.models.TranslateParameters;
@@ -369,27 +370,34 @@ public class UIController implements Initializable{
 
 		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
 		lineRight.disableProperty().bind(isSelectedEditLine.not());
+		lineRight.setUserData(TextLocation.RIGHT);
 		lineLeft.disableProperty().bind(isSelectedEditLine.not());
+		lineLeft.setUserData(TextLocation.LEFT);
 		lineTop.disableProperty().bind(isSelectedEditLine.not());
+		lineTop.setUserData(TextLocation.TOP);
 		lineBottom.disableProperty().bind(isSelectedEditLine.not());
+		lineBottom.setUserData(TextLocation.BOTTOM);
 		lineCenter.disableProperty().bind(isSelectedEditLine.not());
-		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
-				Toggle new_toggle) ->{
+		lineCenter.setUserData(TextLocation.CENTER);
+		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle oldToggle,
+				Toggle newToggle) ->{
+					if(newToggle == null && oldToggle != null) {
+						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+						lineTextLocation.selectToggle(oldToggle);
+
+						return;
+					}
 					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
 					if(RouteIndex == -1){
 						alert.showWarning("路線を選択してください。");
 
 						return;
 					}
-					Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
-					int newT = Arrays.asList(tlToggle).indexOf(new_toggle);
-					int oldT = Arrays.asList(tlToggle).indexOf(old_toggle);
-					if(newT == -1 && oldT != -1) {
-						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-						lineTextLocation.selectToggle(old_toggle);
-					}else if(lineList.get(RouteIndex).getNameLocation() == oldT && oldT != newT){
+					TextLocation newValue = (TextLocation)newToggle.getUserData();
+					TextLocation oldValue = (TextLocation)oldToggle.getUserData();
+					if(lineList.get(RouteIndex).getNameLocation() == oldValue && oldValue != newValue){
 						//手動で操作されたことによるlistenerの呼び出し
-						Command command = new ValueSetCommand<>(lineList.get(RouteIndex).getNameLocationProperty(), oldT, newT);
+						Command command = new ValueSetCommand<>(lineList.get(RouteIndex).getNameLocationProperty(), oldValue, newValue);
 						urManager.execute(command);
 					}
 					lineDraw();
@@ -1852,9 +1860,12 @@ public class UIController implements Initializable{
 		selectedEditLine = Optional.of(line);
 		snList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
 		StationList.getSelectionModel().selectLast();
-		//トグルの選択と駅名表示位置設定
-		Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
-		lineTextLocation.selectToggle(tlToggle[line.getNameLocation()]);
+		//トグルの選択と駅名表示位置設定		
+		lineTextLocation.getToggles().stream()
+			.filter(t -> t.getUserData() == line.getNameLocation())
+			.findFirst()
+			.ifPresent(lineTextLocation::selectToggle);
+
 		lineTextDirectionGroup.selectToggle(line.isVertical() ? lineVerticalButton : lineHorizontalButton);
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
