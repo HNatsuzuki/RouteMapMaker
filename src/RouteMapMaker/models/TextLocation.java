@@ -8,7 +8,8 @@ public enum TextLocation {
     TOP,
     BOTTOM,
     LEFT,
-    RIGHT;
+    RIGHT,
+    INHERIT;
 
     /**
      * 路線のテキスト配置から変換します。
@@ -51,6 +52,8 @@ public enum TextLocation {
                 return LEFT;
             case Station.TEXT_RIGHT:
                 return RIGHT;
+            case Station.TEXT_UNSET:
+                return INHERIT;
             default:
                 throw new IllegalArgumentException("対応する値がありません。");
         }

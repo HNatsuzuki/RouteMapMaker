@@ -28,7 +28,7 @@ public class Station {//駅に関する情報を保持するクラス
 	private BooleanProperty pointSet = new SimpleBooleanProperty(false);//固定座標があるか否か
 	private final ObjectProperty<Point2D> point = new SimpleObjectProperty<>();
 	private int stationConnection = 0;
-	private IntegerProperty textLocation = new SimpleIntegerProperty(TEXT_UNSET);//駅ごとの駅名表示位置
+	private ObjectProperty<TextLocation> textLocation = new SimpleObjectProperty<>(TextLocation.INHERIT);//駅ごとの駅名表示位置
 	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
 	private IntegerProperty size = new SimpleIntegerProperty(0);//駅ごとに設定される文字サイズ。0は経路準拠
 	private IntegerProperty style = new SimpleIntegerProperty(STYLE_UNSET);//駅ごとに設定される文字スタイル
@@ -113,15 +113,21 @@ public class Station {//駅に関する情報を保持するクラス
 		}
 	}
 
-	public void setTextLocation(int muki){
-		this.textLocation.set(muki);
+	public void setTextLocation(TextLocation textLocation) {
+		this.textLocation.set(textLocation);
 	}
-	public IntegerProperty getTextLocationProperty(){
+	public ObjectProperty<TextLocation> textLocationProperty() {
 		return this.textLocation;
 	}
-	public int getTextLocation(){
+	public TextLocation getTextLocation() {
 		return textLocation.get();
 	}
+
+	/** テキスト位置を路線準拠とするかどうか */
+	public boolean isTextLocationInherited() {
+		return textLocation.get() == TextLocation.INHERIT;
+	}
+
 	public void setTategaki(boolean b) {
 		tategaki.set(b);
 	}

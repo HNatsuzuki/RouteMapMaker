@@ -85,22 +85,22 @@
                            </toggleGroup>
                         </ToggleButton>
                         <ToggleButton fx:id="lineHorizontalButton" layoutX="10.0" layoutY="330.0" mnemonicParsing="false" text="横書き" textFill="CRIMSON" toggleGroup="$lineTextDirectionGroup" />
-                        <ToggleButton fx:id="staTop" disable="true" layoutX="119.0" layoutY="914.0" mnemonicParsing="false" text="上" textFill="DARKRED">
+                        <ToggleButton fx:id="stationTopButton" disable="true" layoutX="119.0" layoutY="914.0" mnemonicParsing="false" text="上" textFill="DARKRED">
                            <toggleGroup>
-                              <ToggleGroup fx:id="staTextLocation" />
+                              <ToggleGroup fx:id="stationTextLocationGroup" />
                            </toggleGroup>
                         </ToggleButton>
-                        <ToggleButton fx:id="staCenter" disable="true" layoutX="113.0" layoutY="949.0" mnemonicParsing="false" text="中央" textFill="#5700a8" toggleGroup="$staTextLocation" />
-                        <ToggleButton fx:id="staLeft" disable="true" layoutX="76.0" layoutY="949.0" mnemonicParsing="false" text="左" textFill="DARKSALMON" toggleGroup="$staTextLocation" />
-                        <ToggleButton fx:id="staRight" disable="true" layoutX="164.0" layoutY="949.0" mnemonicParsing="false" text="右" textFill="DARKGREEN" toggleGroup="$staTextLocation" />
-                        <ToggleButton fx:id="staBottom" disable="true" layoutX="119.0" layoutY="984.0" mnemonicParsing="false" text="下" textFill="DARKBLUE" toggleGroup="$staTextLocation" />
+                        <ToggleButton fx:id="stationCenterButton" disable="true" layoutX="113.0" layoutY="949.0" mnemonicParsing="false" text="中央" textFill="#5700a8" toggleGroup="$stationTextLocationGroup" />
+                        <ToggleButton fx:id="stationLeftButton" disable="true" layoutX="76.0" layoutY="949.0" mnemonicParsing="false" text="左" textFill="DARKSALMON" toggleGroup="$stationTextLocationGroup" />
+                        <ToggleButton fx:id="stationRightButton" disable="true" layoutX="164.0" layoutY="949.0" mnemonicParsing="false" text="右" textFill="DARKGREEN" toggleGroup="$stationTextLocationGroup" />
+                        <ToggleButton fx:id="stationBottomButton" disable="true" layoutX="119.0" layoutY="984.0" mnemonicParsing="false" text="下" textFill="DARKBLUE" toggleGroup="$stationTextLocationGroup" />
                         <ToggleButton fx:id="staTate" disable="true" layoutX="8.0" layoutY="949.0" mnemonicParsing="false" text="縦書き" textFill="DARKCYAN">
                            <toggleGroup>
                               <ToggleGroup fx:id="staTextMuki" />
                            </toggleGroup>
                         </ToggleButton>
                         <ToggleButton fx:id="staYoko" disable="true" layoutX="8.0" layoutY="984.0" mnemonicParsing="false" text="横書き" textFill="CRIMSON" toggleGroup="$staTextMuki" />
-                        <ToggleButton fx:id="staObeyLine" layoutX="8.0" layoutY="914.0" mnemonicParsing="false" selected="true" text="路線準拠" />
+                        <ToggleButton fx:id="stationStyleInheritButton" layoutX="8.0" layoutY="914.0" mnemonicParsing="false" selected="true" text="路線準拠" />
                         <Label layoutX="7.0" layoutY="1201.0" text="背景の設定" />
                         <ColorPicker fx:id="bgColor_CP" layoutX="61.0" layoutY="1252.0" prefHeight="27.0" prefWidth="134.0" promptText="背景色を指定" />
                         <Button fx:id="setBgImage" layoutX="12.0" layoutY="1286.0" mnemonicParsing="false" text="背景画像" />

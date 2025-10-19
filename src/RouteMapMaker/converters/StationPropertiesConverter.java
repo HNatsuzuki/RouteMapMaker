@@ -3,6 +3,7 @@ package RouteMapMaker.converters;
 import java.util.Properties;
 
 import RouteMapMaker.models.Station;
+import RouteMapMaker.models.TextLocation;
 
 /**
  * Station と Properties の相互変換を行うクラスです。
@@ -28,7 +29,7 @@ public class StationPropertiesConverter {
             properties.setProperty(prefix + "y", String.valueOf(station.getInterPoint().getY()));
         }
         properties.setProperty(prefix + "stationConnection", String.valueOf(station.getConnection()));
-        properties.setProperty(prefix + "textLocation", String.valueOf(station.getTextLocation()));
+        properties.setProperty(prefix + "textLocation", String.valueOf(textLocationToInt(station.getTextLocation())));
         properties.setProperty(prefix + "tategaki", String.valueOf(station.isTategaki()));
         properties.setProperty(prefix + "size", String.valueOf(station.getNameSize()));
         properties.setProperty(prefix + "style", String.valueOf(station.getNameStyle()));
@@ -65,10 +66,10 @@ public class StationPropertiesConverter {
 
         if (version < 9) {
             int loc = Integer.parseInt(properties.getProperty(prefix + "textMuki"));
-            station.setTextLocation(loc);
+            station.setTextLocation(TextLocation.fromStationLocation(loc));
             station.setTategaki(loc==Station.TEXT_BOTTOM || loc==Station.TEXT_TOP);
         } else {
-            station.setTextLocation(Integer.parseInt(properties.getProperty(prefix + "textLocation")));
+            station.setTextLocation(TextLocation.fromStationLocation(Integer.parseInt(properties.getProperty(prefix + "textLocation"))));
             station.setTategaki(Boolean.valueOf(properties.getProperty(prefix + "tategaki")));
         }
 
@@ -79,5 +80,30 @@ public class StationPropertiesConverter {
         station.setShiftBase(Boolean.valueOf(properties.getProperty(prefix + "shiftOnStation")));
 
         return station;
+    }
+
+    /**
+     * {@link TextLocation} を対応する値に変換します。
+     *
+     * @param textLocation テキスト配置
+     * @return 対応する値
+     */
+    private static int textLocationToInt(TextLocation textLocation) {
+        switch (textLocation) {
+            case LEFT:
+                return Station.TEXT_LEFT;
+            case RIGHT:
+                return Station.TEXT_RIGHT;
+            case TOP:
+                return Station.TEXT_TOP;
+            case BOTTOM:
+                return Station.TEXT_BOTTOM;
+            case CENTER:
+                return Station.TEXT_CENTER;
+            case INHERIT:
+                return Station.TEXT_UNSET;
+            default:
+                throw new IllegalArgumentException("不正な値です:" + textLocation);
+        }
     }
 }

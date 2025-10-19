@@ -38,12 +38,7 @@ public class StationLabelFactory {
             return Optional.empty();
         }
 
-        TextLocation location;
-        if (station.getTextLocation() == Station.TEXT_UNSET) {
-            location = line.getNameLocation();
-        } else {
-            location = TextLocation.fromStationLocation(station.getTextLocation());
-        }
+        TextLocation location = station.isTextLocationInherited() ? line.getNameLocation() : station.getTextLocation();
 
         //駅名シフト
         Point2D offset;
@@ -59,7 +54,7 @@ public class StationLabelFactory {
             offset = line.getNameOffset();
         }
 
-        boolean isVertical = station.getTextLocation() == Station.TEXT_UNSET ? line.isVertical() : station.isTategaki();
+        boolean isVertical = station.isTextLocationInherited() ? line.isVertical() : station.isTategaki();
         String text;
 
         if (isVertical) {

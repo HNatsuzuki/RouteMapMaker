@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -279,16 +278,16 @@ public class UIController implements Initializable{
 	@FXML ToggleButton lineVerticalButton;
 	@FXML ToggleGroup lineTextDirectionGroup;
 	@FXML ToggleGroup lineTextLocationGroup;
-	@FXML ToggleButton staTop;
-	@FXML ToggleButton staBottom;
-	@FXML ToggleButton staRight;
-	@FXML ToggleButton staLeft;
-	@FXML ToggleButton staCenter;
+	@FXML ToggleButton stationTopButton;
+	@FXML ToggleButton stationBottomButton;
+	@FXML ToggleButton stationRightButton;
+	@FXML ToggleButton stationLeftButton;
+	@FXML ToggleButton stationCenterButton;
 	@FXML ToggleButton staYoko;
 	@FXML ToggleButton staTate;
-	@FXML ToggleButton staObeyLine;
+	@FXML ToggleButton stationStyleInheritButton;
 	@FXML ToggleGroup staTextMuki;
-	@FXML ToggleGroup staTextLocation;
+	@FXML ToggleGroup stationTextLocationGroup;
 	@FXML Rectangle draggedRect;
 	@FXML ScrollPane canvasPane;
 	@FXML Slider ZoomSlider;
@@ -441,50 +440,39 @@ public class UIController implements Initializable{
 		lineStationListView.setOnEditCommit(this::lineStationListViewEditCommit);
 		lineStationListView.getSelectionModel().selectedIndexProperty().addListener(this::lineStationSelectedIndexChanged);
 
-		staObeyLine.setSelected(true);
-		staObeyLine.setOnAction((ActionEvent)->{
-			selectedLineStation.ifPresent(station -> {
-				if((station.getTextLocation() == Station.TEXT_UNSET) == staObeyLine.isSelected()) {
-					//状態更新不要
-					return;
-				}
-				int newLocation = staObeyLine.isSelected() ? Station.TEXT_UNSET : Station.TEXT_LEFT;
-				Command command = new ValueSetCommand<>(station.getTextLocationProperty(), newLocation);
-				urManager.execute(command);
-				//位置指定トグルの有効/無効を切り替える
-				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter, staTate, staYoko};
-				boolean obeyLine = newLocation == Station.TEXT_UNSET;
-				Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
-				if (!obeyLine) {
-					staTextLocation.selectToggle(stlToggles[station.getTextLocation() - Station.TEXT_LEFT]);
-				}
-				lineDraw();
-			});
-		});
-		staTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
-			Toggle new_toggle) ->{
-				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter};
-				int oldT = Arrays.asList(stlToggles).indexOf(old_toggle);
-				int newT = Arrays.asList(stlToggles).indexOf(new_toggle);
-				if(oldT == -1) {
-					return;
-				}
-				if(newT == -1) {
-					//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-					staTextLocation.selectToggle(old_toggle);
-				} else {
-					selectedLineStation.ifPresent(station -> {
-						int oldValue = oldT + Station.TEXT_LEFT;
-						int newValue = newT + Station.TEXT_LEFT;
+		// 駅スタイル路線準拠ボタン
+		stationStyleInheritButton.setSelected(true);
+		stationStyleInheritButton.setOnAction(actionEvent-> stationStyleInheritSelectedChanged());
 
-						if (oldValue == station.getTextLocation()) {
-							Command command = new ValueSetCommand<>(station.getTextLocationProperty(), oldValue, newValue);
-							urManager.execute(command);
-							lineDraw();
-						}
-					});
-				}
-			});
+		// 駅テキスト左ボタン
+		stationRightButton.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationRightButton.setUserData(TextLocation.RIGHT);
+
+		// 駅テキスト左ボタン
+		stationLeftButton.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationLeftButton.setUserData(TextLocation.LEFT);
+
+		// 駅テキスト上ボタン
+		stationTopButton.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationTopButton.setUserData(TextLocation.TOP);
+
+		// 駅テキスト下ボタン
+		stationBottomButton.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationBottomButton.setUserData(TextLocation.BOTTOM);
+
+		// 駅テキスト中央ボタン
+		stationCenterButton.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationCenterButton.setUserData(TextLocation.CENTER);
+
+		// 駅テキスト位置グループ
+		stationTextLocationGroup.selectedToggleProperty().addListener(this::stationTextLocationGroupSelectedChanged);
+
+		// 駅テキスト縦書きボタン
+		staTate.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+
+		// 駅テキスト横書きボタン
+		staYoko.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+
 		staTextMuki.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 			Toggle new_toggle) ->{
 				if (old_toggle==null) {
@@ -1762,16 +1750,14 @@ public class UIController implements Initializable{
 				staStyle.getSelectionModel().select(station.getNameStyle());
 				staCurveConnection.setDisable(!line.isCurvable(newValue.intValue()));
 				staCurveConnection.setSelected(line.getCurveConnection(newValue.intValue()));
-				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter};
 				//位置指定トグルの有効/無効を切り替える
-				boolean obeyLine = station.getTextLocation()==Station.TEXT_UNSET;
-				staObeyLine.setSelected(obeyLine);
-				Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
-				((javafx.scene.Node)staTate).setDisable(obeyLine);
-				((javafx.scene.Node)staYoko).setDisable(obeyLine);
+				stationStyleInheritButton.setSelected(station.isTextLocationInherited());
 				staTextMuki.selectToggle(station.isTategaki() ? staTate : staYoko);
-				if(!obeyLine) {
-					staTextLocation.selectToggle(stlToggles[station.getTextLocation()-Station.TEXT_LEFT]);
+				if (!station.isTextLocationInherited()) {
+					stationTextLocationGroup.getToggles().stream()
+						.filter(t -> t.getUserData() == station.getTextLocation())
+						.findFirst()
+						.ifPresent(stationTextLocationGroup::selectToggle);
 				}
 				//選択中の駅を赤点で表示する
 				if(movingStList.size() < 2) {
@@ -2020,6 +2006,56 @@ public class UIController implements Initializable{
 		stationNameList.set(editEvent.getIndex(), newValue);
 		lineStationListView.getSelectionModel().select(indexS);
 		lineDraw();
+	}
+
+	/**
+	 * 駅ごとにスタイルを設定するかどうかのトグル変更時処理
+	 */
+	private void stationStyleInheritSelectedChanged() {
+		selectedLineStation.ifPresent(station -> {
+			if (station.isTextLocationInherited() == stationStyleInheritButton.isSelected()) {
+				//状態更新不要
+				return;
+			}
+			TextLocation newLocation = stationStyleInheritButton.isSelected() ? TextLocation.INHERIT : TextLocation.LEFT;
+			Command command = new ValueSetCommand<>(station.textLocationProperty(), newLocation);
+			urManager.execute(command);
+
+			if (!stationStyleInheritButton.isSelected()) {
+				stationTextLocationGroup.selectToggle(stationLeftButton);
+			}
+
+			lineDraw();
+		});
+	}
+
+	/**
+	 * 駅ごとの駅名位置 ToggleGroup 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldToggle 変更前の値
+	 * @param newToggle 変更後の値
+	 */
+	private void stationTextLocationGroupSelectedChanged(ObservableValue<? extends Toggle> observable, Toggle oldToggle, Toggle newToggle) {
+		if (oldToggle == null) {
+			return;
+		}
+
+		if (newToggle == null) {
+			//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+			stationTextLocationGroup.selectToggle(oldToggle);
+		} else {
+			selectedLineStation.ifPresent(station -> {
+				var oldValue = (TextLocation)oldToggle.getUserData();
+				var newValue = (TextLocation)newToggle.getUserData();
+
+				if (oldValue == station.getTextLocation() && oldValue != newValue) {
+					Command command = new ValueSetCommand<>(station.textLocationProperty(), oldValue, newValue);
+					urManager.execute(command);
+					lineDraw();
+				}
+			});
+		}
 	}
 
 	/**

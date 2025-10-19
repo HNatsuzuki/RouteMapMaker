@@ -452,7 +452,7 @@ public class ChangeAllController implements Initializable{
 			if(D_LineList.getSelectionModel().getSelectedItems().size() > 1){//複数の路線が選択されている。
 				for(Line line: D_LineList.getSelectionModel().getSelectedItems()){
 					for(Station sta: line.getStations()){
-						sta.setTextLocation(v);
+						sta.setTextLocation(TextLocation.fromStationLocation(v));
 						sta.setTategaki(tate);
 					}
 				}
@@ -460,7 +460,7 @@ public class ChangeAllController implements Initializable{
 				alert.showWarning("変更する駅を選択してください。");
 			}else{
 				for(Station sta: D_StaList.getSelectionModel().getSelectedItems()){
-					sta.setTextLocation(v);
+					sta.setTextLocation(TextLocation.fromStationLocation(v));
 					sta.setTategaki(tate);
 				}
 			}
