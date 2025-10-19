@@ -214,7 +214,7 @@ public class UIController implements Initializable{
 	@FXML Button staDeConnect;
 	@FXML Button StationDelete;
 	@FXML Button StationAdd;
-	@FXML Button stationFont;
+	@FXML Button stationFontSelectButton;
 	@FXML Button tStaEdit;
 	@FXML Button trainAddButton;
 	@FXML Button trainDeleteButton;
@@ -425,19 +425,8 @@ public class UIController implements Initializable{
 		lineFontStyleComboBox.disableProperty().bind(isSelectedEditLine.not());
 		lineFontStyleComboBox.valueProperty().addListener(this::lineFontStyleComboBoxValueChanged);
 
-		stationFont.setOnAction((ActionEvent) ->{//フォントを設定。これは全路線共通です。
-			String oldVal = stationFontFamily.get();
-			String newVal = selectFontFamily(stationFontFamily.get());
-
-			if (!newVal.equals(oldVal)) {
-				Command command = new ValueSetCommand<>(stationFontFamily, oldVal, newVal);
-				urManager.execute(command);
-			}
-
-			currentFont.setText(stationFontFamily.get());
-			currentFont.setFont(Font.font(stationFontFamily.get()));
-			lineDraw();
-		});
+		// 駅名フォント選択
+		stationFontSelectButton.setOnAction(actionEvent -> selectStationFont());
 
 		// 駅追加ボタン
 		StationAdd.disableProperty().bind(isSelectedEditLine.not());
@@ -2003,6 +1992,24 @@ public class UIController implements Initializable{
 				urManager.execute(command);
 				lineDraw();
 			}
+		});
+	}
+
+	/**
+	 * 駅名フォントを選択します。
+	 */
+	private void selectStationFont() {
+		String oldValue = stationFontFamily.get();
+		var dialog = new FontSelectDialogService(oldValue, selectFontFactory);
+		dialog.showDialog().ifPresent(newValue -> {
+			if (!newValue.equals(oldValue)) {
+				Command command = new ValueSetCommand<>(stationFontFamily, oldValue, newValue);
+				urManager.execute(command);
+			}
+
+			currentFont.setText(stationFontFamily.get());
+			currentFont.setFont(Font.font(stationFontFamily.get()));
+			lineDraw();
 		});
 	}
 
