@@ -104,6 +104,7 @@ import RouteMapMaker.commands.Command;
 import RouteMapMaker.commands.CompositeCommand;
 import RouteMapMaker.commands.IntegrateStationCommand;
 import RouteMapMaker.commands.LineStationAddCommand;
+import RouteMapMaker.commands.LineStationRemoveCommand;
 import RouteMapMaker.commands.MoveStationsCommand;
 import RouteMapMaker.commands.RemoveListItemCommand;
 import RouteMapMaker.commands.ScaleFreeItemsCommand;
@@ -213,7 +214,7 @@ public class UIController implements Initializable{
 	@FXML Button setBgImage;
 	@FXML Button staRemoveRestr;
 	@FXML Button staDeConnect;
-	@FXML Button StationDelete;
+	@FXML Button stationDeleteButton;
 	@FXML Button stationAddButton;
 	@FXML Button stationFontSelectButton;
 	@FXML Button tStaEdit;
@@ -434,53 +435,8 @@ public class UIController implements Initializable{
 		stationAddButton.setOnAction(actionEvent -> addLineStation());
 
 		// 駅削除ボタン
-		StationDelete.disableProperty().bind(isSelectedEditLine.not());
-		StationDelete.setOnAction((ActionEvent) ->{
-			int index = StationList.getSelectionModel().getSelectedIndex();
-			if(index == 0 || index == line.getStations().size() - 1){
-				//削除は受け付けない
-				alert.showWarning("始点と終点は削除できません。");
-			}else if(index != -1){
-				Command removeConnectionCommand = new RemoveListItemCommand<>(line.getConnections(), index);
-				Station removeCandidate = line.getStations().get(index);
-				List<Command> commands = new ArrayList<>();
-				List<String> trainNames = new ArrayList<>();
-
-				// 運転系統から削除対象駅を検索する
-				for (int i = 0; i < line.getTrains().size(); ++i) {
-					Train train = line.getTrains().get(i);
-
-					for (int h = 0; h < train.getStops().size(); ++h) {
-						if (train.getStops().get(h).getSta() == removeCandidate) {
-							Command command = new RemoveListItemCommand<>(train.getStops(), h);
-							commands.add(command);
-							trainNames.add(train.getName());
-						}
-					}
-				}
-
-				if (commands.size() > 0) {
-					// 運転系統に削除対象がある場合は確認ダイアログを出す
-					String trainName = String.join(" ", trainNames);
-					Optional<ButtonType> result = alert.showConfirmation("運転経路" + trainName + "に削除対象駅が含まれています。削除してよろしいですか？");
-
-					if (result.get() == ButtonType.OK) {
-						CompositeCommand compositeCommand = new CompositeCommand(commands);
-						compositeCommand.addCommand(removeConnectionCommand);
-						urManager.execute(compositeCommand);
-					}
-				} else {
-					urManager.execute(removeConnectionCommand);
-				}
-
-				stationNameList.clear();
-				for(int i=0; i < line.getStations().size(); i++){
-					stationNameList.add(line.getStations().get(i).getName());
-				}
-				StationList.getSelectionModel().select(index);
-				lineDraw();
-			}
-		});
+		stationDeleteButton.disableProperty().bind(isSelectedEditLine.not());
+		stationDeleteButton.setOnAction(actionEvent -> deleteSelectedLineStation());
 		StationList.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
 			@Override
 			public void handle(ListView.EditEvent<String> t){
@@ -2010,6 +1966,54 @@ public class UIController implements Initializable{
 				StationList.getSelectionModel().select(index + 1);
 				lineDraw();
 			});
+		}
+	}
+
+	/**
+	 * 選択中路線の選択した駅を削除します。
+	 */
+	private void deleteSelectedLineStation() {
+		int index = StationList.getSelectionModel().getSelectedIndex();
+
+		if (index == 0 || index == line.getStations().size() - 1) {
+			//削除は受け付けない
+			alert.showWarning("始点と終点は削除できません。");
+		} else if(index != -1) {
+			Command removeConnectionCommand = new LineStationRemoveCommand(line, index);
+			Station removeCandidate = line.getStations().get(index);
+			List<Command> commands = new ArrayList<>();
+			List<String> trainNames = new ArrayList<>();
+
+			// 運転系統から削除対象駅を検索する
+			for (int i = 0; i < line.getTrains().size(); ++i) {
+				Train train = line.getTrains().get(i);
+
+				for (int h = 0; h < train.getStops().size(); ++h) {
+					if (train.getStops().get(h).getSta() == removeCandidate) {
+						Command command = new RemoveListItemCommand<>(train.getStops(), h);
+						commands.add(command);
+						trainNames.add(train.getName());
+					}
+				}
+			}
+
+			if (commands.size() > 0) {
+				// 運転系統に削除対象がある場合は確認ダイアログを出す
+				String trainName = String.join(" ", trainNames);
+				Optional<ButtonType> result = alert.showConfirmation("運転経路" + trainName + "に削除対象駅が含まれています。削除してよろしいですか？");
+
+				if (result.get() == ButtonType.OK) {
+					CompositeCommand compositeCommand = new CompositeCommand(commands);
+					compositeCommand.addCommand(removeConnectionCommand);
+					urManager.execute(compositeCommand);
+				}
+			} else {
+				urManager.execute(removeConnectionCommand);
+			}
+
+			stationNameList.setAll(line.getStations().stream().map(Station::getName).collect(Collectors.toList()));
+			StationList.getSelectionModel().select(index);
+			lineDraw();
 		}
 	}
 
