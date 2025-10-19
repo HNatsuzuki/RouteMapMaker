@@ -591,100 +591,90 @@ public class UIController implements Initializable{
 		});
 		staObeyLine.setSelected(true);
 		staObeyLine.setOnAction((ActionEvent)->{
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			if(indexR == -1 || indexS == -1) {
-				return;
-			}
-			Station s = lineList.get(indexR).getStations().get(indexS);
-			if((s.getTextLocation()==Station.TEXT_UNSET)==staObeyLine.isSelected()) {
-				//状態更新不要
-				return;
-			}
-			int newLocation = staObeyLine.isSelected() ? Station.TEXT_UNSET : Station.TEXT_LEFT;
-			Command command = new ValueSetCommand<>(s.getTextLocationProperty(), newLocation);
-			urManager.execute(command);
-			//位置指定トグルの有効/無効を切り替える
-			Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter, staTate, staYoko};
-			boolean obeyLine = newLocation==Station.TEXT_UNSET;
-			Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
-			if(!obeyLine) {
-				staTextLocation.selectToggle(stlToggles[s.getTextLocation()-Station.TEXT_LEFT]);
-			}
-			lineDraw();
+			selectedLineStation.ifPresent(station -> {
+				if((station.getTextLocation() == Station.TEXT_UNSET) == staObeyLine.isSelected()) {
+					//状態更新不要
+					return;
+				}
+				int newLocation = staObeyLine.isSelected() ? Station.TEXT_UNSET : Station.TEXT_LEFT;
+				Command command = new ValueSetCommand<>(station.getTextLocationProperty(), newLocation);
+				urManager.execute(command);
+				//位置指定トグルの有効/無効を切り替える
+				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter, staTate, staYoko};
+				boolean obeyLine = newLocation == Station.TEXT_UNSET;
+				Arrays.asList(stlToggles).forEach(t -> ((javafx.scene.Node)t).setDisable(obeyLine));
+				if (!obeyLine) {
+					staTextLocation.selectToggle(stlToggles[station.getTextLocation() - Station.TEXT_LEFT]);
+				}
+				lineDraw();
+			});
 		});
 		staTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 			Toggle new_toggle) ->{
-				int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-				int indexS = StationList.getSelectionModel().getSelectedIndex();
 				Toggle[] stlToggles = {staLeft, staRight, staBottom, staTop, staCenter};
 				int oldT = Arrays.asList(stlToggles).indexOf(old_toggle);
 				int newT = Arrays.asList(stlToggles).indexOf(new_toggle);
-				if(indexR == -1 || indexS == -1 || oldT == -1) {
+				if(oldT == -1) {
 					return;
 				}
 				if(newT == -1) {
 					//トグルの選択が解除されたことによるlisterの呼び出し．再選択
 					staTextLocation.selectToggle(old_toggle);
 				} else {
-					oldT += Station.TEXT_LEFT;
-					newT += Station.TEXT_LEFT;
-					Station sta = lineList.get(indexR).getStations().get(indexS);
-					if(oldT == sta.getTextLocation()) {
-						Command command = new ValueSetCommand<>(sta.getTextLocationProperty(), oldT, newT);
-						urManager.execute(command);
-					}
+					selectedLineStation.ifPresent(station -> {
+						int oldValue = oldT + Station.TEXT_LEFT;
+						int newValue = newT + Station.TEXT_LEFT;
+
+						if (oldValue == station.getTextLocation()) {
+							Command command = new ValueSetCommand<>(station.getTextLocationProperty(), oldValue, newValue);
+							urManager.execute(command);
+							lineDraw();
+						}
+					});
 				}
-				lineDraw();
 			});
 		staTextMuki.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
 			Toggle new_toggle) ->{
-				int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-				int indexS = StationList.getSelectionModel().getSelectedIndex();
-				if(indexR == -1 || indexS == -1 || old_toggle==null) {
+				if (old_toggle==null) {
 					return;
 				}
-				Station s = lineList.get(indexR).getStations().get(indexS);
-				if(new_toggle==null) {
-					//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-					staTextMuki.selectToggle(old_toggle);
-				} else if(old_toggle != new_toggle && s.isTategaki() == (old_toggle==staTate)) {
-					//手動で操作されたことによるlistenerの呼び出し
-					boolean nt = (new_toggle==staTate);
-					Command command = new ValueSetCommand<>(s.getTategakiProperty(), nt);
-					urManager.execute(command);
-				}
-				lineDraw();
+
+				selectedLineStation.ifPresent(station -> {
+					if(new_toggle==null) {
+						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+						staTextMuki.selectToggle(old_toggle);
+					} else if(old_toggle != new_toggle && station.isTategaki() == (old_toggle==staTate)) {
+						//手動で操作されたことによるlistenerの呼び出し
+						boolean nt = (new_toggle==staTate);
+						Command command = new ValueSetCommand<>(station.getTategakiProperty(), nt);
+						urManager.execute(command);
+						lineDraw();
+					}
+				});
 			});
 		staSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-1,Integer.MAX_VALUE,0,1));
 		staSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(staSize));
 		staSize.valueProperty().addListener((obs, oldVal, newVal) -> {
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexS != -1){
-				if(lineList.get(indexR).getStations().get(indexS).getNameSize() == oldVal.intValue()) {
-					Command command = new ValueSetCommand<>(lineList.get(indexR).getStations().get(indexS).getNameSizeProperty(), oldVal, newVal);
+			selectedLineStation.ifPresent(station -> {
+				if (station.getNameSize() == oldVal.intValue()) {
+					Command command = new ValueSetCommand<>(station.getNameSizeProperty(), oldVal, newVal);
 					urManager.execute(command);
+					lineDraw();
 				}
-
-				lineDraw();
-			}
+			});
 		});
 		ObservableList<String> staStyle_Options = FXCollections.observableArrayList("Regular", "Italic", "Bold", 
 				"BoldItalic", "路線準拠");
 		staStyle.setItems(staStyle_Options);
 		staStyle.valueProperty().addListener((obs, oldVal, newVal) -> {
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexS != -1){
-				if(lineList.get(indexR).getStations().get(indexS).getNameStyle() == staStyle_Options.indexOf(oldVal)) {
-					Command command = new ValueSetCommand<>(lineList.get(indexR).getStations().get(indexS).getNameStyleProperty(),
+			selectedLineStation.ifPresent(station -> {
+				if(station.getNameStyle() == staStyle_Options.indexOf(oldVal)) {
+					Command command = new ValueSetCommand<>(station.getNameStyleProperty(),
 							staStyle_Options.indexOf(oldVal), staStyle_Options.indexOf(newVal));
 					urManager.execute(command);
+					lineDraw();
 				}
-
-				lineDraw();
-			}
+			});
 		});
 		staCurveConnection.setOnAction((ActionEvent)->{
 			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
@@ -695,20 +685,18 @@ public class UIController implements Initializable{
 			lineDraw();
 		});
 		staNameNoShow.setOnAction((ActionEvent)->{
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			if(indexR == -1 || indexS == -1) { return; }
-			Station sta = lineList.get(indexR).getStations().get(indexS);
-			if(staNameNoShow.isSelected()) {
-				Command command = new ValueSetCommand<>(sta.getNameSizeProperty(), -1);
-				urManager.execute(command);
-			} else {
-				Command command = new ValueSetCommand<>(sta.getNameSizeProperty(), -1, 0);
-				urManager.execute(command);
-				staSize.getValueFactory().setValue(0);
-			}
-			staSize.setDisable(staNameNoShow.isSelected());
-			lineDraw();
+			selectedLineStation.ifPresent(station -> {
+				if (staNameNoShow.isSelected()) {
+					Command command = new ValueSetCommand<>(station.getNameSizeProperty(), -1);
+					urManager.execute(command);
+				} else {
+					Command command = new ValueSetCommand<>(station.getNameSizeProperty(), -1, 0);
+					urManager.execute(command);
+					staSize.getValueFactory().setValue(0);
+				}
+				staSize.setDisable(staNameNoShow.isSelected());
+				lineDraw();
+			});
 		});
 		staRemoveRestr.setOnAction((ActionEvent)->{
 			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
@@ -728,14 +716,13 @@ public class UIController implements Initializable{
 			}
 		});
 		staDeConnect.setOnAction((ActionEvent)->{
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
-			if(indexR != -1 && indexS != -1){
-				if(detectConnectedLine(lineList.get(indexR).getStations().get(indexS)).size() < 2){
+			selectedLineStation.ifPresent(station -> {
+				if(detectConnectedLine(station).size() < 2){
 					//この場合は接続を解除する意味がないのでなにもしない。
 					alert.showWarning("指定された駅は他の路線と接続していません。");
 				}else{
-					Station oldSta = lineList.get(indexR).getStations().get(indexS);
+					Station oldSta = station;
 					Station newSta = new Station("新-" + oldSta.getName());
 					//以下初期設定。clone使いたいけどshiftCoorでトラブりそうなのでやめる
 					newSta.setPoint(oldSta.getPoint().add(50, 50));
@@ -745,11 +732,12 @@ public class UIController implements Initializable{
 					newSta.setNameStyle(oldSta.getNameStyle());
 					//描画位置設定は引き継がないことにする
 					List<Command> commands = new ArrayList<>();
-					Command stationUpdateCommand = new ValueSetCommand<>(lineList.get(indexR).getConnections().get(indexS).getStationProperty(), newSta);
+					Line line = selectedEditLine.get();
+					Command stationUpdateCommand = new ValueSetCommand<>(line.getConnections().get(indexS).getStationProperty(), newSta);
 					commands.add(stationUpdateCommand);
 
 					//交点駅が登録されている運転経路も新駅にチェンジ
-					for (Train train : lineList.get(indexR).getTrains()) {
+					for (Train train : line.getTrains()) {
 						for (int i = 0; i < train.getStops().size(); ++i) {
 							if (train.getStops().get(i).getSta() == oldSta) {
 								TrainStop newStop = new TrainStop(newSta);
@@ -764,8 +752,8 @@ public class UIController implements Initializable{
 
 					lineDraw();
 					snList.clear();
-					for(int i=0; i < lineList.get(indexR).getStations().size(); i++){
-						snList.add(lineList.get(indexR).getStations().get(i).getName());
+					for(int i=0; i < line.getStations().size(); i++){
+						snList.add(line.getStations().get(i).getName());
 					}
 
 					//運転経路編集ウィンドウで変更を反映させる
@@ -778,7 +766,7 @@ public class UIController implements Initializable{
 						}
 					}
 				}
-			}
+			});
 		});
 		StationList.getSelectionModel().selectedIndexProperty().addListener(this::lineStationSelectedIndexChanged);
 		
