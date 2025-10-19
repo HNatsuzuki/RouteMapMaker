@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.models.MarkLayer;
 import RouteMapMaker.models.PaintMode;
@@ -71,7 +70,7 @@ public class CustomMarkController implements Initializable{
 	private final StringProperty textParameter = new SimpleStringProperty();
 	private final BooleanProperty isRotated = new SimpleBooleanProperty();
 	private URElements urManager = new URElements();//undoとredoを管理する。
-	private final SelectFontFactory selectFontFactory;
+	private final FontSelectDialogService fontSelectDialog;
 	private final AlertService alert;
 	private CustomMarkDrawer drawer;
 	private final FileOpenDialogService fileOpenDialog;
@@ -120,9 +119,9 @@ public class CustomMarkController implements Initializable{
 	@FXML private MenuItem undoMenuItem;
 	@FXML private MenuItem redoMenuItem;
 
-	public CustomMarkController(ObservableList<StopMark> customMarks, SelectFontFactory selectFontFactory, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
+	public CustomMarkController(ObservableList<StopMark> customMarks, FontSelectDialogService fontSelectDialog, AlertService alert, FileOpenDialogService fileOpenDialog, Configuration config) {
 		this.customMarks = customMarks;
-		this.selectFontFactory = selectFontFactory;
+		this.fontSelectDialog = fontSelectDialog;
 		this.alert = alert;
 		this.fileOpenDialog = fileOpenDialog;
 		this.config = config;
@@ -391,8 +390,7 @@ public class CustomMarkController implements Initializable{
 	private void selectFont() {
 		getSelectedMarkLayer().ifPresent(markLayer -> {
 			String current = markLayer.getFontName();
-			var dialog = new FontSelectDialogService(current, selectFontFactory);
-			dialog.showDialog().ifPresent(newFont -> {
+			fontSelectDialog.showDialog(current).ifPresent(newFont -> {
 				if (!current.equals(newFont)) {
 					Command command = new ValueSetCommand<>(markLayer.getFontNameProperty(), current, newFont);
 					urManager.execute(command);

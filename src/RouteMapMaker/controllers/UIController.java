@@ -198,8 +198,8 @@ public class UIController implements Initializable{
 	private final FileSaveDialogService fileSaveDialog;
 	private final SceneFactory sceneFactory;
 	private final AlertFactory alertFactory;
-	private final SelectFontFactory selectFontFactory;
 	private final AlertService alert;
+	private final FontSelectDialogService fontSelectDialog;
 	private MapDrawer drawer;
 	//ドラッグスタート時の座標を記録する。station座標（zoomを考慮）．
 	Point2D mouseDownPoint = new Point2D(0, 0);
@@ -315,7 +315,7 @@ public class UIController implements Initializable{
 		this.alertFactory = alertFactory;
 		this.fileOpenDialog = fileOpenDialog;
 		this.fileSaveDialog = fileSaveDialog;
-		selectFontFactory = new SelectFontFactory(sceneFactory);
+		fontSelectDialog = new FontSelectDialogService(new SelectFontFactory(sceneFactory));
 		alert = new AlertService(alertFactory);
 	}
 
@@ -1056,7 +1056,7 @@ public class UIController implements Initializable{
 					editLoader = new FXMLLoader(getClass().getResource("/RouteMapMaker/views/ConfigUIController.fxml"));
 					editLoader.setControllerFactory(param -> {
 						if (param == ConfigUIController.class) {
-							return new ConfigUIController(config, selectFontFactory);
+							return new ConfigUIController(config, fontSelectDialog);
 						} else {
 							throw new RuntimeException();
 						}
@@ -1111,7 +1111,7 @@ public class UIController implements Initializable{
 
 		// カスタム停車マーク編集メニュー
 		mb_editCustomMark.setOnAction(actionEvent -> {
-			var dialog = new CustomMarkEditDialogService(customMarks, sceneFactory, selectFontFactory, alert, fileOpenDialog, config);
+			var dialog = new CustomMarkEditDialogService(customMarks, sceneFactory, fontSelectDialog, alert, fileOpenDialog, config);
 			dialog.showDialog();
 			//マークリストを更新
 			setMarkList();
@@ -2000,8 +2000,7 @@ public class UIController implements Initializable{
 	 */
 	private void selectStationFont() {
 		String oldValue = stationFontFamily.get();
-		var dialog = new FontSelectDialogService(oldValue, selectFontFactory);
-		dialog.showDialog().ifPresent(newValue -> {
+		fontSelectDialog.showDialog(oldValue).ifPresent(newValue -> {
 			if (!newValue.equals(oldValue)) {
 				Command command = new ValueSetCommand<>(stationFontFamily, oldValue, newValue);
 				urManager.execute(command);
@@ -2704,9 +2703,7 @@ public class UIController implements Initializable{
 	}
 	String selectFontFamily(String current){//フォント選択画面を出す。選択されたフォントファミリ名を返す。（not exactフォント名）
 		//個別のテキスト挿入にも対応したいので選択されたファミリ名を直接変数に代入することはしません
-		var dialog = new FontSelectDialogService(current, selectFontFactory);
-
-		return dialog.showDialog().orElse(current);
+		return fontSelectDialog.showDialog(current).orElse(current);
 	}
 	void exportImage(){
 		//新しくウィンドウを開いて何倍にするか聞く

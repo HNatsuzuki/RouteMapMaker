@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 /**
  * 変形ダイアログ表示用クラスです。
  */
-public class TransformDialogService implements DialogService<TransformParameters> {
+public class TransformDialogService implements DialogService<Void, TransformParameters> {
     private final SceneFactory sceneFactory;
     private final AlertService alert;
     private final Dimension2D canvasSize;

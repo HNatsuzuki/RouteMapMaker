@@ -3,7 +3,6 @@ package RouteMapMaker.controllers;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import RouteMapMaker.factories.SelectFontFactory;
 import RouteMapMaker.models.Configuration;
 import RouteMapMaker.services.FontSelectDialogService;
 import javafx.fxml.FXML;
@@ -19,7 +18,7 @@ import javafx.scene.control.ToggleGroup;
 
 public class ConfigUIController implements Initializable{
 	private final Configuration config;//設定はここに保存。
-	private final SelectFontFactory selectFontFactory;
+	private final FontSelectDialogService fontSelectDialog;
 	
 	@FXML CheckBox showGrid;
 	@FXML Spinner<Integer> GridInterval;
@@ -33,9 +32,9 @@ public class ConfigUIController implements Initializable{
 	@FXML Label uiFont;
 	@FXML Button selectFont;
 	
-	public ConfigUIController(Configuration config, SelectFontFactory selectFontFactory) {
+	public ConfigUIController(Configuration config, FontSelectDialogService fontSelectDialog) {
 		this.config = config;
-		this.selectFontFactory = selectFontFactory;
+		this.fontSelectDialog = fontSelectDialog;
 	}
 
 	@Override
@@ -64,8 +63,7 @@ public class ConfigUIController implements Initializable{
 			config.setNonFixedColor(nonFixedColor.getValue());
 		});
 		selectFont.setOnAction((ActionEvent) -> {
-			var dialog = new FontSelectDialogService(config.getUiFont(), selectFontFactory);
-			dialog.showDialog().ifPresent(font -> {
+			fontSelectDialog.showDialog(config.getUiFont()).ifPresent(font -> {
 				config.setUiFont(font);
 				uiFont.setText(font);
 			});

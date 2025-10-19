@@ -10,18 +10,21 @@ import javafx.stage.Stage;
 /**
  * フォント選択ダイアログ表示用クラスです。
  */
-public class FontSelectDialogService implements DialogService<String> {
-    private final String currentFont;
+public class FontSelectDialogService implements DialogService<String, String> {
     private final SelectFontFactory selectFontFactory;
 
-    public FontSelectDialogService(String currentFont, SelectFontFactory selectFontFactory) {
-        this.currentFont = currentFont;
+    public FontSelectDialogService(SelectFontFactory selectFontFactory) {
         this.selectFontFactory = selectFontFactory;
     }
 
     @Override
     public Optional<String> showDialog() {
-        View<SelectFontController> view = selectFontFactory.createSelectFontView(currentFont);
+        return showDialog("System");
+    }
+
+    @Override
+    public Optional<String> showDialog(String value) {
+        View<SelectFontController> view = selectFontFactory.createSelectFontView(value);
         Stage stage = view.getStage();
         SelectFontController controller = view.getController();
         stage.showAndWait();
