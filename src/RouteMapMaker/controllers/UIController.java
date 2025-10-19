@@ -266,15 +266,15 @@ public class UIController implements Initializable{
 	@FXML ToggleButton leftEditButton;
 	@FXML ToggleButton rightEditButton;
 	@FXML ToggleButton re_staPShift_TB;
-	@FXML ToggleButton lineTop;
-	@FXML ToggleButton lineBottom;
-	@FXML ToggleButton lineRight;
-	@FXML ToggleButton lineLeft;
-	@FXML ToggleButton lineCenter;
+	@FXML ToggleButton lineTopButton;
+	@FXML ToggleButton lineBottomButton;
+	@FXML ToggleButton lineRightButton;
+	@FXML ToggleButton lineLeftButton;
+	@FXML ToggleButton lineCenterButton;
 	@FXML ToggleButton lineHorizontalButton;
 	@FXML ToggleButton lineVerticalButton;
 	@FXML ToggleGroup lineTextDirectionGroup;
-	@FXML ToggleGroup lineTextLocation;
+	@FXML ToggleGroup lineTextLocationGroup;
 	@FXML ToggleButton staTop;
 	@FXML ToggleButton staBottom;
 	@FXML ToggleButton staRight;
@@ -368,40 +368,28 @@ public class UIController implements Initializable{
 		// 路線選択中を表す binding
 		BooleanBinding isSelectedEditLine = Bindings.isNotNull(RouteTable.getSelectionModel().selectedItemProperty());
 
-		//駅名文字列の向きに関するトグルボタンの設定（路線単位）
-		lineRight.disableProperty().bind(isSelectedEditLine.not());
-		lineRight.setUserData(TextLocation.RIGHT);
-		lineLeft.disableProperty().bind(isSelectedEditLine.not());
-		lineLeft.setUserData(TextLocation.LEFT);
-		lineTop.disableProperty().bind(isSelectedEditLine.not());
-		lineTop.setUserData(TextLocation.TOP);
-		lineBottom.disableProperty().bind(isSelectedEditLine.not());
-		lineBottom.setUserData(TextLocation.BOTTOM);
-		lineCenter.disableProperty().bind(isSelectedEditLine.not());
-		lineCenter.setUserData(TextLocation.CENTER);
-		lineTextLocation.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle oldToggle,
-				Toggle newToggle) ->{
-					if(newToggle == null && oldToggle != null) {
-						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-						lineTextLocation.selectToggle(oldToggle);
+		// 路線テキスト右ボタン
+		lineRightButton.disableProperty().bind(isSelectedEditLine.not());
+		lineRightButton.setUserData(TextLocation.RIGHT);
 
-						return;
-					}
-					int RouteIndex = RouteTable.getSelectionModel().getSelectedIndex();
-					if(RouteIndex == -1){
-						alert.showWarning("路線を選択してください。");
+		// 路線テキスト左ボタン
+		lineLeftButton.disableProperty().bind(isSelectedEditLine.not());
+		lineLeftButton.setUserData(TextLocation.LEFT);
 
-						return;
-					}
-					TextLocation newValue = (TextLocation)newToggle.getUserData();
-					TextLocation oldValue = (TextLocation)oldToggle.getUserData();
-					if(lineList.get(RouteIndex).getNameLocation() == oldValue && oldValue != newValue){
-						//手動で操作されたことによるlistenerの呼び出し
-						Command command = new ValueSetCommand<>(lineList.get(RouteIndex).getNameLocationProperty(), oldValue, newValue);
-						urManager.execute(command);
-					}
-					lineDraw();
-				});
+		// 路線テキスト上ボタン
+		lineTopButton.disableProperty().bind(isSelectedEditLine.not());
+		lineTopButton.setUserData(TextLocation.TOP);
+
+		// 路線テキスト下ボタン
+		lineBottomButton.disableProperty().bind(isSelectedEditLine.not());
+		lineBottomButton.setUserData(TextLocation.BOTTOM);
+
+		// 路線テキスト中央ボタン
+		lineCenterButton.disableProperty().bind(isSelectedEditLine.not());
+		lineCenterButton.setUserData(TextLocation.CENTER);
+
+		// 路線テキスト位置グループ
+		lineTextLocationGroup.selectedToggleProperty().addListener(this::lineTextLocationGroupSelectedChanged);
 
 		// 路線縦書きボタン
 		lineVerticalButton.disableProperty().bind(isSelectedEditLine.not());
@@ -1861,10 +1849,10 @@ public class UIController implements Initializable{
 		snList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
 		StationList.getSelectionModel().selectLast();
 		//トグルの選択と駅名表示位置設定		
-		lineTextLocation.getToggles().stream()
+		lineTextLocationGroup.getToggles().stream()
 			.filter(t -> t.getUserData() == line.getNameLocation())
 			.findFirst()
-			.ifPresent(lineTextLocation::selectToggle);
+			.ifPresent(lineTextLocationGroup::selectToggle);
 
 		lineTextDirectionGroup.selectToggle(line.isVertical() ? lineVerticalButton : lineHorizontalButton);
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
@@ -1915,11 +1903,37 @@ public class UIController implements Initializable{
 	}
 
 	/**
+	 * 路線の位置向き ToggleGroup 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldToggle 変更前の値
+	 * @param newToggle 変更後の値
+	 */
+	private void lineTextLocationGroupSelectedChanged(ObservableValue<? extends Toggle> observable, Toggle oldToggle, Toggle newToggle) {
+		if (newToggle == null && oldToggle != null) {
+			//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+			lineTextLocationGroup.selectToggle(oldToggle);
+		} else if (oldToggle != null && newToggle != null) {
+			selectedEditLine.ifPresentOrElse(line -> {
+				TextLocation newValue = (TextLocation)newToggle.getUserData();
+				TextLocation oldValue = (TextLocation)oldToggle.getUserData();
+
+				if (line.getNameLocation() == oldValue && oldValue != newValue) {
+					Command command = new ValueSetCommand<>(line.getNameLocationProperty(), oldValue, newValue);
+					urManager.execute(command);
+					lineDraw();
+				}
+			},
+			() -> alert.showWarning("路線を選択してください。"));
+		}
+	}
+
+	/**
 	 * 路線の駅名向き ToggleGroup 変更時イベント
 	 *
 	 * @param observable イベント発生元
-	 * @param oldValue 変更前の値
-	 * @param newValue 変更後の値
+	 * @param oldToggle 変更前の値
+	 * @param newToggle 変更後の値
 	 */
 	private void lineTextDirectionGroupSelectedChanged(ObservableValue<? extends Toggle> observable, Toggle oldToggle, Toggle newToggle) {
 		if (newToggle == null && oldToggle != null) {

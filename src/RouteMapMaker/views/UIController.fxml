@@ -70,15 +70,15 @@
                         <Label layoutX="8.0" layoutY="559.0" text="※フォント設定は全路線共通" />
                         <Button fx:id="RouteLoad" layoutX="85.0" layoutY="35.0" mnemonicParsing="false" text="読込" />
                         <CheckBox fx:id="staNameNoShow" layoutX="13.0" layoutY="849.0" mnemonicParsing="false" text="駅名を非表示" />
-                        <ToggleButton fx:id="lineTop" layoutX="121.0" layoutY="266.0" mnemonicParsing="false" text="上" textFill="DARKRED">
+                        <ToggleButton fx:id="lineTopButton" layoutX="121.0" layoutY="266.0" mnemonicParsing="false" text="上" textFill="DARKRED">
                            <toggleGroup>
-                              <ToggleGroup fx:id="lineTextLocation" />
+                              <ToggleGroup fx:id="lineTextLocationGroup" />
                            </toggleGroup>
                         </ToggleButton>
-                        <ToggleButton fx:id="lineCenter" layoutX="115.0" layoutY="301.0" mnemonicParsing="false" text="中央" textFill="#5700a8" toggleGroup="$lineTextLocation" />
-                        <ToggleButton fx:id="lineLeft" layoutX="78.0" layoutY="301.0" mnemonicParsing="false" text="左" textFill="DARKSALMON" toggleGroup="$lineTextLocation" />
-                        <ToggleButton fx:id="lineRight" layoutX="166.0" layoutY="301.0" mnemonicParsing="false" text="右" textFill="DARKGREEN" toggleGroup="$lineTextLocation" />
-                        <ToggleButton fx:id="lineBottom" layoutX="121.0" layoutY="336.0" mnemonicParsing="false" selected="true" text="下" textFill="DARKBLUE" toggleGroup="$lineTextLocation" />
+                        <ToggleButton fx:id="lineCenterButton" layoutX="115.0" layoutY="301.0" mnemonicParsing="false" text="中央" textFill="#5700a8" toggleGroup="$lineTextLocationGroup" />
+                        <ToggleButton fx:id="lineLeftButton" layoutX="78.0" layoutY="301.0" mnemonicParsing="false" text="左" textFill="DARKSALMON" toggleGroup="$lineTextLocationGroup" />
+                        <ToggleButton fx:id="lineRightButton" layoutX="166.0" layoutY="301.0" mnemonicParsing="false" text="右" textFill="DARKGREEN" toggleGroup="$lineTextLocationGroup" />
+                        <ToggleButton fx:id="lineBottomButton" layoutX="121.0" layoutY="336.0" mnemonicParsing="false" selected="true" text="下" textFill="DARKBLUE" toggleGroup="$lineTextLocationGroup" />
                         <ToggleButton fx:id="lineVerticalButton" layoutX="10.0" layoutY="280.0" mnemonicParsing="false" selected="true" text="縦書き" textFill="DARKCYAN">
                            <toggleGroup>
                               <ToggleGroup fx:id="lineTextDirectionGroup" />
