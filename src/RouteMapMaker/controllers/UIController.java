@@ -243,7 +243,7 @@ public class UIController implements Initializable{
 	@FXML Label currentFont;
 	@FXML Label mouseLocation;
 	@FXML ListView<String> lineEditListView;
-	@FXML ListView<String> StationList;
+	@FXML ListView<String> lineStationListView;
 	@FXML ListView<String> trainListView;
 	@FXML ListView<String> tStaList;
 	@FXML ListView<String> R_RouteTable;
@@ -352,9 +352,6 @@ public class UIController implements Initializable{
 		Line newLine = lineList.createAndAddLine("路線1");
 		setCanvasOriginal(lineList.getMaxPoint());
 		lineNameList.add(newLine.getName());
-		StationList.setCellFactory(TextFieldListCell.forListView());
-		StationList.setItems(stationNameList);
-		StationList.setEditable(true);
 		line = lineList.get(0);
 
 		// 路線リスト
@@ -437,34 +434,13 @@ public class UIController implements Initializable{
 		// 駅削除ボタン
 		stationDeleteButton.disableProperty().bind(isSelectedEditLine.not());
 		stationDeleteButton.setOnAction(actionEvent -> deleteSelectedLineStation());
-		StationList.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
-			@Override
-			public void handle(ListView.EditEvent<String> t){
-				int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
-				int indexS = StationList.getSelectionModel().getSelectedIndex();
-				String prev = lineList.get(indexR).getStations().get(indexS).getName();//変更前の駅名
-				StationList.getItems().set(t.getIndex(), t.getNewValue());
-				String str = StationList.getSelectionModel().getSelectedItem();//変更しようとしてる駅名
-				//途中駅でも接続することにしました。
-				if(str.equals("")){
-					alert.showWarning("駅名は空にはできません。\n"
-							+ "中継点を設定するときは駅名大きさパラメーターを-1にしてください。");
-				}else if(!str.equals(prev)){
-					//同名の駅による置き換えを試みる
-					if(stationConnect(indexS, indexR, str)==1) {
-						//同名の駅は存在しない。駅名を書き換えるだけ。
-						Command command = new ValueSetCommand<>(lineList.get(indexR).getStations().get(indexS).getNameProperty(), prev, str);
-						urManager.execute(command);
-					}
-				}
-				stationNameList.clear();
-				for(int i=0; i < line.getStations().size(); i++){
-					stationNameList.add(line.getStations().get(i).getName());
-				}
-				StationList.getSelectionModel().select(indexS);
-				lineDraw();
-			}
-		});
+
+		// 路線の駅リスト
+		lineStationListView.setCellFactory(TextFieldListCell.forListView());
+		lineStationListView.setItems(stationNameList);
+		lineStationListView.setOnEditCommit(this::lineStationListViewEditCommit);
+		lineStationListView.getSelectionModel().selectedIndexProperty().addListener(this::lineStationSelectedIndexChanged);
+
 		staObeyLine.setSelected(true);
 		staObeyLine.setOnAction((ActionEvent)->{
 			selectedLineStation.ifPresent(station -> {
@@ -554,7 +530,7 @@ public class UIController implements Initializable{
 		});
 		staCurveConnection.setOnAction((ActionEvent)->{
 			int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
+			int indexS = lineStationListView.getSelectionModel().getSelectedIndex();
 			BooleanProperty cp = lineList.get(indexR).getConnections().get(indexS).getCurve();
 			Command command = new ValueSetCommand<>(cp, staCurveConnection.isSelected());
 			urManager.execute(command);
@@ -576,7 +552,7 @@ public class UIController implements Initializable{
 		});
 		staRemoveRestr.setOnAction((ActionEvent)->{
 			int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
+			int indexS = lineStationListView.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexS != -1){
 				if(indexS == 0 || indexS == lineList.get(indexR).getStations().size() - 1){
 					alert.showWarning("始点または終点の座標固定を解除することはできません");
@@ -592,7 +568,7 @@ public class UIController implements Initializable{
 			}
 		});
 		staDeConnect.setOnAction((ActionEvent)->{
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
+			int indexS = lineStationListView.getSelectionModel().getSelectedIndex();
 			selectedLineStation.ifPresent(station -> {
 				if(detectConnectedLine(station).size() < 2){
 					//この場合は接続を解除する意味がないのでなにもしない。
@@ -644,8 +620,7 @@ public class UIController implements Initializable{
 				}
 			});
 		});
-		StationList.getSelectionModel().selectedIndexProperty().addListener(this::lineStationSelectedIndexChanged);
-		
+
 		showBackInLE.setOnAction((ActionEvent) -> {
 			lineDraw();
 		});
@@ -1738,7 +1713,7 @@ public class UIController implements Initializable{
 		line = lineList.get(newValue.intValue());
 		selectedEditLine = Optional.of(line);
 		stationNameList.setAll(line.getStations().stream().map(s -> s.getName()).collect(Collectors.toList()));
-		StationList.getSelectionModel().selectLast();
+		lineStationListView.getSelectionModel().selectLast();
 		//トグルの選択と駅名表示位置設定		
 		lineTextLocationGroup.getToggles().stream()
 			.filter(t -> t.getUserData() == line.getNameLocation())
@@ -1948,7 +1923,7 @@ public class UIController implements Initializable{
 	 * 選択中路線の選択した箇所に駅を追加します。
 	 */
 	private void addLineStation() {
-		int index = StationList.getSelectionModel().getSelectedIndex();
+		int index = lineStationListView.getSelectionModel().getSelectedIndex();
 
 		if (index == -1) {
 			alert.showWarning("追加位置を選択してください。");
@@ -1963,7 +1938,7 @@ public class UIController implements Initializable{
 				Command command = new LineStationAddCommand(line, index, newStation);
 				urManager.execute(command);
 				stationNameList.add(index, stationName);
-				StationList.getSelectionModel().select(index + 1);
+				lineStationListView.getSelectionModel().select(index + 1);
 				lineDraw();
 			});
 		}
@@ -1973,7 +1948,7 @@ public class UIController implements Initializable{
 	 * 選択中路線の選択した駅を削除します。
 	 */
 	private void deleteSelectedLineStation() {
-		int index = StationList.getSelectionModel().getSelectedIndex();
+		int index = lineStationListView.getSelectionModel().getSelectedIndex();
 
 		if (index == 0 || index == line.getStations().size() - 1) {
 			//削除は受け付けない
@@ -2012,9 +1987,39 @@ public class UIController implements Initializable{
 			}
 
 			stationNameList.setAll(line.getStations().stream().map(Station::getName).collect(Collectors.toList()));
-			StationList.getSelectionModel().select(index);
+			lineStationListView.getSelectionModel().select(index);
 			lineDraw();
 		}
+	}
+
+	/**
+	 * 路線編集モードで路線の駅名入力決定時イベント
+	 *
+	 * @param editEvent イベント引数
+	 */
+	private void lineStationListViewEditCommit(ListView.EditEvent<String> editEvent) {
+		int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
+		int indexS = lineStationListView.getSelectionModel().getSelectedIndex();
+		String oldValue = lineList.get(indexR).getStations().get(indexS).getName();//変更前の駅名
+		String newValue = editEvent.getNewValue();//変更しようとしてる駅名
+		//途中駅でも接続することにしました。
+		if (newValue.isEmpty()) {
+			alert.showWarning("駅名は空にはできません。\n"
+					+ "中継点を設定するときは駅名大きさパラメーターを-1にしてください。");
+			newValue = oldValue;
+		} else if (!newValue.equals(oldValue)) {
+			//同名の駅による置き換えを試みる
+			if (stationConnect(indexS, indexR, newValue) == 1) {
+				//同名の駅は存在しない。駅名を書き換えるだけ。
+				Command command = new ValueSetCommand<>(lineList.get(indexR).getStations().get(indexS).getNameProperty(), oldValue, newValue);
+				urManager.execute(command);
+			}
+		}
+		
+		// setしないとフォーカスが飛ぶ
+		stationNameList.set(editEvent.getIndex(), newValue);
+		lineStationListView.getSelectionModel().select(indexS);
+		lineDraw();
 	}
 
 	/**
@@ -2285,21 +2290,21 @@ public class UIController implements Initializable{
 				if(lineList.size() != 0){
 					lineEditListView.getSelectionModel().select(0);
 					indexR = lineEditListView.getSelectionModel().getSelectedIndex();
-					StationList.setItems(stationNameList);
+					lineStationListView.setItems(stationNameList);
 					stationNameList.clear();
 					for(int i=0; i < lineList.get(indexR).getStations().size(); i++){
 						stationNameList.add(lineList.get(indexR).getStations().get(i).getName());
 					}
 				}
 			}
-			int indexS = StationList.getSelectionModel().getSelectedIndex();
+			int indexS = lineStationListView.getSelectionModel().getSelectedIndex();
 			if(indexS == -1 && lineList.size() != 0){
 				if(lineList.get(indexR).getStations().size() != 0){
-					StationList.getSelectionModel().select(0);
-					indexS = StationList.getSelectionModel().getSelectedIndex();
+					lineStationListView.getSelectionModel().select(0);
+					indexS = lineStationListView.getSelectionModel().getSelectedIndex();
 				}
 			}
-			StationList.setEditable(true);
+			lineStationListView.setEditable(true);
 		}else{//系統編集モード
 			int indexR = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(indexR == -1){
@@ -2335,7 +2340,7 @@ public class UIController implements Initializable{
 	void resetParams(){//パラメーターを更新する。
 		int indexLR = lineEditListView.getSelectionModel().getSelectedIndex();
 		int sizeLR = lineNameList.size();
-		int indexLS = StationList.getSelectionModel().getSelectedIndex();
+		int indexLS = lineStationListView.getSelectionModel().getSelectedIndex();
 		int sizeLS = stationNameList.size();
 		int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
 		int indexRT = trainListView.getSelectionModel().getSelectedIndex();
@@ -2353,7 +2358,7 @@ public class UIController implements Initializable{
 		if(lineNameList.size() == sizeLR && indexLR != -1){
 			lineEditListView.getSelectionModel().select(indexLR);
 			if(stationNameList.size() == sizeLS && indexLS != -1){
-				StationList.getSelectionModel().select(indexLS);
+				lineStationListView.getSelectionModel().select(indexLS);
 			}else{
 				selectSomething(true);
 			}
@@ -2476,7 +2481,7 @@ public class UIController implements Initializable{
 
 				if (stationPoint.distance(point) <= 6) {
 					lineEditListView.getSelectionModel().select(i);//選択処理をする
-					StationList.getSelectionModel().select(j);
+					lineStationListView.getSelectionModel().select(j);
 					return station;
 				}
 			}

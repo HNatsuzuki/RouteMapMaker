@@ -41,7 +41,7 @@
                   <AnchorPane fx:id="rightPane" prefHeight="1393.0" prefWidth="205.0">
                      <children>
                         <ListView fx:id="lineEditListView" editable="true" layoutX="8.0" layoutY="66.0" prefHeight="172.0" prefWidth="190.0" />
-                        <ListView fx:id="StationList" layoutX="6.0" layoutY="620.0" prefHeight="200.0" prefWidth="190.0" />
+                        <ListView fx:id="lineStationListView" layoutX="6.0" layoutY="620.0" prefHeight="200.0" prefWidth="190.0" />
                         <Label layoutX="26.0" layoutY="14.0" text="路線一覧" />
                         <Button fx:id="RouteAdd" layoutX="41.0" layoutY="35.0" mnemonicParsing="false" text="追加" />
                         <Button fx:id="RouteDelete" layoutX="129.0" layoutY="35.0" mnemonicParsing="false" text="削除" />
