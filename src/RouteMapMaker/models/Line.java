@@ -59,7 +59,7 @@ public class Line {//路線の情報を保持するクラス。
 	private ObservableList<Connection> connections; //<駅，曲線接続> で駅同士の接続を保持．
 	private ObservableList<Train> trains;//運転系統を保持する。
 	private StringProperty lineName = new SimpleStringProperty();//路線名
-	private BooleanProperty tategaki = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
+	private final BooleanProperty vertical = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
 	private IntegerProperty nameStyle = new SimpleIntegerProperty(REGULAR);
 	private IntegerProperty nameSize = new SimpleIntegerProperty(15);
 	private IntegerProperty nameLocation = new SimpleIntegerProperty(BOTTOM);
@@ -159,14 +159,14 @@ public class Line {//路線の情報を保持するクラス。
 	public ObservableList<Connection> getConnections() {
 		return connections;
 	}
-	public boolean isTategaki(){
-		return tategaki.get();
+	public boolean isVertical() {
+		return vertical.get();
 	}
-	public BooleanProperty getTategakiProperty(){
-		return this.tategaki;
+	public BooleanProperty verticalProperty() {
+		return this.vertical;
 	}
-	public void setTategaki(boolean t){
-		this.tategaki.set(t);
+	public void setVertical(boolean t) {
+		this.vertical.set(t);
 	}
 	public void setNameStyle(int i){
 		this.nameStyle.set(i);

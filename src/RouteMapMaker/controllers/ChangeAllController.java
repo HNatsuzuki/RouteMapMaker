@@ -123,7 +123,7 @@ public class ChangeAllController implements Initializable{
 				v = v - (tate ? (1<<4) : 0); //縦書きbitを消去
 				for(Line l: A_list.getSelectionModel().getSelectedItems()){
 					l.setNameLocation(v);
-					l.setTategaki(tate);
+					l.setVertical(tate);
 				}
 				uic.ReDraw();
 			}else{

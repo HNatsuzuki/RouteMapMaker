@@ -59,7 +59,7 @@ public class StationLabelFactory {
             offset = line.getNameOffset();
         }
 
-        boolean isVertical = station.getTextLocation() == Station.TEXT_UNSET ? line.isTategaki() : station.isTategaki();
+        boolean isVertical = station.getTextLocation() == Station.TEXT_UNSET ? line.isVertical() : station.isTategaki();
         String text;
 
         if (isVertical) {

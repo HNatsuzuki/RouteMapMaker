@@ -404,10 +404,10 @@ public class UIController implements Initializable{
 					//トグルの選択が解除されたことによるlisterの呼び出し．再選択
 					lineTextMuki.selectToggle(old_toggle);
 				} else if (old_toggle != null && old_toggle != new_toggle
-						&& line.isTategaki() == (old_toggle == lineTate)) {
+						&& line.isVertical() == (old_toggle == lineTate)) {
 					//手動で操作されたことによるlistenerの呼び出し
 					boolean nt = (new_toggle == lineTate);
-					Command command = new ValueSetCommand<>(line.getTategakiProperty(), nt);
+					Command command = new ValueSetCommand<>(line.verticalProperty(), nt);
 					urManager.execute(command);
 				}
 				lineDraw();
@@ -1864,7 +1864,7 @@ public class UIController implements Initializable{
 		//トグルの選択と駅名表示位置設定
 		Toggle[] tlToggle = {lineRight, lineLeft, lineTop, lineBottom, lineCenter};
 		lineTextLocation.selectToggle(tlToggle[line.getNameLocation()]);
-		lineTextMuki.selectToggle(line.isTategaki() ? lineTate : lineYoko);
+		lineTextMuki.selectToggle(line.isVertical() ? lineTate : lineYoko);
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
 		RouteColor.setValue(line.getNameColor());//色設定
@@ -2081,7 +2081,7 @@ public class UIController implements Initializable{
 
 		if(lineList.size() > 0){//既に路線があった場合は入力補助として駅名色、駅名大きさ、駅名スタイルを引き継ぐ
 			final Line lastLine = lineList.get(lineList.size()-1);
-			newLine.setTategaki(lastLine.isTategaki());
+			newLine.setVertical(lastLine.isVertical());
 			newLine.setNameColor(lastLine.getNameColor());
 			newLine.setNameSize(lastLine.getNameSize());
 			newLine.setNameStyle(lastLine.getNameStyle());

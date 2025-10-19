@@ -27,7 +27,7 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         Properties properties = new Properties();
         properties.setProperty(prefix + "lineName", line.getName());
         properties.setProperty(prefix + "nameLocation", String.valueOf(line.getNameLocation()));
-        properties.setProperty(prefix + "tategaki",String.valueOf(line.isTategaki()));
+        properties.setProperty(prefix + "tategaki",String.valueOf(line.isVertical()));
         properties.setProperty(prefix + "nameStyle", String.valueOf(line.getNameStyle()));
         properties.setProperty(prefix + "nameSize", String.valueOf(line.getNameSize()));
         properties.setProperty(prefix + "nameColorR", String.valueOf(line.getNameColor().getRed()));
@@ -73,16 +73,16 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
 
         if (version < 7) {
             //上付き、下付きなど未対応のデータ
-            boolean tategaki = Boolean.valueOf(properties.getProperty(prefix + "tategaki"));
-            line.setNameLocation(tategaki ? Line.BOTTOM : Line.RIGHT);
-            line.setTategaki(tategaki);
+            boolean vertical = Boolean.valueOf(properties.getProperty(prefix + "tategaki"));
+            line.setNameLocation(vertical ? Line.BOTTOM : Line.RIGHT);
+            line.setVertical(vertical);
         } else if (version < 9) {
             //縦・横とtopやbottomが分離されていないデータ
             line.setNameLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation")));
-            line.setTategaki(line.getNameLocation() == Line.TOP || line.getNameLocation() == Line.BOTTOM);
+            line.setVertical(line.getNameLocation() == Line.TOP || line.getNameLocation() == Line.BOTTOM);
         } else {
             line.setNameLocation(Integer.valueOf(properties.getProperty(prefix + "nameLocation")));
-            line.setTategaki(Boolean.valueOf(properties.getProperty(prefix + "tategaki")));
+            line.setVertical(Boolean.valueOf(properties.getProperty(prefix + "tategaki")));
         }
 
         int numOfSta = Integer.parseInt(properties.getProperty(prefix + "NumOfStations"));
