@@ -299,7 +299,7 @@ public class UIController implements Initializable{
 	@FXML Spinner<Integer> re_lineSA_SP;
 	@FXML Spinner<Integer> re_lineSB_SP;
 	@FXML Spinner<Integer> re_staPSize_SP;
-	@FXML Spinner<Integer> RouteSize;
+	@FXML Spinner<Integer> lineTextSizeSpinner;
 	@FXML Spinner<Integer> R_nameX;
 	@FXML Spinner<Integer> R_nameY;
 	@FXML Spinner<Integer> re_staPX_SP;
@@ -412,18 +412,12 @@ public class UIController implements Initializable{
 		lineTextColorPicker.setOnAction(actionEvent -> changeLineTextColor());
 		lineTextColorPicker.valueProperty().addListener(this::lineTextColorPickerChanged);
 
-		RouteSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,Integer.MAX_VALUE,15,1));
-		RouteSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(RouteSize));
-		RouteSize.disableProperty().bind(isSelectedEditLine.not());
-		RouteSize.valueProperty().addListener((obs, oldVal, newVal) -> {
-			selectedEditLine.ifPresent(line -> {
-				if (oldVal.intValue() == line.getNameSize()) {
-					Command command = new ValueSetCommand<>(line.getNameSizeProperty(), oldVal, newVal);
-					urManager.execute(command);
-					lineDraw();
-				}
-			});
-		});
+		// 路線の文字サイズ
+		lineTextSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,Integer.MAX_VALUE,15,1));
+		lineTextSizeSpinner.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(lineTextSizeSpinner));
+		lineTextSizeSpinner.disableProperty().bind(isSelectedEditLine.not());
+		lineTextSizeSpinner.valueProperty().addListener(this::lineTextSizeSpinnerChanged);
+
 		ObservableList<String> RouteStyle_Options = FXCollections.observableArrayList("Regular", "Italic", "Bold", "BoldItalic");
 		RouteStyle.setItems(RouteStyle_Options);
 		RouteStyle.disableProperty().bind(isSelectedEditLine.not());
@@ -1841,7 +1835,7 @@ public class UIController implements Initializable{
 			.ifPresent(lineTextLocationGroup::selectToggle);
 
 		lineTextDirectionGroup.selectToggle(line.isVertical() ? lineVerticalButton : lineHorizontalButton);
-		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
+		lineTextSizeSpinner.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
 		lineTextColorPicker.setValue(line.getNameColor());//色設定
 	}
@@ -1983,6 +1977,23 @@ public class UIController implements Initializable{
 			if (!newValue.equals(line.getNameColor())) {
 				// カスタム・カラーダイアログで調整している可能性があるため、ここではコマンドとしては実行せず、プレビュー用に値を更新して再描画する
 				line.setNameColor(newValue);
+				lineDraw();
+			}
+		});
+	}
+
+	/**
+	 * 路線の文字サイズの Spinner 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void lineTextSizeSpinnerChanged(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+		selectedEditLine.ifPresent(line -> {
+			if (oldValue.intValue() == line.getNameSize()) {
+				Command command = new ValueSetCommand<>(line.getNameSizeProperty(), oldValue, newValue);
+				urManager.execute(command);
 				lineDraw();
 			}
 		});
