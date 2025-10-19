@@ -283,10 +283,10 @@ public class UIController implements Initializable{
 	@FXML ToggleButton stationRightButton;
 	@FXML ToggleButton stationLeftButton;
 	@FXML ToggleButton stationCenterButton;
-	@FXML ToggleButton staYoko;
-	@FXML ToggleButton staTate;
+	@FXML ToggleButton stationHorizontalToggle;
+	@FXML ToggleButton stationVerticalToggle;
 	@FXML ToggleButton stationStyleInheritButton;
-	@FXML ToggleGroup staTextMuki;
+	@FXML ToggleGroup stationTextDirectionGroup;
 	@FXML ToggleGroup stationTextLocationGroup;
 	@FXML Rectangle draggedRect;
 	@FXML ScrollPane canvasPane;
@@ -468,30 +468,16 @@ public class UIController implements Initializable{
 		stationTextLocationGroup.selectedToggleProperty().addListener(this::stationTextLocationGroupSelectedChanged);
 
 		// 駅テキスト縦書きボタン
-		staTate.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationVerticalToggle.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationVerticalToggle.setUserData(true);
 
 		// 駅テキスト横書きボタン
-		staYoko.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationHorizontalToggle.disableProperty().bind(stationStyleInheritButton.selectedProperty());
+		stationHorizontalToggle.setUserData(false);
 
-		staTextMuki.selectedToggleProperty().addListener((ObservableValue<? extends Toggle> ov, Toggle old_toggle,
-			Toggle new_toggle) ->{
-				if (old_toggle==null) {
-					return;
-				}
+		// 駅テキスト縦書き/横書きグループ
+		stationTextDirectionGroup.selectedToggleProperty().addListener(this::stationTextDirectionGroupSelectedChanged);
 
-				selectedLineStation.ifPresent(station -> {
-					if(new_toggle==null) {
-						//トグルの選択が解除されたことによるlisterの呼び出し．再選択
-						staTextMuki.selectToggle(old_toggle);
-					} else if(old_toggle != new_toggle && station.isTategaki() == (old_toggle==staTate)) {
-						//手動で操作されたことによるlistenerの呼び出し
-						boolean nt = (new_toggle==staTate);
-						Command command = new ValueSetCommand<>(station.getTategakiProperty(), nt);
-						urManager.execute(command);
-						lineDraw();
-					}
-				});
-			});
 		staSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(-1,Integer.MAX_VALUE,0,1));
 		staSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(staSize));
 		staSize.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -1752,7 +1738,7 @@ public class UIController implements Initializable{
 				staCurveConnection.setSelected(line.getCurveConnection(newValue.intValue()));
 				//位置指定トグルの有効/無効を切り替える
 				stationStyleInheritButton.setSelected(station.isTextLocationInherited());
-				staTextMuki.selectToggle(station.isTategaki() ? staTate : staYoko);
+				stationTextDirectionGroup.selectToggle(station.isTategaki() ? stationVerticalToggle : stationHorizontalToggle);
 				if (!station.isTextLocationInherited()) {
 					stationTextLocationGroup.getToggles().stream()
 						.filter(t -> t.getUserData() == station.getTextLocation())
@@ -2056,6 +2042,37 @@ public class UIController implements Initializable{
 				}
 			});
 		}
+	}
+
+	/**
+	 * 駅ごとの駅名向き ToggleGroup 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldToggle 変更前の値
+	 * @param newToggle 変更後の値
+	 */
+	private void stationTextDirectionGroupSelectedChanged(ObservableValue<? extends Toggle> observable, Toggle oldToggle, Toggle newToggle) {
+		if (oldToggle == null) {
+			return;
+		}
+
+		if (newToggle == null) {
+			//トグルの選択が解除されたことによるlisterの呼び出し．再選択
+			stationTextDirectionGroup.selectToggle(oldToggle);
+
+			return;
+		}
+
+		selectedLineStation.ifPresent(station -> {
+			boolean oldValue = (boolean)oldToggle.getUserData();
+			boolean newValue = (boolean)newToggle.getUserData();
+
+			if (oldValue != newValue && station.isTategaki() == oldValue) {
+				Command command = new ValueSetCommand<>(station.getTategakiProperty(), newValue);
+				urManager.execute(command);
+				lineDraw();
+			}
+		});
 	}
 
 	/**
