@@ -57,7 +57,7 @@
                         <Label layoutX="9.0" layoutY="431.0" text="駅名大きさ" />
                         <Spinner fx:id="lineTextSizeSpinner" editable="true" layoutX="104.0" layoutY="426.0" prefHeight="27.0" prefWidth="83.0" />
                         <Label layoutX="9.0" layoutY="460.0" text="駅名スタイル" />
-                        <ComboBox fx:id="RouteStyle" layoutX="22.0" layoutY="477.0" prefHeight="27.0" prefWidth="165.0" />
+                        <ComboBox fx:id="lineFontStyleComboBox" layoutX="22.0" layoutY="477.0" prefHeight="27.0" prefWidth="165.0" />
                         <Label layoutX="11.0" layoutY="1027.0" text="駅名大きさ" />
                         <Spinner fx:id="staSize" editable="true" layoutX="106.0" layoutY="1022.0" prefHeight="27.0" prefWidth="83.0" />
                         <Label layoutX="11.0" layoutY="1089.0" text="駅名スタイル" />

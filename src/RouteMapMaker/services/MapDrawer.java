@@ -271,7 +271,7 @@ public class MapDrawer {
 
         //文字スタイルの設定
         switch (item.getFontStyle()) {
-            case NORMAL:
+            case REGULAR:
                 gc.setFont(Font.font(item.getFontName(), FontWeight.NORMAL, FontPosture.REGULAR, item.getSize()));
                 break;
             case BOLD:
@@ -282,6 +282,8 @@ public class MapDrawer {
                 break;
             case BOLD_ITALIC:
                 gc.setFont(Font.font(item.getFontName(), FontWeight.BOLD, FontPosture.ITALIC, item.getSize()));
+                break;
+            default:
                 break;
         }
 

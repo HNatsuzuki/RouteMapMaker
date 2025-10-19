@@ -123,6 +123,7 @@ import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.Background;
 import RouteMapMaker.models.Configuration;
+import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.LineList;
 import RouteMapMaker.models.FreeItem;
@@ -234,7 +235,7 @@ public class UIController implements Initializable{
 	@FXML ComboBox<StopMark> re_staMark_CB;
 	@FXML ComboBox<LineDash> re_linePattern_CB;
 	@FXML ComboBox<String> re_staPStyle_CB;
-	@FXML ComboBox<String> RouteStyle;
+	@FXML ComboBox<FontStyle> lineFontStyleComboBox;
 	@FXML ComboBox<String> staStyle;
 	@FXML Label bgImageLabel;
 	@FXML Label currentFont;
@@ -418,23 +419,12 @@ public class UIController implements Initializable{
 		lineTextSizeSpinner.disableProperty().bind(isSelectedEditLine.not());
 		lineTextSizeSpinner.valueProperty().addListener(this::lineTextSizeSpinnerChanged);
 
-		ObservableList<String> RouteStyle_Options = FXCollections.observableArrayList("Regular", "Italic", "Bold", "BoldItalic");
-		RouteStyle.setItems(RouteStyle_Options);
-		RouteStyle.disableProperty().bind(isSelectedEditLine.not());
-		RouteStyle.valueProperty().addListener((obs, oldVal, newVal) -> {
-			selectedEditLine.ifPresent(line -> {
-				if (oldVal != null) {
-					if ((oldVal.equals("Regular") && line.getNameStyle() == Line.REGULAR) ||
-						(oldVal.equals("Italic") && line.getNameStyle() == Line.ITALIC) ||
-						(oldVal.equals("Bold") && line.getNameStyle() == Line.BOLD) ||
-						(oldVal.equals("BoldItalic") && line.getNameStyle() == Line.ITALIC_BOLD)) {
-						Command command = new ValueSetCommand<>(line.getNameStyleProperty(), RouteStyle.getSelectionModel().getSelectedIndex());
-						urManager.execute(command);
-						lineDraw();
-					}
-				}
-			});
-		});
+		// 路線のフォントスタイル
+		ObservableList<FontStyle> lineFontStyles = FXCollections.observableArrayList(FontStyle.availableLineFontStyleValues());
+		lineFontStyleComboBox.setItems(lineFontStyles);
+		lineFontStyleComboBox.disableProperty().bind(isSelectedEditLine.not());
+		lineFontStyleComboBox.valueProperty().addListener(this::lineFontStyleComboBoxValueChanged);
+
 		stationFont.setOnAction((ActionEvent) ->{//フォントを設定。これは全路線共通です。
 			String oldVal = stationFontFamily.get();
 			String newVal = selectFontFamily(stationFontFamily.get());
@@ -1836,7 +1826,7 @@ public class UIController implements Initializable{
 
 		lineTextDirectionGroup.selectToggle(line.isVertical() ? lineVerticalButton : lineHorizontalButton);
 		lineTextSizeSpinner.getValueFactory().setValue(line.getNameSize());//サイズ設定
-		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
+		lineFontStyleComboBox.getSelectionModel().select(line.getFontStyle());//style設定
 		lineTextColorPicker.setValue(line.getNameColor());//色設定
 	}
 
@@ -1993,6 +1983,23 @@ public class UIController implements Initializable{
 		selectedEditLine.ifPresent(line -> {
 			if (oldValue.intValue() == line.getNameSize()) {
 				Command command = new ValueSetCommand<>(line.getNameSizeProperty(), oldValue, newValue);
+				urManager.execute(command);
+				lineDraw();
+			}
+		});
+	}
+
+	/**
+	 * 路線のフォントスタイルの ComboBox 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void lineFontStyleComboBoxValueChanged(ObservableValue<? extends FontStyle> observable, FontStyle oldValue, FontStyle newValue) {
+		selectedEditLine.ifPresent(line -> {
+			if (oldValue == line.getFontStyle() && oldValue != newValue) {
+				Command command = new ValueSetCommand<>(line.fontStyleProperty(), newValue);
 				urManager.execute(command);
 				lineDraw();
 			}
@@ -2171,7 +2178,7 @@ public class UIController implements Initializable{
 			newLine.setVertical(lastLine.isVertical());
 			newLine.setNameColor(lastLine.getNameColor());
 			newLine.setNameSize(lastLine.getNameSize());
-			newLine.setNameStyle(lastLine.getNameStyle());
+			newLine.setFontStyle(lastLine.getFontStyle());
 		}
 		
 		// staNamesが設定されている場合は駅を設定する

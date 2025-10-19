@@ -60,7 +60,7 @@ public class Line {//路線の情報を保持するクラス。
 	private ObservableList<Train> trains;//運転系統を保持する。
 	private StringProperty lineName = new SimpleStringProperty();//路線名
 	private final BooleanProperty vertical = new SimpleBooleanProperty(true);//縦書きか横書きか。trueなら縦書き
-	private IntegerProperty nameStyle = new SimpleIntegerProperty(REGULAR);
+	private final ObjectProperty<FontStyle> fontStyle = new SimpleObjectProperty<>(FontStyle.REGULAR);
 	private IntegerProperty nameSize = new SimpleIntegerProperty(15);
 	private final ObjectProperty<TextLocation> nameLocation = new SimpleObjectProperty<>(TextLocation.BOTTOM);
 	private ObjectProperty<Color> nameColor = new SimpleObjectProperty<>(Color.BLACK);
@@ -168,14 +168,14 @@ public class Line {//路線の情報を保持するクラス。
 	public void setVertical(boolean t) {
 		this.vertical.set(t);
 	}
-	public void setNameStyle(int i){
-		this.nameStyle.set(i);
+	public void setFontStyle(FontStyle style) {
+		this.fontStyle.set(style);
 	}
-	public IntegerProperty getNameStyleProperty(){
-		return this.nameStyle;
+	public ObjectProperty<FontStyle> fontStyleProperty() {
+		return this.fontStyle;
 	}
-	public int getNameStyle(){
-		return this.nameStyle.get();
+	public FontStyle getFontStyle() {
+		return this.fontStyle.get();
 	}
 	public int getNameSize(){
 		return this.nameSize.get();

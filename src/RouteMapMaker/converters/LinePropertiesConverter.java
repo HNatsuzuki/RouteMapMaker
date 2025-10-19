@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Properties;
 
 import RouteMapMaker.models.LineDash;
+import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
@@ -29,7 +30,7 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         properties.setProperty(prefix + "lineName", line.getName());
         properties.setProperty(prefix + "nameLocation", String.valueOf(textLocationToInt(line.getNameLocation())));
         properties.setProperty(prefix + "tategaki",String.valueOf(line.isVertical()));
-        properties.setProperty(prefix + "nameStyle", String.valueOf(line.getNameStyle()));
+        properties.setProperty(prefix + "nameStyle", String.valueOf(fontStyleToInt(line.getFontStyle())));
         properties.setProperty(prefix + "nameSize", String.valueOf(line.getNameSize()));
         properties.setProperty(prefix + "nameColorR", String.valueOf(line.getNameColor().getRed()));
         properties.setProperty(prefix + "nameColorG", String.valueOf(line.getNameColor().getGreen()));
@@ -69,7 +70,7 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         line.setNameColor(new Color(r, g, b, a));
         line.setNameX(Integer.parseInt(properties.getProperty(prefix + "nameX")));
         line.setNameY(Integer.parseInt(properties.getProperty(prefix + "nameY")));
-        line.setNameStyle(Integer.valueOf(properties.getProperty(prefix + "nameStyle")));
+        line.setFontStyle(intToFontStyle(Integer.valueOf(properties.getProperty(prefix + "nameStyle"))));
         line.setNameSize(Integer.valueOf(properties.getProperty(prefix + "nameSize")));
 
         if (version < 7) {
@@ -126,6 +127,48 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
                 return Line.LEFT;
             default:
                 throw new IllegalArgumentException("不正な引数です:" + textLocation);
+        }
+    }
+
+    /**
+     * {@link FontStyle} から保存用の値に変換します。
+     *
+     * @param fontStyle フォントスタイル
+     * @return 対応する値
+     */
+    private static int fontStyleToInt(FontStyle fontStyle) {
+        switch (fontStyle) {
+            case REGULAR:
+                return Line.REGULAR;
+            case BOLD:
+                return Line.BOLD;
+            case ITALIC:
+                return Line.ITALIC;
+            case BOLD_ITALIC:
+                return Line.ITALIC_BOLD;
+            default:
+                throw new IllegalArgumentException("不正な引数です:" + fontStyle);
+        }
+    }
+
+    /**
+     * 保存用の値から {@link FontStyle} に変換します。
+     *
+     * @param style 保存用の値
+     * @return 対応する値
+     */
+    private static FontStyle intToFontStyle(int style) {
+        switch (style) {
+            case Line.REGULAR:
+                return FontStyle.REGULAR;
+            case Line.BOLD:
+                return FontStyle.BOLD;
+            case Line.ITALIC:
+                return FontStyle.ITALIC;
+            case Line.ITALIC_BOLD:
+                return FontStyle.BOLD_ITALIC;
+            default:
+                throw new IllegalArgumentException("不正なフォントスタイルです: " + style);
         }
     }
 }

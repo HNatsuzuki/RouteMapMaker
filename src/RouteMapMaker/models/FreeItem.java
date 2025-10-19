@@ -138,7 +138,7 @@ public class FreeItem implements Cloneable{//路線図上に自由挿入でき�
 		}
 
 		if (this.params[5].get() == 0) {
-			return FontStyle.NORMAL;
+			return FontStyle.REGULAR;
 		} else if (this.params[5].get() == 1) {
 			return FontStyle.BOLD;
 		} else if (this.params[5].get() == 2) {

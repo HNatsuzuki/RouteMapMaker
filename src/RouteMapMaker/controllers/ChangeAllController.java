@@ -8,6 +8,7 @@ import RouteMapMaker.listcells.LineDashCell;
 import RouteMapMaker.listcells.StopMarkCell;
 import RouteMapMaker.models.LineDash;
 import RouteMapMaker.models.LineList;
+import RouteMapMaker.models.FontStyle;
 import RouteMapMaker.models.Line;
 import RouteMapMaker.models.Station;
 import RouteMapMaker.models.StopMark;
@@ -47,7 +48,7 @@ public class ChangeAllController implements Initializable{
 	@FXML Button A_Color_AP;
 	@FXML Spinner<Integer> A_Size;
 	@FXML Button A_Size_AP;
-	@FXML ComboBox<Integer> A_Style;
+	@FXML ComboBox<FontStyle> A_Style;
 	@FXML Button A_Style_AP;
 	@FXML Spinner<Integer> A_X;
 	@FXML Spinner<Integer> A_Y;
@@ -155,17 +156,14 @@ public class ChangeAllController implements Initializable{
 				}
 			}
 		});
-		ObservableList<Integer> A_styleList = FXCollections.observableArrayList(Line.REGULAR,Line.BOLD,Line.ITALIC,
-				Line.ITALIC_BOLD);
+		ObservableList<FontStyle> A_styleList = FXCollections.observableArrayList(FontStyle.availableLineFontStyleValues());
 		A_Style.setItems(A_styleList);
-		A_Style.setCellFactory(new A_styleCell());
-		A_Style.setButtonCell(new A_styleCell().call(null));
 		A_Style.getSelectionModel().select(0);
 		A_Style_AP.setOnAction((ActionEvent) ->{
 			if(confirm("路線駅名スタイル")){
 				if(A_list.getSelectionModel().getSelectedItems().size() > 0){
 					for(Line l: A_list.getSelectionModel().getSelectedItems()){
-						l.setNameStyle(A_Style.getSelectionModel().getSelectedItem().intValue());
+						l.setFontStyle(A_Style.getSelectionModel().getSelectedItem());
 					}
 				}else{
 					alert.showWarning("変更する路線を選択してください。");
@@ -686,27 +684,6 @@ public class ChangeAllController implements Initializable{
 						if(item.intValue() == Station.ITALIC) setText("ITALIC");
 						if(item.intValue() == Station.BOLD_ITALIC) setText("BOLD_ITALIC");
 						if(item.intValue() == Station.STYLE_UNSET) setText("路線準拠");
-					}
-				}
-			};
-		}
-	}
-	class A_styleCell extends ListCell<Integer> implements Callback<ListView<Integer>, ListCell<Integer>>{
-		@Override
-		public ListCell<Integer> call(ListView<Integer> param) {
-			// TODO Auto-generated method stub
-			return new A_styleCell(){
-				@Override
-				protected void updateItem(Integer item, boolean empty){
-					super.updateItem(item, empty);
-					if (empty || item == null) {
-						setText(null);
-						setGraphic(null);
-					} else {
-						if(item.intValue() == Line.REGULAR) setText("REGULAR");
-						if(item.intValue() == Line.BOLD) setText("BOLD");
-						if(item.intValue() == Line.ITALIC) setText("ITALIC");
-						if(item.intValue() == Line.ITALIC_BOLD) setText("BOLD_ITALIC");
 					}
 				}
 			};
