@@ -19,8 +19,8 @@ public class TrainStopListPropertiesConverter extends PropertiesConverterBase {
         for (int i = 0; i < trainStops.size(); ++i) {//stationsは駅名のみ記録する。停車駅ごとのループ
             TrainStop trainStop = trainStops.get(i);
             properties.setProperty(prefix + "sta" + String.valueOf(i), trainStop.getSta().getName());
-            properties.setProperty(prefix + "sta" + String.valueOf(i) + ".shiftX", String.valueOf(trainStop.getShift().getX()));
-            properties.setProperty(prefix + "sta" + String.valueOf(i) + ".shiftY", String.valueOf(trainStop.getShift().getY()));
+            properties.setProperty(prefix + "sta" + String.valueOf(i) + ".shiftX", String.valueOf((int)trainStop.getShift().getX()));
+            properties.setProperty(prefix + "sta" + String.valueOf(i) + ".shiftY", String.valueOf((int)trainStop.getShift().getY()));
 
             //停車駅マークタイプに関する記述。カスタムマーク対応したらここも追記必要あり。
             StopMark sm = trainStop.getMark();

@@ -27,7 +27,7 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
     public static Properties toProperties(Line line, List<LineDash> lineDashes, List<StopMark> customMarks, String prefix) {
         Properties properties = new Properties();
         properties.setProperty(prefix + "lineName", line.getName());
-        properties.setProperty(prefix + "nameLocation", String.valueOf(line.getNameLocation()));
+        properties.setProperty(prefix + "nameLocation", String.valueOf(textLocationToInt(line.getNameLocation())));
         properties.setProperty(prefix + "tategaki",String.valueOf(line.isVertical()));
         properties.setProperty(prefix + "nameStyle", String.valueOf(line.getNameStyle()));
         properties.setProperty(prefix + "nameSize", String.valueOf(line.getNameSize()));
@@ -35,8 +35,8 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         properties.setProperty(prefix + "nameColorG", String.valueOf(line.getNameColor().getGreen()));
         properties.setProperty(prefix + "nameColorB", String.valueOf(line.getNameColor().getBlue()));
         properties.setProperty(prefix + "nameColorO", String.valueOf(line.getNameColor().getOpacity()));
-        properties.setProperty(prefix + "nameX", String.valueOf(line.getNameOffset().getX()));
-        properties.setProperty(prefix + "nameY", String.valueOf(line.getNameOffset().getY()));
+        properties.setProperty(prefix + "nameX", String.valueOf((int)line.getNameOffset().getX()));
+        properties.setProperty(prefix + "nameY", String.valueOf((int)line.getNameOffset().getY()));
 
         Properties stationsProperties = StationListPropertiesConverter.toProperties(line.getStations(), line, prefix);
         properties.putAll(stationsProperties);
@@ -104,5 +104,28 @@ public class LinePropertiesConverter extends PropertiesConverterBase {
         }
 
         return line;
+    }
+
+    /**
+     * {@link TextLocation} から保存用の値に変換します。
+     *
+     * @param textLocation テキスト位置
+     * @return 対応する値
+     */
+    private static int textLocationToInt(TextLocation textLocation) {
+        switch (textLocation) {
+            case CENTER:
+                return Line.CENTER;
+            case TOP:
+                return Line.TOP;
+            case RIGHT:
+                return Line.RIGHT;
+            case BOTTOM:
+                return Line.BOTTOM;
+            case LEFT:
+                return Line.LEFT;
+            default:
+                throw new IllegalArgumentException("不正な引数です:" + textLocation);
+        }
     }
 }

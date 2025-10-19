@@ -32,8 +32,8 @@ public class StationPropertiesConverter {
         properties.setProperty(prefix + "tategaki", String.valueOf(station.isTategaki()));
         properties.setProperty(prefix + "size", String.valueOf(station.getNameSize()));
         properties.setProperty(prefix + "style", String.valueOf(station.getNameStyle()));
-        properties.setProperty(prefix + "nameX", String.valueOf(station.getNameOffset().getX()));
-        properties.setProperty(prefix + "nameY", String.valueOf(station.getNameOffset().getY()));
+        properties.setProperty(prefix + "nameX", String.valueOf((int)station.getNameOffset().getX()));
+        properties.setProperty(prefix + "nameY", String.valueOf((int)station.getNameOffset().getY()));
         properties.setProperty(prefix + "shiftOnStation", String.valueOf(station.shiftBasedOnStation()));
         properties.setProperty(prefix + "curve", String.valueOf(curve));
 
