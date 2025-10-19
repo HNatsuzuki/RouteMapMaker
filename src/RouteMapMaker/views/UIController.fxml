@@ -79,12 +79,12 @@
                         <ToggleButton fx:id="lineLeft" layoutX="78.0" layoutY="301.0" mnemonicParsing="false" text="左" textFill="DARKSALMON" toggleGroup="$lineTextLocation" />
                         <ToggleButton fx:id="lineRight" layoutX="166.0" layoutY="301.0" mnemonicParsing="false" text="右" textFill="DARKGREEN" toggleGroup="$lineTextLocation" />
                         <ToggleButton fx:id="lineBottom" layoutX="121.0" layoutY="336.0" mnemonicParsing="false" selected="true" text="下" textFill="DARKBLUE" toggleGroup="$lineTextLocation" />
-                        <ToggleButton fx:id="lineTate" layoutX="10.0" layoutY="280.0" mnemonicParsing="false" selected="true" text="縦書き" textFill="DARKCYAN">
+                        <ToggleButton fx:id="lineVerticalButton" layoutX="10.0" layoutY="280.0" mnemonicParsing="false" selected="true" text="縦書き" textFill="DARKCYAN">
                            <toggleGroup>
-                              <ToggleGroup fx:id="lineTextMuki" />
+                              <ToggleGroup fx:id="lineTextDirectionGroup" />
                            </toggleGroup>
                         </ToggleButton>
-                        <ToggleButton fx:id="lineYoko" layoutX="10.0" layoutY="330.0" mnemonicParsing="false" text="横書き" textFill="CRIMSON" toggleGroup="$lineTextMuki" />
+                        <ToggleButton fx:id="lineHorizontalButton" layoutX="10.0" layoutY="330.0" mnemonicParsing="false" text="横書き" textFill="CRIMSON" toggleGroup="$lineTextDirectionGroup" />
                         <ToggleButton fx:id="staTop" disable="true" layoutX="119.0" layoutY="914.0" mnemonicParsing="false" text="上" textFill="DARKRED">
                            <toggleGroup>
                               <ToggleGroup fx:id="staTextLocation" />
