@@ -150,7 +150,7 @@ import RouteMapMaker.services.TransformDialogService;
 public class UIController implements Initializable{
 	
 	final double EPSILON = 0.00001;//doubleでの比較用。double変数は==で比較しちゃだめです！
-	private ObservableList<String> rnList = FXCollections.observableArrayList();
+	private ObservableList<String> lineNameList = FXCollections.observableArrayList();
 	private ObservableList<String> tStaListOb = FXCollections.observableArrayList();
 	private ObservableList<String> snList = FXCollections.observableArrayList();
 	private ObservableList<String> trainNameList = FXCollections.observableArrayList();
@@ -238,7 +238,7 @@ public class UIController implements Initializable{
 	@FXML Label bgImageLabel;
 	@FXML Label currentFont;
 	@FXML Label mouseLocation;
-	@FXML ListView<String> RouteTable;
+	@FXML ListView<String> lineEditListView;
 	@FXML ListView<String> StationList;
 	@FXML ListView<String> trainListView;
 	@FXML ListView<String> tStaList;
@@ -322,15 +322,6 @@ public class UIController implements Initializable{
 		drawer = new MapDrawer(config, canvas.getGraphicsContext2D(), stationFontFamily);
 		drawer.initialize();
 
-		RouteTable.setItems(rnList);
-		RouteTable.setEditable(true);
-		RouteTable.setCellFactory(TextFieldListCell.forListView());
-		Line newLine = lineList.createAndAddLine("路線1");
-		setCanvasOriginal(lineList.getMaxPoint());
-		rnList.add(newLine.getName());
-		StationList.setCellFactory(TextFieldListCell.forListView());
-		StationList.setItems(snList);
-		StationList.setEditable(true);
 		(new Thread(){
 			@Override
 			public void run(){
@@ -353,20 +344,33 @@ public class UIController implements Initializable{
 			alert.showAndWait();
 			config.setNoAlert(box.isSelected());
 		}
-		lineDraw();
+
+		Line newLine = lineList.createAndAddLine("路線1");
+		setCanvasOriginal(lineList.getMaxPoint());
+		lineNameList.add(newLine.getName());
+		StationList.setCellFactory(TextFieldListCell.forListView());
+		StationList.setItems(snList);
+		StationList.setEditable(true);
 		line = lineList.get(0);
+
+		// 路線リスト
+		lineEditListView.setItems(lineNameList);
+		lineEditListView.setCellFactory(TextFieldListCell.forListView());
+		lineEditListView.getSelectionModel().selectedIndexProperty().addListener(this::lineSelectedIndexChangedInEditMode);
+		lineEditListView.setOnEditCommit(this::lineEditListViewEditCommit);
+
+		// 路線選択中を表す binding
+		BooleanBinding isSelectedEditLine = Bindings.isNotNull(lineEditListView.getSelectionModel().selectedItemProperty());
 
 		// 路線追加ボタン
 		RouteAdd.setOnAction(actionEvent -> addNewLine());
 
 		// 路線削除ボタン
+		RouteDelete.disableProperty().bind(isSelectedEditLine.not());
 		RouteDelete.setOnAction(actionEvent -> deleteLine());
 
 		// 駅名読み込みボタン
 		RouteLoad.setOnAction(actionEvent -> addNewLineWithTextFile());
-
-		// 路線選択中を表す binding
-		BooleanBinding isSelectedEditLine = Bindings.isNotNull(RouteTable.getSelectionModel().selectedItemProperty());
 
 		// 路線テキスト右ボタン
 		lineRightButton.disableProperty().bind(isSelectedEditLine.not());
@@ -401,24 +405,6 @@ public class UIController implements Initializable{
 
 		// 路線縦書き/横書きグループ
 		lineTextDirectionGroup.selectedToggleProperty().addListener(this::lineTextDirectionGroupSelectedChanged);
-
-		RouteTable.getSelectionModel().selectedIndexProperty().addListener(this::lineSelectedIndexChangedInEditMode);
-		RouteTable.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
-			@Override
-			public void handle(ListView.EditEvent<String> t){
-				if(! t.getNewValue().equals("")){
-					if(! t.getNewValue().equals(lineList.get(t.getIndex()).getName())){
-						Command command = new ValueSetCommand<>(lineList.get(t.getIndex()).getNameProperty(), t.getNewValue());
-						urManager.execute(command);
-					}
-				}
-				rnList.clear();
-				for(int i=0; i < lineList.size(); i++){
-					rnList.add(lineList.get(i).getName());
-				}
-				RouteTable.getSelectionModel().select(t.getIndex());
-			}
-		});
 
 		RouteColor.disableProperty().bind(isSelectedEditLine.not());
 		RouteColor.setOnAction(actionEvent -> {
@@ -551,7 +537,7 @@ public class UIController implements Initializable{
 		StationList.setOnEditCommit(new EventHandler<ListView.EditEvent<String>>(){
 			@Override
 			public void handle(ListView.EditEvent<String> t){
-				int indexR = RouteTable.getSelectionModel().getSelectedIndex();
+				int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
 				int indexS = StationList.getSelectionModel().getSelectedIndex();
 				String prev = lineList.get(indexR).getStations().get(indexS).getName();//変更前の駅名
 				StationList.getItems().set(t.getIndex(), t.getNewValue());
@@ -664,7 +650,7 @@ public class UIController implements Initializable{
 			});
 		});
 		staCurveConnection.setOnAction((ActionEvent)->{
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
+			int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
 			BooleanProperty cp = lineList.get(indexR).getConnections().get(indexS).getCurve();
 			Command command = new ValueSetCommand<>(cp, staCurveConnection.isSelected());
@@ -686,7 +672,7 @@ public class UIController implements Initializable{
 			});
 		});
 		staRemoveRestr.setOnAction((ActionEvent)->{
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
+			int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
 			int indexS = StationList.getSelectionModel().getSelectedIndex();
 			if(indexR != -1 && indexS != -1){
 				if(indexS == 0 || indexS == lineList.get(indexR).getStations().size() - 1){
@@ -988,11 +974,11 @@ public class UIController implements Initializable{
 			lineList.clear();
 			customMarks.clear();
 			freeItems.clear();
-			rnList.clear();
+			lineNameList.clear();
 			Line newLine1 = lineList.createAndAddLine("路線1");
 			setCanvasOriginal(lineList.getMaxPoint());
-			rnList.add(newLine1.getName());
-			RouteTable.getSelectionModel().select(0);
+			lineNameList.add(newLine1.getName());
+			lineEditListView.getSelectionModel().select(0);
 			urManager.clear();
 			lineDraw();
 		});
@@ -1497,7 +1483,7 @@ public class UIController implements Initializable{
 			}
 			mapDraw();
 		});
-		R_RouteTable.setItems(rnList);
+		R_RouteTable.setItems(lineNameList);
 		R_RouteTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
 			int index = R_RouteTable.getSelectionModel().getSelectedIndex();
 			if(index != -1){
@@ -1515,9 +1501,9 @@ public class UIController implements Initializable{
 			if(index > 0){//0と-1は意味を持たない
 				Command command = new SwapListItemUpCommand<>(lineList, index);
 				urManager.execute(command);
-				rnList.clear();
+				lineNameList.clear();
 				for(int i=0; i < lineList.size(); i++){
-					rnList.add(lineList.get(i).getName());
+					lineNameList.add(lineList.get(i).getName());
 				}
 				R_RouteTable.getSelectionModel().select(index - 1);
 				mapDraw();
@@ -1528,9 +1514,9 @@ public class UIController implements Initializable{
 			if(index != -1 && index != lineList.size() - 1){//0とラストは意味を持たない
 				Command command = new SwapListItemDownCommand<>(lineList, index);
 				urManager.execute(command);
-				rnList.clear();
+				lineNameList.clear();
 				for(int i=0; i < lineList.size(); i++){
-					rnList.add(lineList.get(i).getName());
+					lineNameList.add(lineList.get(i).getName());
 				}
 				R_RouteTable.getSelectionModel().select(index + 1);
 				mapDraw();
@@ -1747,7 +1733,9 @@ public class UIController implements Initializable{
 			ReDraw();
 		});
 
+		// コントロールの設定終了後に描画する
 		selectSomething(true);
+		lineDraw();
 
 		// 設定変更時イベント処理
 		config.getR_gridProperty().addListener((obs) -> {
@@ -1821,12 +1809,12 @@ public class UIController implements Initializable{
 	 * 路線を削除します。
 	 */
 	private void deleteLine() {
-		int index = RouteTable.getSelectionModel().getSelectedIndex();
+		int index = lineEditListView.getSelectionModel().getSelectedIndex();
 
 		if (index != -1) {
 			Command command = new RemoveListItemCommand<>(lineList, index);
 			urManager.execute(command);
-			rnList.remove(index);
+			lineNameList.remove(index);
 			lineDraw();
 		}
 	}
@@ -1858,6 +1846,22 @@ public class UIController implements Initializable{
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
 		RouteColor.setValue(line.getNameColor());//色設定
+	}
+
+	/**
+	 * 路線編集モードで路線名入力決定時イベント
+	 *
+	 * @param editEvent イベント引数
+	 */
+	private void lineEditListViewEditCommit(ListView.EditEvent<String> editEvent) {
+		if (!editEvent.getNewValue().isEmpty()) {
+			if (!editEvent.getNewValue().equals(lineList.get(editEvent.getIndex()).getName())) {
+				Command command = new ValueSetCommand<>(lineList.get(editEvent.getIndex()).getNameProperty(), editEvent.getNewValue());
+				urManager.execute(command);
+				lineNameList.set(editEvent.getIndex(), editEvent.getNewValue());
+				lineEditListView.getSelectionModel().select(editEvent.getIndex());
+			}
+		}
 	}
 
 	/**
@@ -2169,8 +2173,8 @@ public class UIController implements Initializable{
 		Command command = new AddListItemCommand<>(lineList, newLine);
 		urManager.execute(command);
 		setCanvasOriginal(lineList.getMaxPoint());
-		rnList.add(newLine.getName());
-		RouteTable.getSelectionModel().select(rnList.size() - 1);
+		lineNameList.add(newLine.getName());
+		lineEditListView.getSelectionModel().select(lineNameList.size() - 1);
 		return newLine;
 	}
 	
@@ -2221,11 +2225,11 @@ public class UIController implements Initializable{
 	
 	void selectSomething(boolean b){//編集画面で何も選択されていない状態を避けるメソッド。trueを渡せば路線編集モード、falseで系統編集モード
 		if(b){//路線編集モード
-			int indexR = RouteTable.getSelectionModel().getSelectedIndex();
+			int indexR = lineEditListView.getSelectionModel().getSelectedIndex();
 			if(indexR == -1){
 				if(lineList.size() != 0){
-					RouteTable.getSelectionModel().select(0);
-					indexR = RouteTable.getSelectionModel().getSelectedIndex();
+					lineEditListView.getSelectionModel().select(0);
+					indexR = lineEditListView.getSelectionModel().getSelectedIndex();
 					StationList.setItems(snList);
 					snList.clear();
 					for(int i=0; i < lineList.get(indexR).getStations().size(); i++){
@@ -2274,8 +2278,8 @@ public class UIController implements Initializable{
 		}
 	}
 	void resetParams(){//パラメーターを更新する。
-		int indexLR = RouteTable.getSelectionModel().getSelectedIndex();
-		int sizeLR = rnList.size();
+		int indexLR = lineEditListView.getSelectionModel().getSelectedIndex();
+		int sizeLR = lineNameList.size();
 		int indexLS = StationList.getSelectionModel().getSelectedIndex();
 		int sizeLS = snList.size();
 		int indexRR = R_RouteTable.getSelectionModel().getSelectedIndex();
@@ -2287,12 +2291,12 @@ public class UIController implements Initializable{
 		updateBackgroundComponents();
 		currentFont.setText(stationFontFamily.get());
 		//まずは左の枠
-		rnList.clear();
+		lineNameList.clear();
 		for(Line l: lineList){
-			rnList.add(l.getName());
+			lineNameList.add(l.getName());
 		}
-		if(rnList.size() == sizeLR && indexLR != -1){
-			RouteTable.getSelectionModel().select(indexLR);
+		if(lineNameList.size() == sizeLR && indexLR != -1){
+			lineEditListView.getSelectionModel().select(indexLR);
 			if(snList.size() == sizeLS && indexLS != -1){
 				StationList.getSelectionModel().select(indexLS);
 			}else{
@@ -2302,7 +2306,7 @@ public class UIController implements Initializable{
 			selectSomething(true);
 		}
 		//つづいて右枠
-		if(rnList.size() == sizeLR && indexRR != -1){
+		if(lineNameList.size() == sizeLR && indexRR != -1){
 			R_RouteTable.getSelectionModel().select(indexLR);
 			if(trainNameList.size() == sizeRT && indexRT != -1){
 				trainListView.getSelectionModel().select(indexRT);
@@ -2416,7 +2420,7 @@ public class UIController implements Initializable{
 					: station.getInterPoint();
 
 				if (stationPoint.distance(point) <= 6) {
-					RouteTable.getSelectionModel().select(i);//選択処理をする
+					lineEditListView.getSelectionModel().select(i);//選択処理をする
 					StationList.getSelectionModel().select(j);
 					return station;
 				}
@@ -2533,11 +2537,11 @@ public class UIController implements Initializable{
 		setMarkList();
 		//lineListを頂点とするデータ群
 		lineList.clear();//lineListは全消去
-		rnList.clear();
+		lineNameList.clear();
 		LineListPropertiesConverter lineListPropertiesConverter = new LineListPropertiesConverter();
 		List<Line> lines = lineListPropertiesConverter.fromProperties(p, pVersion, lineDashes, customMarks, "");
 		lineList.addAll(lines);
-		rnList.addAll(lines.stream().map(l -> l.getName()).collect(Collectors.toList()));
+		lineNameList.addAll(lines.stream().map(l -> l.getName()).collect(Collectors.toList()));
 
 		if (lineListPropertiesConverter.hasError()) {
 				String message =
