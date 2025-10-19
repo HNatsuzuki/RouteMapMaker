@@ -52,7 +52,7 @@
                         <Label layoutX="19.0" layoutY="828.0" text="駅プロパティ" />
                         <Label layoutX="11.0" layoutY="897.0" text="駅名表示" />
                         <Button fx:id="staRemoveRestr" layoutX="8.0" layoutY="1154.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="97.0" text="座標固定解除" textFill="#ff0061" />
-                        <ColorPicker fx:id="RouteColor" layoutX="93.0" layoutY="388.0" prefHeight="27.0" prefWidth="93.0" />
+                        <ColorPicker fx:id="lineTextColorPicker" layoutX="93.0" layoutY="388.0" prefHeight="27.0" prefWidth="93.0" />
                         <Label layoutX="10.0" layoutY="393.0" text="駅名色" />
                         <Label layoutX="9.0" layoutY="431.0" text="駅名大きさ" />
                         <Spinner fx:id="RouteSize" editable="true" layoutX="104.0" layoutY="426.0" prefHeight="27.0" prefWidth="83.0" />

@@ -71,6 +71,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -228,7 +229,7 @@ public class UIController implements Initializable{
 	@FXML ColorPicker bgColor_CP;
 	@FXML ColorPicker re_line_CP;
 	@FXML ColorPicker re_mark_CP;
-	@FXML ColorPicker RouteColor;
+	@FXML ColorPicker lineTextColorPicker;
 	@FXML ComboBox<StopMark> re_mark_CB;
 	@FXML ComboBox<StopMark> re_staMark_CB;
 	@FXML ComboBox<LineDash> re_linePattern_CB;
@@ -406,14 +407,11 @@ public class UIController implements Initializable{
 		// 路線縦書き/横書きグループ
 		lineTextDirectionGroup.selectedToggleProperty().addListener(this::lineTextDirectionGroupSelectedChanged);
 
-		RouteColor.disableProperty().bind(isSelectedEditLine.not());
-		RouteColor.setOnAction(actionEvent -> {
-			selectedEditLine.ifPresent(line -> {
-				Command command = new ValueSetCommand<>(line.getNameColorProperty(), RouteColor.getValue());
-				urManager.execute(command);
-				lineDraw();
-			});
-		});
+		// 路線の文字色
+		lineTextColorPicker.disableProperty().bind(isSelectedEditLine.not());
+		lineTextColorPicker.setOnAction(actionEvent -> changeLineTextColor());
+		lineTextColorPicker.valueProperty().addListener(this::lineTextColorPickerChanged);
+
 		RouteSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1,Integer.MAX_VALUE,15,1));
 		RouteSize.getEditor().addEventHandler(KeyEvent.KEY_PRESSED, new IntegerSpinnerEventHandler(RouteSize));
 		RouteSize.disableProperty().bind(isSelectedEditLine.not());
@@ -1845,7 +1843,7 @@ public class UIController implements Initializable{
 		lineTextDirectionGroup.selectToggle(line.isVertical() ? lineVerticalButton : lineHorizontalButton);
 		RouteSize.getValueFactory().setValue(line.getNameSize());//サイズ設定
 		RouteStyle.getSelectionModel().select(line.getNameStyle());//style設定
-		RouteColor.setValue(line.getNameColor());//色設定
+		lineTextColorPicker.setValue(line.getNameColor());//色設定
 	}
 
 	/**
@@ -1960,6 +1958,34 @@ public class UIController implements Initializable{
 			}
 		},
 		() -> alert.showWarning("路線を選択してください。"));
+	}
+
+	/**
+	 * 路線の文字色変更
+	 */
+	private void changeLineTextColor() {
+		selectedEditLine.ifPresent(line -> {
+			Command command = new ValueSetCommand<>(line.getNameColorProperty(), lineTextColorPicker.getValue());
+			urManager.execute(command);
+			lineDraw();
+		});
+	}
+
+	/**
+	 * 路線の文字色の ColorPicker 変更時イベント
+	 *
+	 * @param observable イベント発生元
+	 * @param oldValue 変更前の値
+	 * @param newValue 変更後の値
+	 */
+	private void lineTextColorPickerChanged(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
+		selectedEditLine.ifPresent(line -> {
+			if (!newValue.equals(line.getNameColor())) {
+				// カスタム・カラーダイアログで調整している可能性があるため、ここではコマンドとしては実行せず、プレビュー用に値を更新して再描画する
+				line.setNameColor(newValue);
+				lineDraw();
+			}
+		});
 	}
 
 	/**
